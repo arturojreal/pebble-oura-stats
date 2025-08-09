@@ -88,9 +88,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 static void update_heart_rate_display() {
   if (s_heart_rate_data.data_available) {
-    // Limit to 3 characters total (e.g., "65" or "120")
     int hr = s_heart_rate_data.resting_heart_rate;
-    if (hr > 999) hr = 999; // Cap at 999
     snprintf(s_heart_rate_buffer, sizeof(s_heart_rate_buffer), "%d", hr);
   } else {
     snprintf(s_heart_rate_buffer, sizeof(s_heart_rate_buffer), "--");
@@ -104,9 +102,7 @@ static void update_heart_rate_display() {
 
 static void update_readiness_display() {
   if (s_readiness_data.data_available) {
-    // Show readiness score, limit to 3 characters (e.g., "85" or "100")
     int score = s_readiness_data.readiness_score;
-    if (score > 999) score = 999; // Cap at 999
     snprintf(s_readiness_buffer, sizeof(s_readiness_buffer), "%d", score);
   } else {
     snprintf(s_readiness_buffer, sizeof(s_readiness_buffer), "--");
@@ -120,9 +116,7 @@ static void update_readiness_display() {
 
 static void update_sleep_display() {
   if (s_sleep_data.data_available) {
-    // Show sleep score, limit to 3 characters (e.g., "78" or "100")
     int score = s_sleep_data.sleep_score;
-    if (score > 999) score = 999; // Cap at 999
     snprintf(s_sleep_buffer, sizeof(s_sleep_buffer), "%d", score);
   } else {
     snprintf(s_sleep_buffer, sizeof(s_sleep_buffer), "--");
