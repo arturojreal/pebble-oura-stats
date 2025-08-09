@@ -1,0 +1,57 @@
+{
+  "name": "oura-stats-watchface",
+  "author": "Arturo J. Real",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {
+    "pebble-clay": "^1.0.4"
+  },
+  "pebble": {
+    "displayName": "oura-stats-watchface",
+    "uuid": "e82ef2e0-8262-4916-b75f-2868b4eef278",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite"
+    ],
+    "capabilities": [
+      "configurable"
+    ],
+    "configurationUrl": "https://peppy-pothos-093b81.netlify.app/pebble-static-config.html",
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "request_data",
+      "setup_auth",
+      "auth_url",
+      "auth_needed",
+      "auth_code",
+      "auth_complete",
+      "debug_status",
+      "heart_rate",
+      "readiness",
+      "sleep",
+      "resting_heart_rate",
+      "hrv_score",
+      "readiness_score",
+      "temperature_deviation",
+      "recovery_index",
+      "sleep_score",
+      "total_sleep_time",
+      "deep_sleep_time",
+      "data_available",
+      "last_updated",
+      "error"
+    ],
+    "resources": {
+      "media": []
+    }
+  }
+}

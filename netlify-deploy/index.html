@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Oura Stats Watchface Settings</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="css/slate.min.css">
+    <script type="text/javascript" src="js/slate.min.js"></script>
+</head>
+<body>
+    <h1 class="title">Oura Stats Watchface</h1>
+    
+    <div class="item-container">
+        <div class="item-container-header">Oura Ring Connection</div>
+        
+        <div class="item-container-content">
+            <label class="item">
+                <div class="item-content">
+                    <div class="item-text">
+                        <div class="item-title">Connection Status</div>
+                        <div class="item-subtitle" id="connection-status">Checking...</div>
+                    </div>
+                </div>
+            </label>
+            
+            <label class="item" id="connect-item">
+                <div class="item-content">
+                    <div class="item-text">
+                        <div class="item-title">Connect to Oura</div>
+                        <div class="item-subtitle">Authorize access to your Oura ring data</div>
+                    </div>
+                    <div class="item-control">
+                        <button class="item-button" id="connect-button">Connect</button>
+                    </div>
+                </div>
+            </label>
+            
+            <label class="item" id="disconnect-item" style="display: none;">
+                <div class="item-content">
+                    <div class="item-text">
+                        <div class="item-title">Disconnect from Oura</div>
+                        <div class="item-subtitle">Remove authorization and clear tokens</div>
+                    </div>
+                    <div class="item-control">
+                        <button class="item-button" id="disconnect-button">Disconnect</button>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+    
+    <div class="item-container">
+        <div class="item-container-header">Display Settings</div>
+        
+        <div class="item-container-content">
+            <label class="item">
+                <div class="item-content">
+                    <div class="item-text">
+                        <div class="item-title">Data Refresh Frequency</div>
+                        <div class="item-subtitle">How often to update Oura data</div>
+                    </div>
+                    <div class="item-control">
+                        <select id="refresh-frequency">
+                            <option value="15">15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="60" selected>1 hour</option>
+                            <option value="120">2 hours</option>
+                            <option value="240">4 hours</option>
+                        </select>
+                    </div>
+                </div>
+            </label>
+            
+            <label class="item">
+                <div class="item-content">
+                    <div class="item-text">
+                        <div class="item-title">Show Debug Messages</div>
+                        <div class="item-subtitle">Display connection status on watch</div>
+                    </div>
+                    <div class="item-control">
+                        <input id="show-debug" type="checkbox" class="item-toggle" checked>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+    
+    <div class="item-container">
+        <div class="item-container-header">Account Information</div>
+        
+        <div class="item-container-content">
+            <label class="item">
+                <div class="item-content">
+                    <div class="item-text">
+                        <div class="item-title">Connected Account</div>
+                        <div class="item-subtitle" id="account-info">Not connected</div>
+                    </div>
+                </div>
+            </label>
+            
+            <label class="item">
+                <div class="item-content">
+                    <div class="item-text">
+                        <div class="item-title">Last Data Update</div>
+                        <div class="item-subtitle" id="last-update">Never</div>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="js/config.js"></script>
+</body>
+</html>

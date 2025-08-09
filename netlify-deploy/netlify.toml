@@ -1,0 +1,11 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = []
+  included_files = []
+
+# Optional: set Node runtime (Netlify defaults to a recent LTS)
+# [functions."*"].node_bundler = "esbuild"

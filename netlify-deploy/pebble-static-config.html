@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oura Stats - Pebble Configuration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            background: #f5f5f5;
+            line-height: 1.4;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .connect-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 15px 0;
+            border: none;
+            cursor: pointer;
+        }
+        .connect-btn:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #0c5460;
+        }
+        .token-info {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .debug-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 12px;
+            border-left: 4px solid #007bff;
+        }
+        .section-box {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+        .section-title {
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 8px 0;
+            font-size: 13px;
+        }
+        .kv {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 6px 10px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .kv div:nth-child(odd) { color: #555; }
+        .kv div:nth-child(even) {
+            word-break: break-word;
+        }
+        .debug-log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 160px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 10px 0;
+        }
+        .test-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #218838;
+        }
+        .warn { color: #b45400; }
+        .ok { color: #1f7a1f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏃‍♂️ Oura Stats</h1>
+        
+        <div id="status" class="status disconnected">
+            Checking connection...
+        </div>
+
+        <div id="connect-section">
+            <button id="connect-btn" class="connect-btn">
+                Connect to Oura Ring
+            </button>
+            
+            <div class="info">
+                <strong>How it works:</strong><br>
+                Tap "Connect" → Login to Oura → Return here automatically
+            </div>
+        </div>
+
+        <div id="connected-section" style="display: none;">
+            <div class="info">
+                ✅ Token stored. Review diagnostics below, then tap "Send to Pebble" when ready.
+            </div>
+            
+            <div class="token-info" id="token-display"></div>
+            
+            <button onclick="sendAndClose()" class="connect-btn">Send to Pebble (Close)</button>
+            <button onclick="closeWebview()" class="connect-btn btn-secondary">Close (Don’t Send)</button>
+            <button onclick="clearSettings()" class="connect-btn btn-danger">Clear Settings</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔍 Debug Information</h3>
+
+            <div class="section-box">
+                <div class="section-title">Developer Status</div>
+                <div class="kv" id="dev-kv"></div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-title">Live Log</div>
+                <div class="debug-log" id="debug-log">Debug information will appear here...</div>
+                <div>
+                    <button onclick="testOuraAPI()" class="test-button">Test Oura API</button>
+                    <button onclick="checkStoredData()" class="test-button">Check Stored Data</button>
+                    <button onclick="resendToPebble()" class="test-button">Resend to Pebble</button>
+                    <button onclick="copyLog()" class="test-button">Copy Log</button>
+                    <button onclick="clearDebugLog()" class="test-button">Clear Log</button>
+                </div>
+                <div id="copy-status" style="font-size:11px;color:#555;margin-top:6px;display:none;">Copied!</div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-title">Token Details</div>
+                <div id="token-details"></div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-title">API Test Results</div>
+                <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#333;">
+                        <input type="checkbox" id="use-proxy-toggle" />
+                        Use Proxy for Test
+                    </label>
+                    <span style="font-size:11px;color:#666;">Direct API calls often fail inside the Pebble webview due to CORS/TLS; enable Proxy.</span>
+                </div>
+                <div id="api-test-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PURE STATIC CONFIG - NO POPUPS, ONLY REDIRECTS
+        var CLIENT_ID = 'TGDTXUBGWULVNKSC';
+        var REDIRECT_URI = 'https://peppy-pothos-093b81.netlify.app/pebble-static-config.html';
+        var AUTH_URL = 'https://cloud.ouraring.com/oauth/authorize';
+        var SCOPES = 'daily heartrate'; // daily_* endpoints + /usercollection/heartrate
+
+        // Generate OAuth URL - client-side-only flow
+        function generateAuthUrl() {
+            return AUTH_URL + 
+                '?response_type=token' +  // CLIENT-SIDE-ONLY
+                '&client_id=' + CLIENT_ID +
+                '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+                '&scope=' + encodeURIComponent(SCOPES);
+        }
+
+        // Check for token in URL fragment
+        function checkForToken() {
+            var hash = window.location.hash;
+            if (hash && hash.includes('access_token=')) {
+                var params = new URLSearchParams(hash.substring(1));
+                var token = params.get('access_token');
+                var expiresIn = params.get('expires_in') || 2592000;
+                
+                if (token) {
+                    // Store token
+                    localStorage.setItem('oura_access_token', token);
+                    localStorage.setItem('oura_token_expires', Date.now() + (expiresIn * 1000));
+                    
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    // Show connected state
+                    showConnected(token);
+                    // Do not auto-close or auto-send. Developer can review and send manually.
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Check stored token
+        function checkStoredToken() {
+            var token = localStorage.getItem('oura_access_token');
+            var expires = localStorage.getItem('oura_token_expires');
+            
+            if (token && expires && Date.now() < parseInt(expires)) {
+                showConnected(token);
+                return true;
+            }
+            return false;
+        }
+
+        // Show connected state
+        function showConnected(token) {
+            document.getElementById('status').className = 'status connected';
+            document.getElementById('status').textContent = '✅ Connected to Oura (token stored)';
+            document.getElementById('connect-section').style.display = 'none';
+            document.getElementById('connected-section').style.display = 'block';
+            
+            var display = token.substring(0, 8) + '...' + token.substring(token.length - 4);
+            document.getElementById('token-display').textContent = 'Token: ' + display;
+        }
+
+        // Show disconnected state
+        function showDisconnected() {
+            document.getElementById('status').className = 'status disconnected';
+            document.getElementById('status').textContent = '❌ Not connected';
+            document.getElementById('connect-section').style.display = 'block';
+            document.getElementById('connected-section').style.display = 'none';
+        }
+
+        // DIRECT REDIRECT - NO POPUP!
+        function connect() {
+            console.log('Direct redirect to Oura OAuth2...');
+            window.location = generateAuthUrl();  // PURE REDIRECT
+        }
+
+        // Reconnect
+        function reconnect() {
+            clearSettings();
+            window.location = generateAuthUrl();  // PURE REDIRECT
+        }
+
+        // Send settings to Pebble
+        function sendToPebble(token) {
+            try {
+                var settings = { oura_access_token: token };
+                var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
+                
+                debugLog('📱 Sending settings to Pebble:');
+                debugLog('Token: ' + token.substring(0, 10) + '...' + token.substring(token.length - 6));
+                debugLog('Settings: ' + JSON.stringify(settings));
+                debugLog('Return URL: ' + returnUrl);
+                
+                // Perform the close immediately when user requests send
+                window.location = returnUrl;
+            } catch (error) {
+                debugLog('❌ Error sending to Pebble: ' + error.message);
+                console.log('Could not return to Pebble (expected in browser)');
+            }
+        }
+
+        function resendToPebble() {
+            var token = localStorage.getItem('oura_access_token');
+            if (!token) { debugLog('❌ Resend failed: no token in storage'); return; }
+            debugLog('🔁 Manual resend to Pebble requested');
+            sendToPebble(token);
+        }
+
+        function sendAndClose() {
+            var token = localStorage.getItem('oura_access_token');
+            if (!token) { debugLog('❌ Send failed: no token in storage'); return; }
+            sendToPebble(token);
+        }
+
+        function closeWebview() {
+            try {
+                debugLog('🔒 Closing webview without sending');
+                window.location = 'pebblejs://close#' + encodeURIComponent(JSON.stringify({}));
+            } catch (e) {
+                debugLog('❌ Close failed (likely in normal browser): ' + e.message);
+            }
+        }
+
+        function clearSettings() {
+            localStorage.removeItem('oura_access_token');
+            localStorage.removeItem('oura_token_expires');
+            document.getElementById('debug-log').textContent = 'Debug information will appear here...';
+            showDisconnected();
+            updateDevPanel();
+            renderTokenDetails();
+            clearApiResults();
+            debugLog('🧹 Cleared stored settings');
+        }
+
+        // Debug logging function with HTML sanitization
+        function debugLog(message) {
+            var timestamp = new Date().toLocaleTimeString();
+            var logElement = document.getElementById('debug-log');
+            if (!logElement) return;
+            
+            // Sanitize message to prevent HTML injection
+            var sanitized = String(message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            // Truncate very long messages that might contain full HTML pages
+            if (sanitized.length > 500) {
+                sanitized = sanitized.substring(0, 500) + '... [truncated]';
+            }
+            
+            logElement.textContent += '[' + timestamp + '] ' + sanitized + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function copyLog() {
+            var logElement = document.getElementById('debug-log');
+            var statusEl = document.getElementById('copy-status');
+            if (!logElement) return;
+            var text = logElement.innerText || logElement.textContent || '';
+            if (!text) {
+                if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Log is empty'; }
+                setTimeout(function(){ if (statusEl) statusEl.style.display = 'none'; }, 1500);
+                return;
+            }
+            var onSuccess = function(){
+                if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Copied!'; }
+                debugLog(' Log copied to clipboard');
+                setTimeout(function(){ if (statusEl) statusEl.style.display = 'none'; }, 1200);
+            };
+            var onFail = function(err){
+                if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Copy failed'; }
+                debugLog(' Copy failed: ' + (err && err.message ? err.message : 'unknown error'));
+                setTimeout(function(){ if (statusEl) statusEl.style.display = 'none'; }, 1500);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
+            } else {
+                // Fallback
+                try {
+                    var ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.setAttribute('readonly', '');
+                    ta.style.position = 'absolute';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    var ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    if (ok) onSuccess(); else onFail();
+                } catch (e) { onFail(e); }
+            }
+        }
+
+        // Test Oura API with current token
+        function testOuraAPI() {
+            var token = localStorage.getItem('oura_access_token');
+            
+            if (!token) {
+                debugLog('❌ No token found in localStorage');
+                appendApiResult('Direct API Test', 'No Token', 'Please authenticate first.');
+                return;
+            }
+            
+            var useProxy = getUseProxySetting() || isPebbleWebView();
+            var today = new Date().toISOString().split('T')[0];
+            if (useProxy) {
+                debugLog('🧪 Testing Oura API via Proxy');
+                var pu = 'https://peppy-pothos-093b81.netlify.app/.netlify/functions/oura-proxy?endpoint=heartrate&token=' + encodeURIComponent(token) + '&start_date=' + today + '&end_date=' + today;
+                var px = new XMLHttpRequest();
+                px.open('GET', pu, true);
+                var start = Date.now();
+                px.onreadystatechange = function(){
+                    if (px.readyState === 4) {
+                        var ms = Date.now() - start;
+                        debugLog('📡 Proxy Test → status ' + px.status + ' in ' + ms + 'ms');
+                        appendApiResult('Proxy API Test (heartrate)', px.status, (px.responseText || '').substring(0, 200) + '...');
+                        if (px.status === 200) {
+                            try { var data = JSON.parse(px.responseText); debugLog('✅ Proxy OK - Data count: ' + (data.data ? data.data.length : 0)); } catch(e){ debugLog('❌ Proxy JSON Parse Error: ' + e.message); }
+                        } else if (px.status === 401) {
+                            debugLog('⚠️ Proxy 401: token expired or missing required scope');
+                        }
+                    }
+                };
+                px.send();
+                return;
+            }
+
+            debugLog('🧪 Testing Oura API directly (browser request)');
+            var xhr = new XMLHttpRequest();
+            var url = 'https://api.ouraring.com/v2/usercollection/heartrate?start_date=' + today + '&end_date=' + today;
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    debugLog('📊 Heart Rate API Response:');
+                    debugLog('Status: ' + xhr.status);
+                    debugLog('Response (first 200): ' + (xhr.responseText || '').substring(0, 200) + '...');
+                    appendApiResult('Direct API Test (heartrate)', xhr.status, (xhr.responseText || '').substring(0, 200) + '...');
+                    if (xhr.status === 0) {
+                        debugLog('ℹ️ Status 0 usually indicates the Pebble webview blocked the request (CORS/TLS). Use the Proxy toggle.');
+                    }
+                    if (xhr.status === 200) {
+                        try { var data2 = JSON.parse(xhr.responseText); debugLog('✅ API Success - Data count: ' + (data2.data ? data2.data.length : 0)); } catch (e) { debugLog('❌ JSON Parse Error: ' + e.message); }
+                    } else {
+                        debugLog('❌ API Error: ' + xhr.status + ' - ' + xhr.statusText);
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function maskToken(t) {
+            if (!t) return '(none)';
+            if (t.length <= 14) return t;
+            return t.substring(0, 8) + '...' + t.substring(t.length - 6);
+        }
+
+        function renderTokenDetails() {
+            var token = localStorage.getItem('oura_access_token');
+            var expires = localStorage.getItem('oura_token_expires');
+            var el = document.getElementById('token-details');
+            if (!el) return;
+            if (!token) {
+                el.innerHTML = '<div class="warn">No token in storage.</div>';
+                return;
+            }
+            var expText = '(n/a)';
+            if (expires) {
+                var expMs = parseInt(expires, 10);
+                var delta = expMs - Date.now();
+                var mins = Math.max(0, Math.floor(delta / 60000));
+                expText = new Date(expMs).toLocaleString() + '  (' + mins + ' min left)';
+            }
+            el.innerHTML = '' +
+                '<div><strong>Masked Token:</strong> ' + maskToken(token) + '</div>' +
+                '<div><strong>Scopes:</strong> ' + SCOPES + '</div>' +
+                '<div><strong>Expires:</strong> ' + expText + '</div>';
+        }
+
+        function clearApiResults() {
+            var r = document.getElementById('api-test-results');
+            if (r) r.innerHTML = '';
+        }
+
+        function appendApiResult(title, status, bodySnippet) {
+            var r = document.getElementById('api-test-results');
+            if (!r) return;
+            
+            // Enhanced sanitization and truncation
+            var body = String(bodySnippet || '');
+            // If it looks like HTML (starts with DOCTYPE or <html), truncate heavily
+            if (/^\s*<!DOCTYPE|^\s*<html/i.test(body)) {
+                body = '[HTML Response - likely error page] ' + body.substring(0, 100) + '...';
+            } else if (body.length > 300) {
+                body = body.substring(0, 300) + '... [truncated]';
+            }
+            var safeBody = body.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            var row = '<div style="margin:6px 0;">' +
+                      '<div><strong>' + title + ':</strong> status ' + status + '</div>' +
+                      (safeBody ? '<pre style="white-space:pre-wrap;word-break:break-word;background:#f8f9fa;border:1px solid #e9ecef;padding:8px;border-radius:4px;margin:6px 0 0 0;">' + safeBody + '</pre>' : '') +
+                      '</div>';
+            r.innerHTML = r.innerHTML + row;
+        }
+
+        function isPebbleWebView() {
+            var ua = (navigator.userAgent || '').toLowerCase();
+            return /pebble|rebble/.test(ua);
+        }
+
+        function getUseProxySetting() {
+            var el = document.getElementById('use-proxy-toggle');
+            if (!el) return false;
+            return !!el.checked;
+        }
+
+        function setUseProxyDefault() {
+            var el = document.getElementById('use-proxy-toggle');
+            if (!el) return;
+            // Default ON in Pebble webview; OFF in normal desktop browser
+            var def = isPebbleWebView();
+            el.checked = def;
+            el.addEventListener('change', function(){
+                // no-op for now; could persist if desired
+            });
+        }
+
+        function updateDevPanel() {
+            var kv = document.getElementById('dev-kv');
+            if (!kv) return;
+            var token = localStorage.getItem('oura_access_token');
+            var expires = localStorage.getItem('oura_token_expires');
+            var ua = navigator.userAgent || '';
+            var inPebble = /pebble|watch|mobile safari/i.test(ua);
+            var expText = '(n/a)';
+            if (expires) {
+                var expMs = parseInt(expires, 10);
+                var delta = expMs - Date.now();
+                var mins = Math.max(0, Math.floor(delta / 60000));
+                expText = new Date(expMs).toLocaleString() + '  (' + mins + ' min left)';
+            }
+            kv.innerHTML = '' +
+                '<div>Env</div><div>' + (inPebble ? '<span class="ok">Pebble WebView</span>' : ua) + '</div>' +
+                '<div>Scopes</div><div>' + SCOPES + '</div>' +
+                '<div>Token</div><div>' + maskToken(token) + '</div>' +
+                '<div>Expires</div><div>' + expText + '</div>' +
+                '<div>Redirect URI</div><div>' + REDIRECT_URI + '</div>' +
+                '<div>Auth URL</div><div>' + AUTH_URL + '</div>';
+        }
+
+        function autoProxySmokeTest() {
+            var token = localStorage.getItem('oura_access_token');
+            if (!token) return;
+            var today = new Date().toISOString().split('T')[0];
+            var u = 'https://peppy-pothos-093b81.netlify.app/.netlify/functions/oura-proxy?endpoint=heartrate&token=' + encodeURIComponent(token) + '&start_date=' + today + '&end_date=' + today;
+            var xhr = new XMLHttpRequest();
+            var started = Date.now();
+            xhr.open('GET', u, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    var ms = Date.now() - started;
+                    debugLog('🛰️ Proxy smoke test → status ' + xhr.status + ' in ' + ms + 'ms');
+                    appendApiResult('Proxy Smoke Test', xhr.status, (xhr.responseText || '').substring(0, 200) + '...');
+                    if (xhr.status !== 200) {
+                        debugLog('↪︎ Body (first 200): ' + (xhr.responseText || '').substring(0, 200) + '...');
+                        if (xhr.status === 401) {
+                            debugLog('⚠️ Token likely missing required scope ("heartrate") or expired');
+                        }
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        // Check all stored data
+        function checkStoredData() {
+            debugLog('🔍 Checking localStorage data:');
+            
+            var keys = ['oura_access_token', 'oura_token_expires', 'oura_config_settings', 'oura_last_update'];
+            
+            keys.forEach(function(key) {
+                var value = localStorage.getItem(key);
+                if (value) {
+                    if (key === 'oura_access_token') {
+                        debugLog(key + ': ' + value.substring(0, 10) + '...' + value.substring(value.length - 6));
+                    } else if (key === 'oura_token_expires') {
+                        var expires = new Date(parseInt(value));
+                        var now = new Date();
+                        var isExpired = now > expires;
+                        debugLog(key + ': ' + expires.toLocaleString() + ' (Expired: ' + isExpired + ')');
+                    } else {
+                        debugLog(key + ': ' + value);
+                    }
+                } else {
+                    debugLog(key + ': (not set)');
+                }
+            });
+            
+            // Check token validity
+            var token = localStorage.getItem('oura_access_token');
+            var expires = localStorage.getItem('oura_token_expires');
+            
+            if (token && expires) {
+                var isValid = Date.now() < parseInt(expires);
+                debugLog('🔐 Token Status: ' + (isValid ? 'VALID' : 'EXPIRED'));
+            }
+        }
+
+        // Clear debug log
+        function clearDebugLog() {
+            document.getElementById('debug-log').textContent = 'Debug information will appear here...';
+        }
+
+        // Initialize - PURE STATIC, NO DYNAMIC LOADING
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('🚀 Config page loaded');
+            debugLog('Current URL: ' + window.location.href);
+            debugLog('Requested OAuth scopes: ' + SCOPES);
+            updateDevPanel();
+            renderTokenDetails();
+            clearApiResults();
+            setUseProxyDefault();
+            
+            // Check for OAuth redirect
+            debugLog('🔍 Checking for OAuth redirect token...');
+            if (checkForToken()) {
+                debugLog('✅ Token found in URL redirect');
+                updateDevPanel();
+                renderTokenDetails();
+                autoProxySmokeTest();
+                return;
+            }
+            
+            // Check for stored token
+            debugLog('🔍 Checking for stored token...');
+            if (checkStoredToken()) {
+                debugLog('✅ Valid stored token found');
+                updateDevPanel();
+                renderTokenDetails();
+                autoProxySmokeTest();
+                return;
+            }
+            
+            // Show connect section
+            debugLog('❌ No valid token found - showing connect section');
+            showDisconnected();
+            
+            // Set up connect button - DIRECT REDIRECT ONLY
+            document.getElementById('connect-btn').onclick = connect;
+            
+            // Log initial state
+            debugLog('📋 Initial localStorage check:');
+            checkStoredData();
+            updateDevPanel();
+            renderTokenDetails();
+            clearApiResults();
+        });
+    </script>
+</body>
+</html>

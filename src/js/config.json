@@ -1,0 +1,79 @@
+[
+  {
+    "type": "heading",
+    "defaultValue": "Oura Stats Configuration"
+  },
+  {
+    "type": "text",
+    "defaultValue": "Connect your Oura ring to display real health data on your Pebble."
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Oura Connection"
+      },
+      {
+        "type": "input",
+        "messageKey": "oura_access_token",
+        "label": "Access Token",
+        "description": "Enter your Oura API access token",
+        "defaultValue": "",
+        "attributes": {
+          "placeholder": "Paste your Oura access token here...",
+          "type": "password"
+        }
+      },
+      {
+        "type": "button",
+        "defaultValue": "Get Oura Token",
+        "description": "Click to open Oura authorization page",
+        "primary": true
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Display Settings"
+      },
+      {
+        "type": "slider",
+        "messageKey": "refresh_frequency",
+        "label": "Refresh Frequency (minutes)",
+        "description": "How often to fetch new data from Oura",
+        "defaultValue": 60,
+        "min": 15,
+        "max": 240,
+        "step": 15
+      },
+      {
+        "type": "toggle",
+        "messageKey": "show_debug",
+        "label": "Show Debug Messages",
+        "description": "Display debug information on the watchface",
+        "defaultValue": false
+      }
+    ]
+  },
+  {
+    "type": "section",
+    "items": [
+      {
+        "type": "heading",
+        "defaultValue": "Instructions"
+      },
+      {
+        "type": "text",
+        "defaultValue": "1. Click 'Get Oura Token' to open the authorization page\n2. Sign in to your Oura account and authorize access\n3. Copy the access token from the result page\n4. Paste the token in the 'Access Token' field above\n5. Tap 'Save' to apply your settings"
+      }
+    ]
+  },
+  {
+    "type": "submit",
+    "defaultValue": "Save Settings"
+  }
+]

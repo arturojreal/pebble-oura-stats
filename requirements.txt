@@ -1,0 +1,47 @@
+# Pebble Oura Stats Watchface - Requirements
+
+## Development Environment
+- macOS (tested on Apple Silicon and Intel)
+- Homebrew package manager
+- Python 3.x
+- Node.js and npm
+
+## Pebble Development Tools
+- uv package manager: https://docs.astral.sh/uv/
+- pebble-tool v5.0.5: `uv tool install pebble-tool`
+- Pebble SDK 4.4 (automatically installed with pebble-tool)
+
+## Install Commands
+```bash
+# Install uv package manager
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install Pebble development tools
+uv tool install pebble-tool
+
+# Install project dependencies
+npm install
+```
+
+## Netlify Deployment (Optional)
+If you need to deploy the configuration page:
+- Netlify CLI: `npm install -g netlify-cli`
+- Account at https://netlify.com
+- See README.md for deployment instructions
+
+## Oura API Requirements
+- Oura Developer Account: https://cloud.ouraring.com/oauth/applications
+- OAuth2 Application with redirect URI configured
+- Required scopes: `daily heartrate`
+
+## Build and Test
+```bash
+# Build watchface
+pebble build
+
+# Install to emulator
+pebble install --emulator basalt
+
+# Install to device (replace IP)
+pebble install --phone 192.168.1.XXX
+```
