@@ -2,7 +2,12 @@
 
 A modern Pebble watchface that displays real-time health data from your Oura Ring, including sleep score, readiness score, and heart rate metrics.
 
-![Watchface Preview](https://img.shields.io/badge/Pebble-Compatible-blue) ![OAuth2](https://img.shields.io/badge/OAuth2-Secure-green) ![Status](https://img.shields.io/badge/Status-Stable-brightgreen)
+This is a work in progress, and is not yet ready for production use. It is currently in beta testing!
+
+To find out more: [The Rebble Alliance Discord](https://discord.com/channels/221364737269694464/1403471447481122897)
+
+
+![Watchface Preview](https://img.shields.io/badge/Pebble-Compatible-blue) ![OAuth2](https://img.shields.io/badge/OAuth2-Secure-green) ![Status](https://img.shields.io/badge/Status-Beta-yellow)
 
 ## Features
 
@@ -106,6 +111,7 @@ Update your Oura app redirect URI to match your deployed URL.
 - Check Settings → verify token is present and not expired
 - Use "Test Oura API" in config page diagnostics
 - Ensure "Use Proxy for Test" is enabled in Pebble webview
+- Use "Send to Pebble" to send data to watchface
 
 **Config page won't load:**
 - Verify Netlify deployment is live
@@ -193,7 +199,8 @@ The old callback-based system has been superseded by this static approach, which
 
 ## Credits
 
-**Developer**: Arturo J. Real
+**Developer**: Arturo J. Real (https://arturojreal.com)
+
 **Framework**: Pebble SDK 4.4  
 **API**: Oura Ring API v2  
 **Deployment**: Netlify  
@@ -204,4 +211,5 @@ This project is provided as-is for educational and personal use. Oura Ring is a 
 
 ---
 
-For technical support or contributions, please refer to the troubleshooting section above or examine the diagnostic tools built into the configuration page.
+For technical support or contributions, please refer to the troubleshooting section above or examine the diagnostic tools built into the configuration page. At the time of writing, you can get in touch about this project on the [The Rebble Alliance Discord thread](https://discord.com/channels/221364737269694464/1403471447481122897)
+
