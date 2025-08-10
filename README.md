@@ -193,7 +193,7 @@ The old callback-based system has been superseded by this static approach, which
 
 ## Credits
 
-**Developer**: Arturo  
+**Developer**: Arturo J. Real
 **Framework**: Pebble SDK 4.4  
 **API**: Oura Ring API v2  
 **Deployment**: Netlify  

@@ -28,6 +28,13 @@ static char s_heart_rate_buffer[16];
 static char s_readiness_buffer[16];
 static char s_sleep_buffer[16];
 
+// Timer for debug message timeout
+static AppTimer *s_debug_timer = NULL;
+static bool s_real_data_received = false;
+
+// Forward declarations
+static void update_debug_display(const char* message);
+
 // =============================================================================
 // OURA DATA STRUCTURES (Based on Oura API v2)
 // =============================================================================
@@ -142,11 +149,33 @@ static void request_oura_data() {
 // DEBUG STATUS DISPLAY
 // =============================================================================
 
+// Timer callback to clear debug message
+static void debug_timer_callback(void *data) {
+  s_debug_timer = NULL;
+  update_debug_display(NULL);  // Clear debug message
+}
+
 static void update_debug_display(const char* message) {
   if (message) {
     snprintf(s_debug_buffer, sizeof(s_debug_buffer), "%.30s", message);
+    
+    // Cancel existing timer
+    if (s_debug_timer) {
+      app_timer_cancel(s_debug_timer);
+      s_debug_timer = NULL;
+    }
+    
+    // Set timeout based on message type
+    if (strstr(message, "Requesting")) {
+      // 1 minute timeout for "Requesting real data"
+      s_debug_timer = app_timer_register(60000, debug_timer_callback, NULL);
+    }
   } else {
     s_debug_buffer[0] = '\0';  // Clear the buffer
+    if (s_debug_timer) {
+      app_timer_cancel(s_debug_timer);
+      s_debug_timer = NULL;
+    }
   }
   text_layer_set_text(s_debug_layer, s_debug_buffer);
 }
@@ -206,88 +235,91 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
   
-  // Time display (center top) - moved up with 1/5 glyph height headroom, larger font
+  // Set dark background
+  window_set_background_color(window, GColorBlack);
+  
+  // Time display (center top) - bigger font, closer to top
   s_time_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(20, 15), bounds.size.w, 50));
+      GRect(0, PBL_IF_ROUND_ELSE(10, 5), bounds.size.w, 60));
   text_layer_set_background_color(s_time_layer, GColorClear);
-  text_layer_set_text_color(s_time_layer, GColorBlack);
-  text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT));
+  text_layer_set_text_color(s_time_layer, GColorWhite);
+  text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
   
   // Debug status (between time and sample indicator)
   s_debug_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(65, 60), bounds.size.w, 15));
+      GRect(0, PBL_IF_ROUND_ELSE(70, 65), bounds.size.w, 15));
   text_layer_set_background_color(s_debug_layer, GColorClear);
-  text_layer_set_text_color(s_debug_layer, GColorBlack);
+  text_layer_set_text_color(s_debug_layer, GColorWhite);
   text_layer_set_font(s_debug_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
   text_layer_set_text_alignment(s_debug_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_debug_layer));
   
   // Sample indicator (under debug)
   s_sample_indicator_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(80, 75), bounds.size.w, 20));
+      GRect(0, PBL_IF_ROUND_ELSE(85, 80), bounds.size.w, 20));
   text_layer_set_background_color(s_sample_indicator_layer, GColorClear);
-  text_layer_set_text_color(s_sample_indicator_layer, GColorBlack);
+  text_layer_set_text_color(s_sample_indicator_layer, GColorWhite);
   text_layer_set_font(s_sample_indicator_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
   text_layer_set_text_alignment(s_sample_indicator_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_sample_indicator_layer));
   
-  // Sleep (bottom left) - reordered to first position, larger font
+  // Sleep (bottom left) - larger font, moved up for emoji
   s_sleep_layer = text_layer_create(
-      GRect(0, bounds.size.h - 75, bounds.size.w/3, 25));
+      GRect(0, bounds.size.h - 85, bounds.size.w/3, 30));
   text_layer_set_background_color(s_sleep_layer, GColorClear);
-  text_layer_set_text_color(s_sleep_layer, GColorBlack);
-  text_layer_set_font(s_sleep_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_color(s_sleep_layer, GColorWhite);
+  text_layer_set_font(s_sleep_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_sleep_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_sleep_layer));
   
-  // Sleep Label
+  // Sleep Label (emoji)
   s_sleep_label_layer = text_layer_create(
-      GRect(0, bounds.size.h - 50, bounds.size.w/3, 15));
+      GRect(0, bounds.size.h - 55, bounds.size.w/3, 35));
   text_layer_set_background_color(s_sleep_label_layer, GColorClear);
-  text_layer_set_text_color(s_sleep_label_layer, GColorBlack);
-  text_layer_set_font(s_sleep_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  text_layer_set_text_color(s_sleep_label_layer, GColorWhite);
+  text_layer_set_font(s_sleep_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_sleep_label_layer, GTextAlignmentCenter);
-  text_layer_set_text(s_sleep_label_layer, "SLP");
+  text_layer_set_text(s_sleep_label_layer, "😴");
   layer_add_child(window_layer, text_layer_get_layer(s_sleep_label_layer));
   
-  // Readiness (bottom center) - larger font
+  // Readiness (bottom center) - larger font, moved up for emoji
   s_readiness_layer = text_layer_create(
-      GRect(bounds.size.w/3, bounds.size.h - 75, bounds.size.w/3, 25));
+      GRect(bounds.size.w/3, bounds.size.h - 85, bounds.size.w/3, 30));
   text_layer_set_background_color(s_readiness_layer, GColorClear);
-  text_layer_set_text_color(s_readiness_layer, GColorBlack);
-  text_layer_set_font(s_readiness_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_color(s_readiness_layer, GColorWhite);
+  text_layer_set_font(s_readiness_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_readiness_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_readiness_layer));
   
-  // Readiness Label
+  // Readiness Label (emoji)
   s_readiness_label_layer = text_layer_create(
-      GRect(bounds.size.w/3, bounds.size.h - 50, bounds.size.w/3, 15));
+      GRect(bounds.size.w/3, bounds.size.h - 55, bounds.size.w/3, 35));
   text_layer_set_background_color(s_readiness_label_layer, GColorClear);
-  text_layer_set_text_color(s_readiness_label_layer, GColorBlack);
-  text_layer_set_font(s_readiness_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  text_layer_set_text_color(s_readiness_label_layer, GColorWhite);
+  text_layer_set_font(s_readiness_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_readiness_label_layer, GTextAlignmentCenter);
-  text_layer_set_text(s_readiness_label_layer, "RDY");
+  text_layer_set_text(s_readiness_label_layer, "🎉");
   layer_add_child(window_layer, text_layer_get_layer(s_readiness_label_layer));
   
-  // Heart Rate (bottom right) - moved to third position, larger font
+  // Heart Rate (bottom right) - larger font, moved up for emoji
   s_heart_rate_layer = text_layer_create(
-      GRect(2*bounds.size.w/3, bounds.size.h - 75, bounds.size.w/3, 25));
+      GRect(2*bounds.size.w/3, bounds.size.h - 85, bounds.size.w/3, 30));
   text_layer_set_background_color(s_heart_rate_layer, GColorClear);
-  text_layer_set_text_color(s_heart_rate_layer, GColorBlack);
-  text_layer_set_font(s_heart_rate_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_color(s_heart_rate_layer, GColorWhite);
+  text_layer_set_font(s_heart_rate_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_heart_rate_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_heart_rate_layer));
   
-  // Heart Rate Label
+  // Heart Rate Label (emoji)
   s_heart_rate_label_layer = text_layer_create(
-      GRect(2*bounds.size.w/3, bounds.size.h - 50, bounds.size.w/3, 15));
+      GRect(2*bounds.size.w/3, bounds.size.h - 55, bounds.size.w/3, 35));
   text_layer_set_background_color(s_heart_rate_label_layer, GColorClear);
-  text_layer_set_text_color(s_heart_rate_label_layer, GColorBlack);
-  text_layer_set_font(s_heart_rate_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  text_layer_set_text_color(s_heart_rate_label_layer, GColorWhite);
+  text_layer_set_font(s_heart_rate_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_heart_rate_label_layer, GTextAlignmentCenter);
-  text_layer_set_text(s_heart_rate_label_layer, "HR");
+  text_layer_set_text(s_heart_rate_label_layer, "❤");
   layer_add_child(window_layer, text_layer_get_layer(s_heart_rate_label_layer));
 }
 
@@ -373,6 +405,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   // If we received any real data, hide the sample indicator
   s_using_sample_data = false;
   update_sample_indicator();
+  
+  // Mark that real data was received and clear debug message after 10 seconds
+  s_real_data_received = true;
+  if (s_debug_timer) {
+    app_timer_cancel(s_debug_timer);
+  }
+  s_debug_timer = app_timer_register(10000, debug_timer_callback, NULL);
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
