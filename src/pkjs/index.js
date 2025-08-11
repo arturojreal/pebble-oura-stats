@@ -429,6 +429,33 @@ function loadSampleData() {
   sendSampleDataToWatch();
 }
 
+// Get currently cached Oura data for immediate layout updates
+function getCachedOuraData() {
+  // Return cached data if available
+  if (g_cached_readiness_score > 0 || g_cached_sleep_score > 0) {
+    return {
+      readiness: {
+        readiness_score: g_cached_readiness_score,
+        temperature_deviation: 0,
+        recovery_index: g_cached_readiness_score,
+        data_available: g_cached_readiness_score > 0
+      },
+      sleep: {
+        sleep_score: g_cached_sleep_score,
+        total_sleep_time: 450, // Default reasonable value
+        deep_sleep_time: 90,   // Default reasonable value
+        data_available: g_cached_sleep_score > 0
+      },
+      heart_rate: {
+        resting_heart_rate: 65, // Default reasonable value
+        hrv_score: 45,          // Default reasonable value
+        data_available: true
+      }
+    };
+  }
+  return null; // No cached data available
+}
+
 function sendSampleDataToWatch() {
   var sampleData = {
     heart_rate: {
@@ -484,6 +511,36 @@ function sendDataToWatch(data) {
   // Convert nested data structure to flat message keys that C code expects
   var flatData = {};
   
+  // Add measurement layout configuration
+  var savedLayout = localStorage.getItem('oura_measurement_layout');
+  if (savedLayout) {
+    try {
+      var layoutConfig = JSON.parse(savedLayout);
+      // Config page saves numeric strings ('0', '1', '2'), convert to integers
+      // 0=readiness, 1=sleep, 2=heart_rate
+      
+      // Use proper fallback that doesn't treat 0 as falsy
+      flatData.layout_left = (layoutConfig.left !== undefined && layoutConfig.left !== null) ? parseInt(layoutConfig.left) : 0;
+      flatData.layout_middle = (layoutConfig.middle !== undefined && layoutConfig.middle !== null) ? parseInt(layoutConfig.middle) : 1;
+      flatData.layout_right = (layoutConfig.right !== undefined && layoutConfig.right !== null) ? parseInt(layoutConfig.right) : 2;
+      
+      console.log('[oura] Sending layout config:', layoutConfig, '-> positions:', 
+                  flatData.layout_left, flatData.layout_middle, flatData.layout_right);
+    } catch (e) {
+      console.log('[oura] Error parsing layout config, using defaults:', e);
+      // Default layout: readiness-sleep-heart_rate
+      flatData.layout_left = 0;
+      flatData.layout_middle = 1;
+      flatData.layout_right = 2;
+    }
+  } else {
+    // Default layout: readiness-sleep-heart_rate
+    flatData.layout_left = 0;
+    flatData.layout_middle = 1;
+    flatData.layout_right = 2;
+    console.log('[oura] No saved layout, using default positions');
+  }
+  
   // Heart rate data
   if (data.heart_rate) {
     flatData.heart_rate = 1; // Indicate heart rate data present
@@ -510,7 +567,7 @@ function sendDataToWatch(data) {
     // Note: reusing data_available key - this might cause issues, need separate keys
   }
   
-  console.log('[oura] Sending flattened data to watch:', flatData);
+  console.log('[oura] Sending flattened data to watch (with layout):', flatData);
   
   Pebble.sendAppMessage(flatData, 
     function() {
@@ -626,6 +683,8 @@ Pebble.addEventListener('showConfiguration', function() {
   Pebble.openURL(configUrl);
 });
 
+
+
 // Handle configuration settings from config page
 Pebble.addEventListener('webviewclosed', function(e) {
   console.log('🔧 Configuration closed:', e.response);
@@ -633,8 +692,10 @@ Pebble.addEventListener('webviewclosed', function(e) {
   
   if (e.response) {
     try {
+      console.log('🔍 Raw response before decode:', e.response);
       var settings = JSON.parse(decodeURIComponent(e.response));
       console.log('📥 Received config settings:', JSON.stringify(settings));
+      console.log('🔍 Settings keys:', Object.keys(settings));
       sendDebugStatus('Settings received: ' + Object.keys(settings).join(', '));
       
       // Check if we got a token
@@ -647,6 +708,61 @@ Pebble.addEventListener('webviewclosed', function(e) {
         localStorage.setItem('oura_token_expires', Date.now() + (30 * 24 * 60 * 60 * 1000)); // 30 days
         console.log('💾 Token stored in localStorage');
         sendDebugStatus('Token stored');
+      }
+      
+      // Check if we got layout configuration
+      console.log('🔍 Checking for layout config - left:', settings.layout_left, 'middle:', settings.layout_middle, 'right:', settings.layout_right);
+      if (settings.layout_left !== undefined && settings.layout_left !== null && 
+          settings.layout_middle !== undefined && settings.layout_middle !== null && 
+          settings.layout_right !== undefined && settings.layout_right !== null) {
+        console.log('📊 Layout configuration received:', settings.layout_left, settings.layout_middle, settings.layout_right);
+        sendDebugStatus('Layout config received');
+        
+        // Store layout configuration in localStorage (config page already saved it, but ensure consistency)
+        var layoutConfig = {
+          left: settings.layout_left.toString(),
+          middle: settings.layout_middle.toString(),
+          right: settings.layout_right.toString()
+        };
+        console.log('💾 Storing layout config:', JSON.stringify(layoutConfig));
+        localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
+        console.log('✅ Layout configuration stored in localStorage');
+        sendDebugStatus('Layout config stored');
+        
+        // Immediately apply the new layout with current data
+        console.log('🔄 Applying new layout immediately...');
+        sendDebugStatus('Applying new layout');
+        
+        // Get current cached data and resend with new layout
+        console.log('🔍 Getting cached data...');
+        var cachedData = getCachedOuraData();
+        console.log('📊 Cached data result:', cachedData ? 'Found' : 'None');
+        
+        if (cachedData && (cachedData.readiness || cachedData.sleep || cachedData.heart_rate)) {
+          console.log('📊 Resending cached data with new layout');
+          sendDebugStatus('Resending cached data');
+          try {
+            sendDataToWatch(cachedData);
+            console.log('✅ Data sent to watch with new layout');
+            sendDebugStatus('Layout applied successfully');
+          } catch (error) {
+            console.error('❌ Error sending data to watch:', error);
+            sendDebugStatus('Error applying layout: ' + error.message);
+          }
+        } else {
+          // If no cached data, fetch fresh data to apply new layout
+          console.log('🔄 No cached data, fetching fresh data for new layout');
+          sendDebugStatus('Fetching fresh data for layout');
+          try {
+            fetchAllOuraData();
+          } catch (error) {
+            console.error('❌ Error fetching fresh data:', error);
+            sendDebugStatus('Error fetching data: ' + error.message);
+          }
+        }
+      } else {
+        console.log('⚠️ Layout configuration not found in settings');
+        sendDebugStatus('No layout config in settings');
       }
       
       // Update configuration

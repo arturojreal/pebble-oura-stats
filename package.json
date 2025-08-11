@@ -1,7 +1,7 @@
 {
   "name": "oura-stats-watchface",
   "author": "Arturo J. Real",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "keywords": [
     "pebble-app"
   ],
@@ -48,7 +48,10 @@
       "deep_sleep_time",
       "data_available",
       "last_updated",
-      "error"
+      "error",
+      "layout_left",
+      "layout_middle",
+      "layout_right"
     ],
     "resources": {
       "media": []

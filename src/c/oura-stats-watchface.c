@@ -32,6 +32,12 @@ static char s_sleep_buffer[16];
 static AppTimer *s_debug_timer = NULL;
 static bool s_real_data_received = false;
 
+// Measurement layout configuration
+// 0=readiness, 1=sleep, 2=heart_rate
+static int s_layout_left = 0;    // Default: readiness
+static int s_layout_middle = 1;  // Default: sleep
+static int s_layout_right = 2;   // Default: heart_rate
+
 // Forward declarations
 static void update_debug_display(const char* message);
 
@@ -90,45 +96,95 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 }
 
 // =============================================================================
-// HEART RATE MODULE (Bottom Left)
+// DYNAMIC LAYOUT SYSTEM
+// =============================================================================
+
+// Helper function to get the correct layer and buffer for a measurement type at a position
+static void update_measurement_at_position(int measurement_type, int position) {
+  TextLayer *layer = NULL;
+  TextLayer *label_layer = NULL;
+  char *buffer = NULL;
+  char *value_text = "--";
+  char *emoji_text = "";
+  char value_buffer[16];
+  
+  // Determine which layer and buffer to use based on position
+  switch (position) {
+    case 0: // Left position (using sleep layers)
+      layer = s_sleep_layer;
+      label_layer = s_sleep_label_layer;
+      buffer = s_sleep_buffer;
+      break;
+    case 1: // Middle position (using readiness layers)
+      layer = s_readiness_layer;
+      label_layer = s_readiness_label_layer;
+      buffer = s_readiness_buffer;
+      break;
+    case 2: // Right position (using heart rate layers)
+      layer = s_heart_rate_layer;
+      label_layer = s_heart_rate_label_layer;
+      buffer = s_heart_rate_buffer;
+      break;
+    default:
+      return; // Invalid position
+  }
+  
+  // Get the value and emoji based on measurement type
+  switch (measurement_type) {
+    case 0: // Readiness
+      emoji_text = "🎉";
+      if (s_readiness_data.data_available) {
+        snprintf(value_buffer, sizeof(value_buffer), "%d", s_readiness_data.readiness_score);
+        value_text = value_buffer;
+      }
+      break;
+    case 1: // Sleep
+      emoji_text = "😴";
+      if (s_sleep_data.data_available) {
+        snprintf(value_buffer, sizeof(value_buffer), "%d", s_sleep_data.sleep_score);
+        value_text = value_buffer;
+      }
+      break;
+    case 2: // Heart Rate
+      emoji_text = "❤";
+      if (s_heart_rate_data.data_available) {
+        snprintf(value_buffer, sizeof(value_buffer), "%d", s_heart_rate_data.resting_heart_rate);
+        value_text = value_buffer;
+      }
+      break;
+  }
+  
+  // Update the display
+  snprintf(buffer, 16, "%s", value_text);
+  text_layer_set_text(layer, buffer);
+  
+  // Update the emoji label
+  if (label_layer) {
+    text_layer_set_text(label_layer, emoji_text);
+  }
+}
+
+// Update all measurements according to current layout
+static void update_all_measurements() {
+  update_measurement_at_position(s_layout_left, 0);    // Left position
+  update_measurement_at_position(s_layout_middle, 1);  // Middle position
+  update_measurement_at_position(s_layout_right, 2);   // Right position
+}
+
+// =============================================================================
+// LEGACY DISPLAY FUNCTIONS (now call the dynamic system)
 // =============================================================================
 
 static void update_heart_rate_display() {
-  if (s_heart_rate_data.data_available) {
-    int hr = s_heart_rate_data.resting_heart_rate;
-    snprintf(s_heart_rate_buffer, sizeof(s_heart_rate_buffer), "%d", hr);
-  } else {
-    snprintf(s_heart_rate_buffer, sizeof(s_heart_rate_buffer), "--");
-  }
-  text_layer_set_text(s_heart_rate_layer, s_heart_rate_buffer);
+  update_all_measurements();
 }
-
-// =============================================================================
-// READINESS MODULE (Bottom Center)
-// =============================================================================
 
 static void update_readiness_display() {
-  if (s_readiness_data.data_available) {
-    int score = s_readiness_data.readiness_score;
-    snprintf(s_readiness_buffer, sizeof(s_readiness_buffer), "%d", score);
-  } else {
-    snprintf(s_readiness_buffer, sizeof(s_readiness_buffer), "--");
-  }
-  text_layer_set_text(s_readiness_layer, s_readiness_buffer);
+  update_all_measurements();
 }
 
-// =============================================================================
-// SLEEP MODULE (Bottom Right)
-// =============================================================================
-
 static void update_sleep_display() {
-  if (s_sleep_data.data_available) {
-    int score = s_sleep_data.sleep_score;
-    snprintf(s_sleep_buffer, sizeof(s_sleep_buffer), "%d", score);
-  } else {
-    snprintf(s_sleep_buffer, sizeof(s_sleep_buffer), "--");
-  }
-  text_layer_set_text(s_sleep_layer, s_sleep_buffer);
+  update_all_measurements();
 }
 
 // =============================================================================
@@ -400,6 +456,25 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       APP_LOG(APP_LOG_LEVEL_INFO, "Sleep updated: %d score, %d min total", 
               s_sleep_data.sleep_score, s_sleep_data.total_sleep_time);
     }
+  }
+  
+  // Process layout configuration
+  Tuple *layout_left_tuple = dict_find(iterator, MESSAGE_KEY_layout_left);
+  Tuple *layout_middle_tuple = dict_find(iterator, MESSAGE_KEY_layout_middle);
+  Tuple *layout_right_tuple = dict_find(iterator, MESSAGE_KEY_layout_right);
+  
+  if (layout_left_tuple && layout_middle_tuple && layout_right_tuple) {
+    s_layout_left = layout_left_tuple->value->int32;
+    s_layout_middle = layout_middle_tuple->value->int32;
+    s_layout_right = layout_right_tuple->value->int32;
+    
+    APP_LOG(APP_LOG_LEVEL_INFO, "Layout config updated: L=%d M=%d R=%d", 
+            s_layout_left, s_layout_middle, s_layout_right);
+    
+    // Update all displays to reflect new layout
+    update_heart_rate_display();
+    update_readiness_display();
+    update_sleep_display();
   }
   
   // If we received any real data, hide the sample indicator

@@ -15,10 +15,54 @@
         }
         .container {
             background: white;
-            padding: 25px;
+            padding: 0;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             text-align: center;
+            overflow: hidden;
+        }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-button.active {
+            color: #007bff;
+            background: white;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .tab-button:hover {
+            background: #e9ecef;
+        }
+        
+        .tab-button.active:hover {
+            background: white;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 25px;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
         h1 {
             color: #333;
@@ -149,9 +193,31 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏃‍♂️ Oura Stats</h1>
+        <!-- Construction Banner -->
+        <div style="background: linear-gradient(135deg, #ff6b6b, #ffa726); color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 8px 8px 0 0;">
+            <div style="font-size: 18px; margin-bottom: 5px;">🚧 Configuration Pages Under Construction</div>
+            <div style="font-size: 14px; opacity: 0.9;">August 11, 2025 - Some features may experience issues, delays, or unexpected behavior</div>
+        </div>
         
-        <div id="status" class="status disconnected">
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-button active" onclick="switchTab('setup')">⚙️ Setup</button>
+            <button class="tab-button" onclick="switchTab('customization')">🎨 Customization</button>
+        </div>
+        
+        <!-- Setup Tab -->
+        <div id="setup-tab" class="tab-content active">
+            <h1>🏃‍♂️ Oura Stats Setup</h1>
+            
+            <!-- Debug Toggle (moved to top for better UX) -->
+            <div id="debug-toggle-section" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
+                <label style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-size: 14px;">
+                    <input type="checkbox" id="show-debug" onchange="toggleDebugVisibility()" style="transform: scale(1.2);">
+                    <span>Show debug information</span>
+                </label>
+            </div>
+            
+            <div id="status" class="status disconnected">
             Checking connection...
         </div>
 
@@ -178,7 +244,7 @@
             <button onclick="clearSettings()" class="connect-btn btn-danger">Clear Settings</button>
         </div>
 
-        <div class="debug-section">
+        <div class="debug-section" style="display: none;">
             <h3>🔍 Debug Information</h3>
 
             <div class="section-box">
@@ -216,9 +282,369 @@
                 <div id="api-test-results"></div>
             </div>
         </div>
-    </div>
+        
+        </div> <!-- End Setup Tab -->
+        
+        <!-- Customization Tab -->
+        <div id="customization-tab" class="tab-content">
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin-bottom: 20px; color: #856404;">
+                <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ Work in Progress - August 11, 2025</h4>
+                <p style="margin: 0; font-size: 14px;">
+                    <strong>Layout Customization:</strong> This feature is currently being actively developed and may not work as expected. 
+                    The default layout (Readiness-Sleep-Heart Rate) is stable and working properly. 
+                    Custom layout changes may not apply immediately to the watchface.
+                </p>
+            </div>
+            
+            <h1>🎛️ Customization</h1>
+            
+            <!-- Measurement Organization -->
+            <div class="section-box" style="margin: 20px 0;">
+                <div class="section-title">📊 Measurement Organization</div>
+                <p style="font-size: 14px; color: #666; margin: 10px 0;">Choose which measurement appears in each position on your watchface.</p>
+                
+                <!-- Visual Layout Preview -->
+                <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="text-align: center; margin: 0 15px;">
+                        <div style="font-size: 12px; color: #999; margin-bottom: 5px;">LEFT</div>
+                        <div id="preview-left" style="font-size: 24px; padding: 10px; background: white; border-radius: 4px; min-width: 60px; border: 2px solid #dee2e6;">🎉</div>
+                        <div style="font-size: 10px; color: #666; margin-top: 5px;">RDY</div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 0 15px;">
+                        <div style="font-size: 12px; color: #999; margin-bottom: 5px;">MIDDLE</div>
+                        <div id="preview-middle" style="font-size: 24px; padding: 10px; background: white; border-radius: 4px; min-width: 60px; border: 2px solid #dee2e6;">😴</div>
+                        <div style="font-size: 10px; color: #666; margin-top: 5px;">SLP</div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 0 15px;">
+                        <div style="font-size: 12px; color: #999; margin-bottom: 5px;">RIGHT</div>
+                        <div id="preview-right" style="font-size: 24px; padding: 10px; background: white; border-radius: 4px; min-width: 60px; border: 2px solid #dee2e6;">❤️</div>
+                        <div style="font-size: 10px; color: #666; margin-top: 5px;">HR</div>
+                    </div>
+                </div>
+                
+                <!-- Position Selectors -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
+                    <div>
+                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
+                        <select id="left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="0">🎉 Readiness</option>
+                            <option value="1">😴 Sleep</option>
+                            <option value="2">❤️ Heart Rate</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
+                        <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="0">🎉 Readiness</option>
+                            <option value="1" selected>😴 Sleep</option>
+                            <option value="2">❤️ Heart Rate</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
+                        <select id="right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="0">🎉 Readiness</option>
+                            <option value="1">😴 Sleep</option>
+                            <option value="2" selected>❤️ Heart Rate</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 15px 0;">
+                    <button onclick="applyMeasurementLayout()" class="connect-btn" style="width: auto; padding: 10px 20px;">Apply Layout</button>
+                </div>
+            </div>
+            
+            <!-- Future Customization Options -->
+            <div style="padding: 20px; background: #f8f9fa; border-radius: 6px; color: #6c757d; margin-top: 20px;">
+                <strong>Coming Soon:</strong>
+                <ul style="text-align: left; margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                    <li>Dark/Light mode toggle</li>
+                    <li>Font size options</li>
+                    <li>Update frequency settings</li>
+                </ul>
+            </div>
+        </div>
+        
+    </div> <!-- End Container -->
 
     <script>
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tab contents
+            var tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            var tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(function(button) {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to clicked tab button
+            event.target.classList.add('active');
+        }
+        
+        // Toggle debug information visibility
+        function toggleDebugVisibility() {
+            var debugSection = document.querySelector('.debug-section');
+            var showDebug = document.getElementById('show-debug').checked;
+            
+            if (showDebug) {
+                debugSection.style.display = 'block';
+            } else {
+                debugSection.style.display = 'none';
+            }
+        }
+        
+        // Measurement layout customization - using numeric keys to match select values
+        var measurementConfig = {
+            '0': { emoji: '🎉', label: 'RDY', name: 'readiness' },
+            '1': { emoji: '😴', label: 'SLP', name: 'sleep' },
+            '2': { emoji: '❤️', label: 'HR', name: 'heart_rate' }
+        };
+        
+        // Smart duplicate prevention - automatically adjust conflicting selections
+        function preventDuplicates(changedSelectId) {
+            var leftSelect = document.getElementById('left-position');
+            var middleSelect = document.getElementById('middle-position');
+            var rightSelect = document.getElementById('right-position');
+            
+            var leftValue = leftSelect.value;
+            var middleValue = middleSelect.value;
+            var rightValue = rightSelect.value;
+            
+            var allValues = ['0', '1', '2']; // All possible measurement values
+            
+            console.log('Preventing duplicates after changing', changedSelectId, '- Values: L=' + leftValue + ' M=' + middleValue + ' R=' + rightValue);
+            
+            // Find duplicates and resolve them intelligently
+            if (changedSelectId === 'left-position') {
+                // If left conflicts with middle, move middle to available value
+                if (leftValue === middleValue) {
+                    var availableForMiddle = allValues.find(function(val) {
+                        return val !== leftValue && val !== rightValue;
+                    });
+                    if (availableForMiddle) {
+                        middleSelect.value = availableForMiddle;
+                        console.log('Auto-moved middle from', middleValue, 'to', availableForMiddle);
+                    }
+                }
+                // If left conflicts with right, move right to available value
+                if (leftValue === rightValue) {
+                    var availableForRight = allValues.find(function(val) {
+                        return val !== leftValue && val !== middleSelect.value;
+                    });
+                    if (availableForRight) {
+                        rightSelect.value = availableForRight;
+                        console.log('Auto-moved right from', rightValue, 'to', availableForRight);
+                    }
+                }
+            } else if (changedSelectId === 'middle-position') {
+                // If middle conflicts with left, move left to available value
+                if (middleValue === leftValue) {
+                    var availableForLeft = allValues.find(function(val) {
+                        return val !== middleValue && val !== rightValue;
+                    });
+                    if (availableForLeft) {
+                        leftSelect.value = availableForLeft;
+                        console.log('Auto-moved left from', leftValue, 'to', availableForLeft);
+                    }
+                }
+                // If middle conflicts with right, move right to available value
+                if (middleValue === rightValue) {
+                    var availableForRight = allValues.find(function(val) {
+                        return val !== middleValue && val !== leftSelect.value;
+                    });
+                    if (availableForRight) {
+                        rightSelect.value = availableForRight;
+                        console.log('Auto-moved right from', rightValue, 'to', availableForRight);
+                    }
+                }
+            } else if (changedSelectId === 'right-position') {
+                // If right conflicts with left, move left to available value
+                if (rightValue === leftValue) {
+                    var availableForLeft = allValues.find(function(val) {
+                        return val !== rightValue && val !== middleValue;
+                    });
+                    if (availableForLeft) {
+                        leftSelect.value = availableForLeft;
+                        console.log('Auto-moved left from', leftValue, 'to', availableForLeft);
+                    }
+                }
+                // If right conflicts with middle, move middle to available value
+                if (rightValue === middleValue) {
+                    var availableForMiddle = allValues.find(function(val) {
+                        return val !== rightValue && val !== leftSelect.value;
+                    });
+                    if (availableForMiddle) {
+                        middleSelect.value = availableForMiddle;
+                        console.log('Auto-moved middle from', middleValue, 'to', availableForMiddle);
+                    }
+                }
+            }
+        }
+        
+        function updateMeasurementLayout() {
+            var leftValue = document.getElementById('left-position').value;
+            var middleValue = document.getElementById('middle-position').value;
+            var rightValue = document.getElementById('right-position').value;
+            
+            console.log('Updating preview - L:', leftValue, 'M:', middleValue, 'R:', rightValue);
+            
+            // Update visual preview
+            if (measurementConfig[leftValue]) {
+                document.getElementById('preview-left').textContent = measurementConfig[leftValue].emoji;
+                document.querySelector('#preview-left').nextElementSibling.textContent = measurementConfig[leftValue].label;
+            }
+            
+            if (measurementConfig[middleValue]) {
+                document.getElementById('preview-middle').textContent = measurementConfig[middleValue].emoji;
+                document.querySelector('#preview-middle').nextElementSibling.textContent = measurementConfig[middleValue].label;
+            }
+            
+            if (measurementConfig[rightValue]) {
+                document.getElementById('preview-right').textContent = measurementConfig[rightValue].emoji;
+                document.querySelector('#preview-right').nextElementSibling.textContent = measurementConfig[rightValue].label;
+            }
+            
+            // Check for duplicates and enable/disable apply button accordingly
+            var positions = [leftValue, middleValue, rightValue];
+            var hasDuplicates = positions.length !== new Set(positions).size;
+            
+            // Visual feedback - always show clean state since we prevent duplicates
+            var selects = ['left-position', 'middle-position', 'right-position'];
+            selects.forEach(function(selectId) {
+                var select = document.getElementById(selectId);
+                select.style.borderColor = '#ccc';
+                select.style.backgroundColor = 'white';
+            });
+            
+            // Update apply button state
+            var applyButton = document.querySelector('button[onclick="applyMeasurementLayout()"]');
+            if (hasDuplicates) {
+                applyButton.disabled = true;
+                applyButton.textContent = 'Fix Duplicates First';
+                applyButton.style.backgroundColor = '#6c757d';
+            } else {
+                applyButton.disabled = false;
+                applyButton.textContent = 'Apply Layout';
+                applyButton.style.backgroundColor = '#007bff';
+            }
+        }
+        
+        function applyMeasurementLayout() {
+            var leftValue = document.getElementById('left-position').value;
+            var middleValue = document.getElementById('middle-position').value;
+            var rightValue = document.getElementById('right-position').value;
+            
+            // Check for duplicates
+            var positions = [leftValue, middleValue, rightValue];
+            if (positions.length !== new Set(positions).size) {
+                alert('Please ensure each measurement appears in only one position.');
+                return;
+            }
+            
+            // Store the layout configuration
+            var layoutConfig = {
+                left: leftValue,
+                middle: middleValue,
+                right: rightValue
+            };
+            
+            // Store in localStorage for persistence
+            localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
+            
+            // Send layout update to Pebble immediately
+            debugLog('📊 Applying measurement layout: ' + JSON.stringify(layoutConfig));
+            
+            // Send layout data to watchface via webview close
+            var currentToken = localStorage.getItem('oura_access_token');
+            debugLog('🔍 Current token status: ' + (currentToken ? 'Found' : 'Not found'));
+            
+            if (currentToken) {
+                debugLog('🔄 Sending layout update with token...');
+                
+                // Include layout configuration in the settings
+                var settings = {
+                    oura_access_token: currentToken,
+                    layout_left: parseInt(leftValue),
+                    layout_middle: parseInt(middleValue),
+                    layout_right: parseInt(rightValue),
+                    config_action: 'layout_update'
+                };
+                
+                debugLog('📊 Layout values: L=' + leftValue + ' M=' + middleValue + ' R=' + rightValue);
+                debugLog('📊 Parsed layout: L=' + settings.layout_left + ' M=' + settings.layout_middle + ' R=' + settings.layout_right);
+                
+                var settingsJson = JSON.stringify(settings);
+                var encodedSettings = encodeURIComponent(settingsJson);
+                var returnUrl = 'pebblejs://close#' + encodedSettings;
+                
+                debugLog('📤 Settings JSON: ' + settingsJson);
+                debugLog('📤 Encoded settings length: ' + encodedSettings.length);
+                debugLog('📤 Return URL: ' + returnUrl.substring(0, 100) + '...');
+                
+                // Close the webview with the layout data
+                debugLog('🚀 Closing webview with layout data...');
+                window.location = returnUrl;
+            } else {
+                debugLog('⚠️ No token found - cannot send layout update');
+                debugLog('💡 Layout saved to localStorage - will apply on next data refresh');
+                alert('Please connect to your Oura Ring first before applying layout changes.');
+            }
+            
+            // Visual feedback
+            var button = document.querySelector('button[onclick="applyMeasurementLayout()"]');
+            var originalText = button.textContent;
+            button.textContent = '✅ Applied!';
+            button.style.backgroundColor = '#28a745';
+            
+            setTimeout(function() {
+                button.textContent = originalText;
+                button.style.backgroundColor = '#007bff';
+            }, 2000);
+        }
+        
+        function loadSavedMeasurementLayout() {
+            var saved = localStorage.getItem('oura_measurement_layout');
+            if (saved) {
+                try {
+                    var layout = JSON.parse(saved);
+                    console.log('Loading saved layout:', layout);
+                    document.getElementById('left-position').value = layout.left;
+                    document.getElementById('middle-position').value = layout.middle;
+                    document.getElementById('right-position').value = layout.right;
+                    updateMeasurementLayout();
+                } catch (e) {
+                    console.log('Error loading saved layout:', e);
+                    // If loading fails, set defaults and update preview
+                    setDefaultLayout();
+                }
+            } else {
+                // No saved layout, set defaults
+                setDefaultLayout();
+            }
+        }
+        
+        function setDefaultLayout() {
+            // Default: Readiness(0) - Sleep(1) - Heart Rate(2)
+            document.getElementById('left-position').value = '0';
+            document.getElementById('middle-position').value = '1';
+            document.getElementById('right-position').value = '2';
+            updateMeasurementLayout();
+            debugLog('📊 Using default measurement layout');
+        }
+        
         // PURE STATIC CONFIG - NO POPUPS, ONLY REDIRECTS
         var CLIENT_ID = 'TGDTXUBGWULVNKSC';
         var REDIRECT_URI = 'https://peppy-pothos-093b81.netlify.app/pebble-static-config.html';
@@ -305,11 +731,28 @@
         // Send settings to Pebble
         function sendToPebble(token) {
             try {
-                var settings = { oura_access_token: token };
+                // Get current layout configuration
+                var savedLayout = localStorage.getItem('oura_measurement_layout');
+                var layoutConfig = { left: '0', middle: '1', right: '2' }; // defaults
+                if (savedLayout) {
+                    try {
+                        layoutConfig = JSON.parse(savedLayout);
+                    } catch (e) {
+                        debugLog('⚠️ Error parsing saved layout, using defaults');
+                    }
+                }
+                
+                var settings = { 
+                    oura_access_token: token,
+                    layout_left: parseInt(layoutConfig.left),
+                    layout_middle: parseInt(layoutConfig.middle),
+                    layout_right: parseInt(layoutConfig.right)
+                };
                 var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
                 
                 debugLog('📱 Sending settings to Pebble:');
                 debugLog('Token: ' + token.substring(0, 10) + '...' + token.substring(token.length - 6));
+                debugLog('Layout: L=' + layoutConfig.left + ' M=' + layoutConfig.middle + ' R=' + layoutConfig.right);
                 debugLog('Settings: ' + JSON.stringify(settings));
                 debugLog('Return URL: ' + returnUrl);
                 
@@ -630,8 +1073,39 @@
             document.getElementById('debug-log').textContent = 'Debug information will appear here...';
         }
 
+        // Initialize debug section as hidden by default
+        function initializeDebugVisibility() {
+            var debugSection = document.querySelector('.debug-section');
+            var showDebug = document.getElementById('show-debug').checked;
+            
+            // Hide debug section by default
+            if (debugSection) {
+                debugSection.style.display = showDebug ? 'block' : 'none';
+            }
+        }
+        
         // Initialize - PURE STATIC, NO DYNAMIC LOADING
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize debug visibility
+            initializeDebugVisibility();
+            
+            // Initialize measurement layout
+            loadSavedMeasurementLayout();
+            
+            // Add smart duplicate prevention event listeners
+            document.getElementById('left-position').addEventListener('change', function() {
+                preventDuplicates('left-position');
+                updateMeasurementLayout();
+            });
+            document.getElementById('middle-position').addEventListener('change', function() {
+                preventDuplicates('middle-position');
+                updateMeasurementLayout();
+            });
+            document.getElementById('right-position').addEventListener('change', function() {
+                preventDuplicates('right-position');
+                updateMeasurementLayout();
+            });
+            
             debugLog('🚀 Config page loaded');
             debugLog('Current URL: ' + window.location.href);
             debugLog('Requested OAuth scopes: ' + SCOPES);
