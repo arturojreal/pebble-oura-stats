@@ -4,8 +4,9 @@ A modern Pebble watchface that displays real-time health data from your Oura Rin
 
 This is a work in progress, and is not yet ready for production use. It is currently in beta testing!
 
-To find out more: [The Rebble Alliance Discord](https://discord.com/channels/221364737269694464/1403471447481122897)
+To participate, join [The Rebble Alliance Discord](https://discord.com/channels/221364737269694464/1403471447481122897)
 
+To help support development, please consider [buying me a coffee!](https://ko-fi.com/arturojreal).
 
 ![Watchface Preview](https://img.shields.io/badge/Pebble-Compatible-blue) ![OAuth2](https://img.shields.io/badge/OAuth2-Secure-green) ![Status](https://img.shields.io/badge/Status-Beta-yellow)
 

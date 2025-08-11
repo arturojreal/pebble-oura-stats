@@ -214,8 +214,10 @@ function fetchHeartRateData(token, callback) {
 }
 
 function fetchReadinessData(token, callback) {
-  var today = new Date().toISOString().split('T')[0];
-  var endpoint = '/usercollection/daily_readiness?start_date=' + today + '&end_date=' + today;
+  // Fetch last 7 days to find most recent non-zero readiness score
+  var endDate = new Date().toISOString().split('T')[0];
+  var startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  var endpoint = '/usercollection/daily_readiness?start_date=' + startDate + '&end_date=' + endDate;
   
   console.log('[oura] Fetching readiness data for:', today);
   sendDebugStatus('Getting readiness...');
@@ -229,15 +231,30 @@ function fetchReadinessData(token, callback) {
     }
     
     if (data && data.data && data.data.length > 0) {
-      var latestData = data.data[data.data.length - 1];
-      console.log('[oura] Readiness records:', data.data.length, 'latest keys:', Object.keys(latestData || {}));
-      sendDebugStatus('RDY data found!');
-      callback({
-        readiness_score: latestData.score || 0,
-        temperature_deviation: latestData.temperature_deviation || 0,
-        recovery_index: latestData.recovery_index || 0,
-        data_available: true
-      });
+      // Find most recent non-zero readiness score
+      var validData = null;
+      for (var i = data.data.length - 1; i >= 0; i--) {
+        var record = data.data[i];
+        if (record.score && record.score > 0) {
+          validData = record;
+          break;
+        }
+      }
+      
+      if (validData) {
+        console.log('[oura] Readiness records:', data.data.length, 'using date:', validData.day, 'score:', validData.score);
+        sendDebugStatus('RDY data found!');
+        callback({
+          readiness_score: validData.score,
+          temperature_deviation: validData.temperature_deviation || 0,
+          recovery_index: validData.recovery_index || 0,
+          data_available: true
+        });
+      } else {
+        console.log('[oura] No valid readiness data (all scores are 0)');
+        sendDebugStatus('No valid RDY data');
+        callback({ data_available: false });
+      }
     } else {
       console.log('[oura] No readiness data available');
       sendDebugStatus('No RDY data today');
@@ -247,8 +264,10 @@ function fetchReadinessData(token, callback) {
 }
 
 function fetchSleepData(token, callback) {
-  var today = new Date().toISOString().split('T')[0];
-  var endpoint = '/usercollection/daily_sleep?start_date=' + today + '&end_date=' + today;
+  // Fetch last 7 days to find most recent non-zero sleep score
+  var endDate = new Date().toISOString().split('T')[0];
+  var startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  var endpoint = '/usercollection/daily_sleep?start_date=' + startDate + '&end_date=' + endDate;
   
   console.log('[oura] Fetching sleep data for:', today);
   sendDebugStatus('Getting sleep...');
@@ -262,15 +281,30 @@ function fetchSleepData(token, callback) {
     }
     
     if (data && data.data && data.data.length > 0) {
-      var latestData = data.data[data.data.length - 1];
-      console.log('[oura] Sleep records:', data.data.length, 'latest keys:', Object.keys(latestData || {}));
-      sendDebugStatus('Sleep data found!');
-      callback({
-        sleep_score: latestData.score || 0,
-        total_sleep_duration: latestData.total_sleep_duration || 0,
-        sleep_efficiency: latestData.efficiency || 0,
-        data_available: true
-      });
+      // Find most recent non-zero sleep score
+      var validData = null;
+      for (var i = data.data.length - 1; i >= 0; i--) {
+        var record = data.data[i];
+        if (record.score && record.score > 0) {
+          validData = record;
+          break;
+        }
+      }
+      
+      if (validData) {
+        console.log('[oura] Sleep records:', data.data.length, 'using date:', validData.day, 'score:', validData.score);
+        sendDebugStatus('Sleep data found!');
+        callback({
+          sleep_score: validData.score,
+          total_sleep_duration: validData.total_sleep_duration || 0,
+          sleep_efficiency: validData.efficiency || 0,
+          data_available: true
+        });
+      } else {
+        console.log('[oura] No valid sleep data (all scores are 0)');
+        sendDebugStatus('No valid sleep data');
+        callback({ data_available: false });
+      }
     } else {
       console.log('[oura] No sleep data available');
       sendDebugStatus('No sleep data today');
