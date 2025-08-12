@@ -56,6 +56,23 @@
         "label": "Show Debug Messages",
         "description": "Display debug information on the watchface",
         "defaultValue": false
+      },
+      {
+        "type": "select",
+        "messageKey": "date_format",
+        "label": "Date Format",
+        "description": "Choose how the date is displayed",
+        "defaultValue": 0,
+        "options": [
+          {
+            "label": "MM-DD-YYYY (US Format)",
+            "value": 0
+          },
+          {
+            "label": "DD-MM-YYYY (International Format)",
+            "value": 1
+          }
+        ]
       }
     ]
   },

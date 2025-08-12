@@ -193,11 +193,21 @@
 </head>
 <body>
     <div class="container">
-        <!-- Construction Banner -->
-        <div style="background: linear-gradient(135deg, #ff6b6b, #ffa726); color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 8px 8px 0 0;">
-            <div style="font-size: 18px; margin-bottom: 5px;">🚧 Configuration Pages Under Construction</div>
-            <div style="font-size: 14px; opacity: 0.9;">August 11, 2025 - Some features may experience issues, delays, or unexpected behavior</div>
+        <!-- Ko-fi Support CTA -->
+        <div style="background: linear-gradient(135deg, #29abe0, #00d4aa); color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 8px 8px 0 0;">
+            <div style="font-size: 16px; margin-bottom: 8px;">☕ Want to support this development?</div>
+            <a href="https://ko-fi.com/arturojreal" target="_blank" style="text-decoration: none; color: inherit; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; display: inline-block; font-size: 14px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                💝 Buy me a coffee!
+            </a>
         </div>
+        
+        <!-- Construction Banner (Modularized - can be easily commented out) -->
+        <!-- CONSTRUCTION_BANNER_START -->
+        <div style="background: linear-gradient(135deg, #ff6b6b, #ffa726); color: white; padding: 15px; text-align: center; font-weight: bold;">
+            <div style="font-size: 18px; margin-bottom: 5px;">🚧 Configuration Pages Under Construction</div>
+            <div style="font-size: 14px; opacity: 0.9;" id="construction-date">Loading date... - Some features may experience issues, delays, or unexpected behavior</div>
+        </div>
+        <!-- CONSTRUCTION_BANNER_END -->
         
         <!-- Tab Navigation -->
         <div class="tab-nav">
@@ -339,7 +349,7 @@
                         <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
                         <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="0">🎉 Readiness</option>
-                            <option value="1" selected>😴 Sleep</option>
+                            <option value="1">😴 Sleep</option>
                             <option value="2">❤️ Heart Rate</option>
                         </select>
                     </div>
@@ -354,19 +364,60 @@
                     </div>
                 </div>
                 
+                <div class="section-box" style="margin: 20px 0;">
+                    <div class="section-title">⚙️ Display Settings</div>
+                    <p style="font-size: 14px; color: #666; margin: 10px 0;">Configure how your watchface displays information.</p>
+                    
+                    <div style="margin: 15px 0;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Data Refresh Frequency:</label>
+                        <select id="refresh-frequency" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="15">15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="60" selected>1 hour</option>
+                            <option value="120">2 hours</option>
+                            <option value="240">4 hours</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">📅 Date Format:</label>
+                        <select id="date-format" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="0" selected>MM-DD-YYYY (US Format)</option>
+                            <option value="1">DD-MM-YYYY (International Format)</option>
+                        </select>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose how the date appears below the time on your watchface</p>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">🎨 Theme Mode:</label>
+                        <select id="theme-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="0" selected>🌙 Dark Mode (Default)</option>
+                            <option value="1">☀️ Light Mode</option>
+                        </select>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose between dark mode (white text on black) or light mode (black text on white)</p>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="show-debug" checked style="margin-right: 10px;">
+                            <span>Show debug messages on watchface</span>
+                        </label>
+                    </div>
+                </div>
+                
                 <div style="text-align: center; margin: 15px 0;">
                     <button onclick="applyMeasurementLayout()" class="connect-btn" style="width: auto; padding: 10px 20px;">Apply Layout</button>
                 </div>
-            </div>
-            
-            <!-- Future Customization Options -->
-            <div style="padding: 20px; background: #f8f9fa; border-radius: 6px; color: #6c757d; margin-top: 20px;">
-                <strong>Coming Soon:</strong>
-                <ul style="text-align: left; margin: 10px 0; padding-left: 20px; font-size: 14px;">
-                    <li>Dark/Light mode toggle</li>
-                    <li>Font size options</li>
-                    <li>Update frequency settings</li>
-                </ul>
+                
+                <!-- Future Customization Options -->
+                <div style="padding: 20px; background: #f8f9fa; border-radius: 6px; color: #6c757d; margin-top: 20px;">
+                    <strong>Coming Soon:</strong>
+                    <ul style="text-align: left; margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                        <li>Font size options</li>
+                        <li>Custom emoji selection</li>
+                        <li>Refresh interval customization</li>
+                    </ul>
+                </div>
             </div>
         </div>
         
@@ -574,12 +625,20 @@
             if (currentToken) {
                 debugLog('🔄 Sending layout update with token...');
                 
-                // Include layout configuration in the settings
+                // Get date format setting
+                var dateFormat = localStorage.getItem('oura_date_format') || '0';
+                
+                // Get theme mode setting
+                var themeMode = localStorage.getItem('oura_theme_mode') || '0';
+                
+                // Include layout configuration, date format, and theme mode in the settings
                 var settings = {
                     oura_access_token: currentToken,
                     layout_left: parseInt(leftValue),
                     layout_middle: parseInt(middleValue),
                     layout_right: parseInt(rightValue),
+                    date_format: parseInt(dateFormat),
+                    theme_mode: parseInt(themeMode),
                     config_action: 'layout_update'
                 };
                 
@@ -742,11 +801,19 @@
                     }
                 }
                 
+                // Get date format setting
+                var dateFormat = localStorage.getItem('oura_date_format') || '0';
+                
+                // Get theme mode setting
+                var themeMode = localStorage.getItem('oura_theme_mode') || '0';
+                
                 var settings = { 
                     oura_access_token: token,
                     layout_left: parseInt(layoutConfig.left),
                     layout_middle: parseInt(layoutConfig.middle),
-                    layout_right: parseInt(layoutConfig.right)
+                    layout_right: parseInt(layoutConfig.right),
+                    date_format: parseInt(dateFormat),
+                    theme_mode: parseInt(themeMode)
                 };
                 var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
                 
@@ -1084,13 +1151,88 @@
             }
         }
         
+        // Update construction banner with current date
+        function updateConstructionDate() {
+            var constructionDateElement = document.getElementById('construction-date');
+            if (constructionDateElement) {
+                var now = new Date();
+                var dateString = now.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                constructionDateElement.textContent = dateString + ' - Some features may experience issues, delays, or unexpected behavior';
+            }
+        }
+        
+        // Load saved date format setting
+        function loadSavedDateFormat() {
+            var savedDateFormat = localStorage.getItem('oura_date_format');
+            if (savedDateFormat !== null) {
+                var dateFormatSelect = document.getElementById('date-format');
+                if (dateFormatSelect) {
+                    dateFormatSelect.value = savedDateFormat;
+                }
+            }
+        }
+        
+        // Save date format setting
+        function saveDateFormat() {
+            var dateFormatSelect = document.getElementById('date-format');
+            if (dateFormatSelect) {
+                localStorage.setItem('oura_date_format', dateFormatSelect.value);
+                debugLog('📅 Date format saved: ' + (dateFormatSelect.value === '0' ? 'MM-DD-YYYY' : 'DD-MM-YYYY'));
+            }
+        }
+        
+        // Load saved theme mode setting
+        function loadSavedThemeMode() {
+            var savedThemeMode = localStorage.getItem('oura_theme_mode');
+            if (savedThemeMode !== null) {
+                var themeModeSelect = document.getElementById('theme-mode');
+                if (themeModeSelect) {
+                    themeModeSelect.value = savedThemeMode;
+                }
+            }
+        }
+        
+        // Save theme mode setting
+        function saveThemeMode() {
+            var themeModeSelect = document.getElementById('theme-mode');
+            if (themeModeSelect) {
+                localStorage.setItem('oura_theme_mode', themeModeSelect.value);
+                debugLog('🎨 Theme mode saved: ' + (themeModeSelect.value === '0' ? '🌙 Dark Mode' : '☀️ Light Mode'));
+            }
+        }
+        
         // Initialize - PURE STATIC, NO DYNAMIC LOADING
         document.addEventListener('DOMContentLoaded', function() {
+            // Update construction banner with current date
+            updateConstructionDate();
+            
             // Initialize debug visibility
             initializeDebugVisibility();
             
             // Initialize measurement layout
             loadSavedMeasurementLayout();
+            
+            // Load saved date format
+            loadSavedDateFormat();
+            
+            // Load saved theme mode
+            loadSavedThemeMode();
+            
+            // Add date format change listener
+            var dateFormatSelect = document.getElementById('date-format');
+            if (dateFormatSelect) {
+                dateFormatSelect.addEventListener('change', saveDateFormat);
+            }
+            
+            // Add theme mode change listener
+            var themeModeSelect = document.getElementById('theme-mode');
+            if (themeModeSelect) {
+                themeModeSelect.addEventListener('change', saveThemeMode);
+            }
             
             // Add smart duplicate prevention event listeners
             document.getElementById('left-position').addEventListener('change', function() {

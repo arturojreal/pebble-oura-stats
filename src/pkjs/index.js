@@ -100,6 +100,21 @@ function getLocalDateString() {
   return year + '-' + monthStr + '-' + dayStr;
 }
 
+// Helper function to get yesterday's date for Oura data (Oura data is typically available for previous day)
+function getOuraDataDate() {
+  var now = new Date();
+  now.setDate(now.getDate() - 1); // Get yesterday's date
+  var year = now.getFullYear();
+  var month = now.getMonth() + 1;
+  var day = now.getDate();
+  
+  // Manual padding for compatibility (no padStart in Pebble JS)
+  var monthStr = month < 10 ? '0' + month : '' + month;
+  var dayStr = day < 10 ? '0' + day : '' + day;
+  
+  return year + '-' + monthStr + '-' + dayStr;
+}
+
 // Load cached values from localStorage on startup
 function loadCachedScores() {
   try {
@@ -324,10 +339,10 @@ function makeOuraRequest(endpoint, token, callback) {
 }
 
 function fetchHeartRateData(token, callback) {
-  var today = getLocalDateString();
-  var endpoint = '/usercollection/heartrate?start_date=' + today + '&end_date=' + today;
+  var dataDate = getOuraDataDate(); // Use yesterday's date for Oura data
+  var endpoint = '/usercollection/heartrate?start_date=' + dataDate + '&end_date=' + dataDate;
   
-  console.log('[oura] Fetching heart rate data for:', today);
+  console.log('[oura] Fetching heart rate data for:', dataDate);
   sendDebugStatus('Getting heart rate...');
   
   makeOuraRequest(endpoint, token, function(error, data) {
@@ -356,10 +371,10 @@ function fetchHeartRateData(token, callback) {
 }
 
 function fetchReadinessData(token, callback) {
-  var today = getLocalDateString();
-  var endpoint = '/usercollection/daily_readiness?start_date=' + today + '&end_date=' + today;
+  var dataDate = getOuraDataDate(); // Use yesterday's date for Oura data
+  var endpoint = '/usercollection/daily_readiness?start_date=' + dataDate + '&end_date=' + dataDate;
   
-  console.log('[oura] Fetching readiness data for:', today);
+  console.log('[oura] Fetching readiness data for:', dataDate);
   sendDebugStatus('Getting readiness...');
   
   makeOuraRequest(endpoint, token, function(error, data) {
@@ -393,10 +408,9 @@ function fetchReadinessData(token, callback) {
       // Always update cache with latest data if it's valid
       if (currentScore > 0) {
         g_cached_readiness_score = currentScore;
-        g_cache_date = today;
+        g_cache_date = dataDate;
         console.log('[oura] Readiness: Cached new score:', currentScore);
         sendDebugStatus('RDY updated');
-        // Only save to localStorage if we have valid data
         saveCachedScores();
       }
       
@@ -441,10 +455,10 @@ function fetchReadinessData(token, callback) {
 }
 
 function fetchSleepData(token, callback) {
-  var today = getLocalDateString();
-  var endpoint = '/usercollection/daily_sleep?start_date=' + today + '&end_date=' + today;
+  var dataDate = getOuraDataDate(); // Use yesterday's date for Oura data
+  var endpoint = '/usercollection/daily_sleep?start_date=' + dataDate + '&end_date=' + dataDate;
   
-  console.log('[oura] Fetching sleep data for:', today);
+  console.log('[oura] Fetching sleep data for:', dataDate);
   sendDebugStatus('Getting sleep...');
   
   makeOuraRequest(endpoint, token, function(error, data) {
@@ -478,10 +492,9 @@ function fetchSleepData(token, callback) {
       // Always update cache with latest data if it's valid
       if (currentScore > 0) {
         g_cached_sleep_score = currentScore;
-        g_cache_date = today;
+        g_cache_date = dataDate;
         console.log('[oura] Sleep: Cached new score:', currentScore);
         sendDebugStatus('Sleep updated');
-        // Only save to localStorage if we have valid data
         saveCachedScores();
       }
       
@@ -741,6 +754,18 @@ function sendDataToWatch(data) {
     console.log('[oura] No saved layout, using default positions');
   }
   
+  // Add date format configuration - always get the most current value from localStorage
+  var dateFormat = localStorage.getItem('oura_date_format') || '0'; // Use same key as config page
+  flatData.date_format = parseInt(dateFormat); // 0 = MM-DD-YYYY, 1 = DD-MM-YYYY
+  var formatName = (flatData.date_format === 1) ? 'DD-MM-YYYY' : 'MM-DD-YYYY';
+  console.log('[oura] Sending date format:', formatName, '-> value:', flatData.date_format);
+  
+  // Add theme mode configuration - always get the most current value from localStorage
+  var themeMode = localStorage.getItem('oura_theme_mode') || '0'; // Use same key as config page
+  flatData.theme_mode = parseInt(themeMode); // 0 = Dark Mode, 1 = Light Mode
+  var themeName = (flatData.theme_mode === 1) ? '☀️ Light Mode' : '🌙 Dark Mode';
+  console.log('[oura] Sending theme mode:', themeName, '-> value:', flatData.theme_mode);
+  
   // Heart rate data
   if (data.heart_rate) {
     flatData.heart_rate = 1; // Indicate heart rate data present
@@ -954,6 +979,66 @@ Pebble.addEventListener('webviewclosed', function(e) {
         localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
         console.log('✅ Layout configuration stored in localStorage');
         sendDebugStatus('Layout config stored');
+      }
+      
+      // Check if we got date format configuration
+      if (settings.date_format !== undefined && settings.date_format !== null) {
+        console.log('📅 Date format configuration received:', settings.date_format);
+        sendDebugStatus('Date format config received');
+        
+        // Store date format configuration
+        localStorage.setItem('oura_date_format', settings.date_format.toString());
+        console.log('💾 Date format stored:', settings.date_format);
+        sendDebugStatus('Date format stored');
+        
+        // Send date format to watchface immediately
+        try {
+          var message = {
+            'date_format': parseInt(settings.date_format)
+          };
+          Pebble.sendAppMessage(message, function() {
+            console.log('✅ Date format sent to watchface');
+            sendDebugStatus('Date format applied');
+          }, function(error) {
+            console.error('❌ Error sending date format:', error);
+            sendDebugStatus('Error applying date format');
+          });
+        } catch (error) {
+          console.error('❌ Error sending date format message:', error);
+        }
+      }
+      
+      // Check if we got theme mode configuration
+      if (settings.theme_mode !== undefined && settings.theme_mode !== null) {
+        console.log('🎨 Theme mode configuration received:', settings.theme_mode);
+        sendDebugStatus('Theme mode config received');
+        
+        // Store theme mode configuration
+        localStorage.setItem('oura_theme_mode', settings.theme_mode.toString());
+        console.log('💾 Theme mode stored:', settings.theme_mode);
+        sendDebugStatus('Theme mode stored');
+        
+        // Send theme mode to watchface immediately
+        try {
+          var message = {
+            'theme_mode': parseInt(settings.theme_mode)
+          };
+          Pebble.sendAppMessage(message, function() {
+            console.log('✅ Theme mode sent to watchface');
+            sendDebugStatus('Theme mode applied');
+          }, function(error) {
+            console.error('❌ Error sending theme mode:', error);
+            sendDebugStatus('Error applying theme mode');
+          });
+        } catch (error) {
+          console.error('❌ Error sending theme mode message:', error);
+        }
+      }
+      
+      // Process layout changes if received
+      if (settings.layout_left !== undefined && settings.layout_left !== null && 
+          settings.layout_middle !== undefined && settings.layout_middle !== null && 
+          settings.layout_right !== undefined && settings.layout_right !== null) {
         
         // Immediately apply the new layout with current data
         console.log('🔄 Applying new layout immediately...');

@@ -11,6 +11,7 @@
 // Main window and layers
 static Window *s_window;
 static TextLayer *s_time_layer;
+static TextLayer *s_date_layer;
 static TextLayer *s_debug_layer;
 static TextLayer *s_sample_indicator_layer;
 static TextLayer *s_heart_rate_layer;
@@ -22,6 +23,7 @@ static TextLayer *s_sleep_label_layer;
 
 // Data buffers
 static char s_time_buffer[16];
+static char s_date_buffer[16];
 static char s_debug_buffer[32];
 static char s_sample_indicator_buffer[16];
 static char s_heart_rate_buffer[16];
@@ -38,8 +40,26 @@ static int s_layout_left = 0;    // Default: readiness
 static int s_layout_middle = 1;  // Default: sleep
 static int s_layout_right = 2;   // Default: heart_rate
 
+// Date format configuration
+// 0=MM-DD-YYYY, 1=DD-MM-YYYY
+static int s_date_format = 0;    // Default: MM-DD-YYYY
+
+// Theme mode configuration
+// 0=Dark Mode (white text on black), 1=Light Mode (black text on white)
+static int s_theme_mode = 0;     // Default: Dark Mode
+
 // Forward declarations
 static void update_debug_display(const char* message);
+static void apply_theme_colors(void);
+
+// Helper functions for theme colors
+static GColor get_background_color(void) {
+  return s_theme_mode == 1 ? GColorWhite : GColorBlack;
+}
+
+static GColor get_text_color(void) {
+  return s_theme_mode == 1 ? GColorBlack : GColorWhite;
+}
 
 // =============================================================================
 // OURA DATA STRUCTURES (Based on Oura API v2)
@@ -85,8 +105,24 @@ static void update_time_display() {
   text_layer_set_text(s_time_layer, s_time_buffer);
 }
 
+static void update_date_display() {
+  time_t temp = time(NULL);
+  struct tm *tick_time = localtime(&temp);
+  
+  if (s_date_format == 1) {
+    // DD-MM-YYYY format
+    strftime(s_date_buffer, sizeof(s_date_buffer), "%d-%m-%Y", tick_time);
+  } else {
+    // MM-DD-YYYY format (default)
+    strftime(s_date_buffer, sizeof(s_date_buffer), "%m-%d-%Y", tick_time);
+  }
+  
+  text_layer_set_text(s_date_layer, s_date_buffer);
+}
+
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time_display();
+  update_date_display();
   
   // Update Oura data every hour (or on minute change for testing)
   if (units_changed & HOUR_UNIT) {
@@ -270,10 +306,10 @@ static void fetch_oura_data() {
   // Mark as using sample data
   s_using_sample_data = true;
   
-  // Update all displays
-  update_heart_rate_display();
-  update_readiness_display();
-  update_sleep_display();
+  // Initialize displays
+  update_time_display();
+  update_date_display();
+  update_all_measurements();
   update_sample_indicator();
   
   APP_LOG(APP_LOG_LEVEL_INFO, "Sample Oura data loaded");
@@ -291,88 +327,97 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
   
-  // Set dark background
-  window_set_background_color(window, GColorBlack);
+  // Set background color based on theme
+  window_set_background_color(window, get_background_color());
   
-  // Time display (center top) - bigger font, closer to top
+  // Time display (center top) - moved up 10 pixels for better positioning
   s_time_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(10, 5), bounds.size.w, 60));
+      GRect(0, PBL_IF_ROUND_ELSE(5, 0), bounds.size.w, 50));
   text_layer_set_background_color(s_time_layer, GColorClear);
-  text_layer_set_text_color(s_time_layer, GColorWhite);
+  text_layer_set_text_color(s_time_layer, get_text_color());
   text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
   
-  // Debug status (between time and sample indicator)
+  // Date display (below time) - bigger and bolder font for better readability
+  s_date_layer = text_layer_create(
+      GRect(0, PBL_IF_ROUND_ELSE(50, 45), bounds.size.w, 25));
+  text_layer_set_background_color(s_date_layer, GColorClear);
+  text_layer_set_text_color(s_date_layer, get_text_color());
+  text_layer_set_font(s_date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_alignment(s_date_layer, GTextAlignmentCenter);
+  layer_add_child(window_layer, text_layer_get_layer(s_date_layer));
+  
+  // Debug status (moved down to accommodate date)
   s_debug_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(70, 65), bounds.size.w, 15));
+      GRect(0, PBL_IF_ROUND_ELSE(85, 80), bounds.size.w, 15));
   text_layer_set_background_color(s_debug_layer, GColorClear);
-  text_layer_set_text_color(s_debug_layer, GColorWhite);
+  text_layer_set_text_color(s_debug_layer, get_text_color());
   text_layer_set_font(s_debug_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
   text_layer_set_text_alignment(s_debug_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_debug_layer));
   
-  // Sample indicator (moved down 5 pixels from previous position)
+  // Sample indicator (moved down to accommodate date)
   s_sample_indicator_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(50, 45), bounds.size.w, 20));
+      GRect(0, PBL_IF_ROUND_ELSE(105, 100), bounds.size.w, 20));
   text_layer_set_background_color(s_sample_indicator_layer, GColorClear);
-  text_layer_set_text_color(s_sample_indicator_layer, GColorWhite);
+  text_layer_set_text_color(s_sample_indicator_layer, get_text_color());
   text_layer_set_font(s_sample_indicator_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
   text_layer_set_text_alignment(s_sample_indicator_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_sample_indicator_layer));
   
-  // Sleep (bottom left) - larger font, moved up for emoji
+  // Sleep (bottom left) - moved down so emoji is ~0.5px from bottom
   s_sleep_layer = text_layer_create(
-      GRect(0, bounds.size.h - 85, bounds.size.w/3, 30));
+      GRect(0, bounds.size.h - 75, bounds.size.w/3, 30));
   text_layer_set_background_color(s_sleep_layer, GColorClear);
-  text_layer_set_text_color(s_sleep_layer, GColorWhite);
+  text_layer_set_text_color(s_sleep_layer, get_text_color());
   text_layer_set_font(s_sleep_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_sleep_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_sleep_layer));
   
-  // Sleep Label (emoji)
+  // Sleep Label (emoji) - positioned for ~0.5px from bottom
   s_sleep_label_layer = text_layer_create(
-      GRect(0, bounds.size.h - 55, bounds.size.w/3, 35));
+      GRect(0, bounds.size.h - 40, bounds.size.w/3, 35));
   text_layer_set_background_color(s_sleep_label_layer, GColorClear);
-  text_layer_set_text_color(s_sleep_label_layer, GColorWhite);
+  text_layer_set_text_color(s_sleep_label_layer, get_text_color());
   text_layer_set_font(s_sleep_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_sleep_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_sleep_label_layer, "😴");
   layer_add_child(window_layer, text_layer_get_layer(s_sleep_label_layer));
   
-  // Readiness (bottom center) - larger font, moved up for emoji
+  // Readiness (bottom center) - moved down so emoji is ~0.5px from bottom
   s_readiness_layer = text_layer_create(
-      GRect(bounds.size.w/3, bounds.size.h - 85, bounds.size.w/3, 30));
+      GRect(bounds.size.w/3, bounds.size.h - 75, bounds.size.w/3, 30));
   text_layer_set_background_color(s_readiness_layer, GColorClear);
-  text_layer_set_text_color(s_readiness_layer, GColorWhite);
+  text_layer_set_text_color(s_readiness_layer, get_text_color());
   text_layer_set_font(s_readiness_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_readiness_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_readiness_layer));
   
-  // Readiness Label (emoji)
+  // Readiness Label (emoji) - positioned for ~0.5px from bottom
   s_readiness_label_layer = text_layer_create(
-      GRect(bounds.size.w/3, bounds.size.h - 55, bounds.size.w/3, 35));
+      GRect(bounds.size.w/3, bounds.size.h - 40, bounds.size.w/3, 35));
   text_layer_set_background_color(s_readiness_label_layer, GColorClear);
-  text_layer_set_text_color(s_readiness_label_layer, GColorWhite);
+  text_layer_set_text_color(s_readiness_label_layer, get_text_color());
   text_layer_set_font(s_readiness_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_readiness_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_readiness_label_layer, "🎉");
   layer_add_child(window_layer, text_layer_get_layer(s_readiness_label_layer));
   
-  // Heart Rate (bottom right) - larger font, moved up for emoji
+  // Heart Rate (bottom right) - moved down so emoji is ~0.5px from bottom
   s_heart_rate_layer = text_layer_create(
-      GRect(2*bounds.size.w/3, bounds.size.h - 85, bounds.size.w/3, 30));
+      GRect(2*bounds.size.w/3, bounds.size.h - 75, bounds.size.w/3, 30));
   text_layer_set_background_color(s_heart_rate_layer, GColorClear);
-  text_layer_set_text_color(s_heart_rate_layer, GColorWhite);
+  text_layer_set_text_color(s_heart_rate_layer, get_text_color());
   text_layer_set_font(s_heart_rate_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_heart_rate_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_heart_rate_layer));
   
-  // Heart Rate Label (emoji)
+  // Heart Rate Label (emoji) - positioned for ~0.5px from bottom
   s_heart_rate_label_layer = text_layer_create(
-      GRect(2*bounds.size.w/3, bounds.size.h - 55, bounds.size.w/3, 35));
+      GRect(2*bounds.size.w/3, bounds.size.h - 40, bounds.size.w/3, 35));
   text_layer_set_background_color(s_heart_rate_label_layer, GColorClear);
-  text_layer_set_text_color(s_heart_rate_label_layer, GColorWhite);
+  text_layer_set_text_color(s_heart_rate_label_layer, get_text_color());
   text_layer_set_font(s_heart_rate_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
   text_layer_set_text_alignment(s_heart_rate_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_heart_rate_label_layer, "❤");
@@ -381,6 +426,7 @@ static void window_load(Window *window) {
 
 static void window_unload(Window *window) {
   text_layer_destroy(s_time_layer);
+  text_layer_destroy(s_date_layer);
   text_layer_destroy(s_debug_layer);
   text_layer_destroy(s_sample_indicator_layer);
   text_layer_destroy(s_heart_rate_layer);
@@ -477,6 +523,22 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     update_sleep_display();
   }
   
+  // Process date format configuration
+  Tuple *date_format_tuple = dict_find(iterator, MESSAGE_KEY_date_format);
+  if (date_format_tuple) {
+    s_date_format = date_format_tuple->value->int32;
+    APP_LOG(APP_LOG_LEVEL_INFO, "Date format updated: %d", s_date_format);
+    update_date_display();
+  }
+  
+  // Process theme mode configuration
+  Tuple *theme_mode_tuple = dict_find(iterator, MESSAGE_KEY_theme_mode);
+  if (theme_mode_tuple) {
+    s_theme_mode = theme_mode_tuple->value->int32;
+    APP_LOG(APP_LOG_LEVEL_INFO, "Theme mode updated: %d", s_theme_mode);
+    apply_theme_colors();
+  }
+  
   // If we received any real data, hide the sample indicator
   s_using_sample_data = false;
   update_sample_indicator();
@@ -499,6 +561,62 @@ static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResul
 
 static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
   APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success");
+}
+
+// Apply theme colors to all UI elements
+static void apply_theme_colors(void) {
+  GColor bg_color = get_background_color();
+  GColor text_color = get_text_color();
+  
+  // Update window background
+  if (s_window) {
+    window_set_background_color(s_window, bg_color);
+  }
+  
+  // Update all text layers
+  if (s_time_layer) {
+    text_layer_set_text_color(s_time_layer, text_color);
+  }
+  
+  if (s_date_layer) {
+    text_layer_set_text_color(s_date_layer, text_color);
+  }
+  
+  if (s_debug_layer) {
+    text_layer_set_text_color(s_debug_layer, text_color);
+  }
+  
+  if (s_sample_indicator_layer) {
+    text_layer_set_text_color(s_sample_indicator_layer, text_color);
+  }
+  
+  // Update measurement layers
+  if (s_sleep_layer) {
+    text_layer_set_text_color(s_sleep_layer, text_color);
+  }
+  
+  if (s_sleep_label_layer) {
+    text_layer_set_text_color(s_sleep_label_layer, text_color);
+  }
+  
+  if (s_readiness_layer) {
+    text_layer_set_text_color(s_readiness_layer, text_color);
+  }
+  
+  if (s_readiness_label_layer) {
+    text_layer_set_text_color(s_readiness_label_layer, text_color);
+  }
+  
+  if (s_heart_rate_layer) {
+    text_layer_set_text_color(s_heart_rate_layer, text_color);
+  }
+  
+  if (s_heart_rate_label_layer) {
+    text_layer_set_text_color(s_heart_rate_label_layer, text_color);
+  }
+  
+  APP_LOG(APP_LOG_LEVEL_INFO, "Theme colors applied: %s", 
+          s_theme_mode == 1 ? "Light Mode" : "Dark Mode");
 }
 
 // =============================================================================
