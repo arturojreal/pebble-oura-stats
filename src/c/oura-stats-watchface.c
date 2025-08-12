@@ -242,7 +242,7 @@ static void update_debug_display(const char* message) {
 
 static void update_sample_indicator() {
   if (s_using_sample_data) {
-    snprintf(s_sample_indicator_buffer, sizeof(s_sample_indicator_buffer), "Sample");
+    snprintf(s_sample_indicator_buffer, sizeof(s_sample_indicator_buffer), "This is sample data, not your data!");
   } else {
     s_sample_indicator_buffer[0] = '\0';  // Clear the buffer
   }
@@ -312,9 +312,9 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(s_debug_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_debug_layer));
   
-  // Sample indicator (under debug)
+  // Sample indicator (moved down 5 pixels from previous position)
   s_sample_indicator_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(85, 80), bounds.size.w, 20));
+      GRect(0, PBL_IF_ROUND_ELSE(50, 45), bounds.size.w, 20));
   text_layer_set_background_color(s_sample_indicator_layer, GColorClear);
   text_layer_set_text_color(s_sample_indicator_layer, GColorWhite);
   text_layer_set_font(s_sample_indicator_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));

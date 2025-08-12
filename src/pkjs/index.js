@@ -6,6 +6,58 @@
 // Runs on phone, sends data to Pebble watch
 // =============================================================================
 
+// Cache management
+var CACHE_VERSION = 'v1';
+
+// Global cache variables
+var g_cached_sleep_score = 0;
+var g_cached_readiness_score = 0;
+var g_cache_date = '';
+
+var CACHE_KEYS = {
+  READINESS: CACHE_VERSION + '_readiness',
+  SLEEP: CACHE_VERSION + '_sleep',
+  TIMESTAMP: CACHE_VERSION + '_timestamp'
+};
+
+// Cache functions
+function getCachedData(key) {
+  try {
+    var data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : null;
+  } catch (e) {
+    console.log('Cache read error:', e);
+    return null;
+  }
+}
+
+function setCachedData(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    localStorage.setItem(CACHE_KEYS.TIMESTAMP, Date.now());
+  } catch (e) {
+    console.log('Cache write error:', e);
+  }
+}
+
+function updateCacheIfValid(key, newValue) {
+  if (!newValue) return false;
+  
+  var currentValue = getCachedData(key);
+  // Only update if new value is valid (non-zero)
+  if (newValue && newValue !== '0' && newValue !== 0) {
+    setCachedData(key, newValue);
+    return true;
+  }
+  return false;
+}
+
+function getCachedValue(key) {
+  var cached = getCachedData(key);
+  // Return cached value if it exists and is valid
+  return (cached && cached !== '0' && cached !== 0) ? cached : null;
+}
+
 // OAuth2 configuration - SECURE CLIENT-SIDE-ONLY FLOW
 // No client secret stored in browser - uses Oura's official client-side-only flow
 var OURA_CONFIG = {
@@ -32,6 +84,85 @@ var g_aggregated_data = {};
 var g_cached_sleep_score = 0;
 var g_cached_readiness_score = 0;
 var g_cache_date = null;
+
+// Helper function to get local date string (YYYY-MM-DD) instead of UTC
+// Compatible with older JavaScript environments (no padStart)
+function getLocalDateString() {
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth() + 1;
+  var day = now.getDate();
+  
+  // Manual padding for compatibility (no padStart in Pebble JS)
+  var monthStr = month < 10 ? '0' + month : '' + month;
+  var dayStr = day < 10 ? '0' + day : '' + day;
+  
+  return year + '-' + monthStr + '-' + dayStr;
+}
+
+// Load cached values from localStorage on startup
+function loadCachedScores() {
+  try {
+    var today = getLocalDateString();
+    var cachedData = localStorage.getItem('oura_cached_scores');
+    
+    if (cachedData) {
+      var data = JSON.parse(cachedData);
+      console.log('Raw cached data:', data);
+      
+      // Only use cached data if it's from today
+      if (data.cache_date === today) {
+        if (data.sleep_score && !isNaN(parseInt(data.sleep_score))) {
+          g_cached_sleep_score = parseInt(data.sleep_score);
+          console.log('Loaded cached sleep score:', g_cached_sleep_score);
+        }
+        if (data.readiness_score && !isNaN(parseInt(data.readiness_score))) {
+          g_cached_readiness_score = parseInt(data.readiness_score);
+          console.log('Loaded cached readiness score:', g_cached_readiness_score);
+        }
+        g_cache_date = data.cache_date;
+      } else {
+        console.log('Cached data is from a different date, ignoring');
+      }
+    } else {
+      console.log('No cached scores found in localStorage');
+    }
+  } catch (e) {
+    console.error('Error loading cached scores:', e);
+  }
+}
+
+// Save cached scores to localStorage - only saves if values are valid (non-zero)
+function saveCachedScores() {
+  try {
+    var today = getLocalDateString();
+    
+    // Only save if we have at least one valid (non-zero) score
+    if (g_cached_sleep_score <= 0 && g_cached_readiness_score <= 0) {
+      console.log('Not saving cache - no valid scores to save');
+      return;
+    }
+    
+    var data = {
+      sleep_score: g_cached_sleep_score,
+      readiness_score: g_cached_readiness_score,
+      cache_date: today  // Always use today's date when saving
+    };
+    
+    console.log('Saving cached scores:', data);
+    localStorage.setItem('oura_cached_scores', JSON.stringify(data));
+    console.log('Successfully saved cached scores to localStorage');
+    
+    // Debug: Verify the data was saved correctly
+    var verify = localStorage.getItem('oura_cached_scores');
+    console.log('Verification read from localStorage:', verify);
+  } catch (e) {
+    console.error('Error saving cached scores:', e);
+  }
+}
+
+// Initialize cache
+loadCachedScores();
 
 // =============================================================================
 // OAUTH2 AUTHENTICATION
@@ -193,7 +324,7 @@ function makeOuraRequest(endpoint, token, callback) {
 }
 
 function fetchHeartRateData(token, callback) {
-  var today = new Date().toISOString().split('T')[0];
+  var today = getLocalDateString();
   var endpoint = '/usercollection/heartrate?start_date=' + today + '&end_date=' + today;
   
   console.log('[oura] Fetching heart rate data for:', today);
@@ -225,7 +356,7 @@ function fetchHeartRateData(token, callback) {
 }
 
 function fetchReadinessData(token, callback) {
-  var today = new Date().toISOString().split('T')[0];
+  var today = getLocalDateString();
   var endpoint = '/usercollection/daily_readiness?start_date=' + today + '&end_date=' + today;
   
   console.log('[oura] Fetching readiness data for:', today);
@@ -235,47 +366,82 @@ function fetchReadinessData(token, callback) {
     if (error) {
       console.error('Failed to fetch readiness data:', error);
       sendDebugStatus('RDY API failed');
+      
+      // If API fails but we have a cached value, use it
+      if (g_cached_readiness_score > 0) {
+        console.log('[oura] Using cached readiness score after API error:', g_cached_readiness_score);
+        sendDebugStatus('Using cached RDY');
+        callback({
+          readiness_score: g_cached_readiness_score,
+          temperature_deviation: 0,
+          recovery_index: 0,
+          data_available: true
+        });
+        return;
+      }
+      
       callback({ data_available: false });
       return;
     }
+    
+    var result = { data_available: false };
     
     if (data && data.data && data.data.length > 0) {
       var latestData = data.data[data.data.length - 1];
       var currentScore = latestData.score || 0;
       
-      // Smart caching: Update cache if we get a valid (non-zero) score
+      // Always update cache with latest data if it's valid
       if (currentScore > 0) {
         g_cached_readiness_score = currentScore;
         g_cache_date = today;
-        console.log('[oura] Readiness: New valid score cached:', currentScore, 'for date:', today);
-        sendDebugStatus('RDY data cached!');
-      } else if (g_cached_readiness_score > 0 && g_cache_date === today) {
-        // Use cached score if current is 0 but we have a valid cached score for today
-        currentScore = g_cached_readiness_score;
-        console.log('[oura] Readiness: Using cached score:', currentScore, 'from date:', g_cache_date);
-        sendDebugStatus('RDY using cache!');
-      } else {
-        console.log('[oura] Readiness: No valid score available (current:', currentScore, 'cached:', g_cached_readiness_score, ')');
-        sendDebugStatus('RDY no valid data');
+        console.log('[oura] Readiness: Cached new score:', currentScore);
+        sendDebugStatus('RDY updated');
+        // Only save to localStorage if we have valid data
+        saveCachedScores();
       }
       
-      console.log('[oura] Readiness records:', data.data.length, 'using score:', currentScore);
-      callback({
-        readiness_score: currentScore,
-        temperature_deviation: latestData.temperature_deviation || 0,
-        recovery_index: latestData.recovery_index || 0,
+      // If we have a valid score, use it
+      if (currentScore > 0) {
+        result = {
+          readiness_score: currentScore,
+          temperature_deviation: latestData.temperature_deviation || 0,
+          recovery_index: latestData.recovery_index || 0,
+          data_available: true
+        };
+      } 
+      // If score is 0 but we have a cached value, use the cache
+      else if (g_cached_readiness_score > 0) {
+        console.log('[oura] Readiness: Using cached score instead of zero');
+        result = {
+          readiness_score: g_cached_readiness_score,
+          temperature_deviation: 0,
+          recovery_index: 0,
+          data_available: true
+        };
+        sendDebugStatus('Using cached RDY');
+      }
+      
+      console.log('[oura] Readiness records:', data.data.length, 'score:', result.readiness_score || 'none');
+    } 
+    
+    // If we still don't have data but have a cached value, use it
+    if (!result.data_available && g_cached_readiness_score > 0) {
+      console.log('[oura] Readiness: No data, using cached score');
+      result = {
+        readiness_score: g_cached_readiness_score,
+        temperature_deviation: 0,
+        recovery_index: 0,
         data_available: true
-      });
-    } else {
-      console.log('[oura] No readiness data available');
-      sendDebugStatus('No RDY data today');
-      callback({ data_available: false });
+      };
+      sendDebugStatus('Using cached RDY');
     }
+    
+    callback(result);
   });
 }
 
 function fetchSleepData(token, callback) {
-  var today = new Date().toISOString().split('T')[0];
+  var today = getLocalDateString();
   var endpoint = '/usercollection/daily_sleep?start_date=' + today + '&end_date=' + today;
   
   console.log('[oura] Fetching sleep data for:', today);
@@ -285,42 +451,77 @@ function fetchSleepData(token, callback) {
     if (error) {
       console.error('Failed to fetch sleep data:', error);
       sendDebugStatus('Sleep API failed');
+      
+      // If API fails but we have a cached value, use it
+      if (g_cached_sleep_score > 0) {
+        console.log('[oura] Using cached sleep score after API error:', g_cached_sleep_score);
+        sendDebugStatus('Using cached sleep');
+        callback({
+          sleep_score: g_cached_sleep_score,
+          total_sleep_duration: 0,
+          sleep_efficiency: 0,
+          data_available: true
+        });
+        return;
+      }
+      
       callback({ data_available: false });
       return;
     }
+    
+    var result = { data_available: false };
     
     if (data && data.data && data.data.length > 0) {
       var latestData = data.data[data.data.length - 1];
       var currentScore = latestData.score || 0;
       
-      // Smart caching: Update cache if we get a valid (non-zero) score
+      // Always update cache with latest data if it's valid
       if (currentScore > 0) {
         g_cached_sleep_score = currentScore;
         g_cache_date = today;
-        console.log('[oura] Sleep: New valid score cached:', currentScore, 'for date:', today);
-        sendDebugStatus('Sleep data cached!');
-      } else if (g_cached_sleep_score > 0 && g_cache_date === today) {
-        // Use cached score if current is 0 but we have a valid cached score for today
-        currentScore = g_cached_sleep_score;
-        console.log('[oura] Sleep: Using cached score:', currentScore, 'from date:', g_cache_date);
-        sendDebugStatus('Sleep using cache!');
-      } else {
-        console.log('[oura] Sleep: No valid score available (current:', currentScore, 'cached:', g_cached_sleep_score, ')');
-        sendDebugStatus('Sleep no valid data');
+        console.log('[oura] Sleep: Cached new score:', currentScore);
+        sendDebugStatus('Sleep updated');
+        // Only save to localStorage if we have valid data
+        saveCachedScores();
       }
       
-      console.log('[oura] Sleep records:', data.data.length, 'using score:', currentScore);
-      callback({
-        sleep_score: currentScore,
-        total_sleep_duration: latestData.total_sleep_duration || 0,
-        sleep_efficiency: latestData.efficiency || 0,
+      // If we have a valid score, use it
+      if (currentScore > 0) {
+        result = {
+          sleep_score: currentScore,
+          total_sleep_duration: latestData.total_sleep_duration || 0,
+          sleep_efficiency: latestData.efficiency || 0,
+          data_available: true
+        };
+      } 
+      // If score is 0 but we have a cached value, use the cache
+      else if (g_cached_sleep_score > 0) {
+        console.log('[oura] Sleep: Using cached score instead of zero');
+        result = {
+          sleep_score: g_cached_sleep_score,
+          total_sleep_duration: 0,
+          sleep_efficiency: 0,
+          data_available: true
+        };
+        sendDebugStatus('Using cached sleep');
+      }
+      
+      console.log('[oura] Sleep records:', data.data.length, 'score:', result.sleep_score || 'none');
+    } 
+    
+    // If we still don't have data but have a cached value, use it
+    if (!result.data_available && g_cached_sleep_score > 0) {
+      console.log('[oura] Sleep: No data, using cached score');
+      result = {
+        sleep_score: g_cached_sleep_score,
+        total_sleep_duration: 0,
+        sleep_efficiency: 0,
         data_available: true
-      });
-    } else {
-      console.log('[oura] No sleep data available');
-      sendDebugStatus('No sleep data today');
-      callback({ data_available: false });
+      };
+      sendDebugStatus('Using cached sleep');
     }
+    
+    callback(result);
   });
 }
 
@@ -331,9 +532,9 @@ function fetchSleepData(token, callback) {
 function fetchAllOuraData() {
   console.log('🚀 Starting to fetch all Oura data...');
   
-  var token = getStoredToken();
-  if (!token) {
-    console.log('❌ No token available, loading sample data');
+  var token = CONFIG_SETTINGS.access_token;
+  if (!token || !CONFIG_SETTINGS.connected) {
+    console.log('❌ No token available in CONFIG_SETTINGS, loading sample data');
     sendDebugStatus('No token - using sample data');
     loadSampleData();
     return;
@@ -343,11 +544,10 @@ function fetchAllOuraData() {
   console.log('📊 Token length:', token.length);
   sendDebugStatus('Token found - fetching data');
   
-  // Check token expiration
-  var expires = localStorage.getItem('oura_token_expires');
-  if (expires) {
-    var isExpired = Date.now() > parseInt(expires);
-    console.log('⏰ Token expires:', new Date(parseInt(expires)).toISOString());
+  // Check token expiration using CONFIG_SETTINGS
+  if (CONFIG_SETTINGS.token_expires) {
+    var isExpired = Date.now() > CONFIG_SETTINGS.token_expires;
+    console.log('⏰ Token expires:', new Date(CONFIG_SETTINGS.token_expires).toISOString());
     console.log('🔍 Token expired:', isExpired);
     
     if (isExpired) {
@@ -595,25 +795,41 @@ var CONFIG_SETTINGS = {
 
 // Load settings from Clay configuration or localStorage
 function loadConfigSettings() {
-  // Check for Clay settings first (from webview config)
+  console.log('🔧 Loading configuration settings...');
+  
+  // Debug: Check all localStorage keys
+  console.log('🔍 All localStorage keys:', Object.keys(localStorage));
+  
+  // Check for Clay configuration first (priority)
   var clayToken = localStorage.getItem('clay-oura_access_token');
   var clayRefresh = localStorage.getItem('clay-refresh_frequency');
   var clayDebug = localStorage.getItem('clay-show_debug');
   
+  console.log('🏺 Clay token found:', !!clayToken);
   if (clayToken) {
-    // Clay configuration detected
+    console.log('🏺 Clay token length:', clayToken.length);
+  }
+  
+  if (clayToken) {
     CONFIG_SETTINGS.access_token = clayToken;
     CONFIG_SETTINGS.refresh_frequency = parseInt(clayRefresh) || 60;
     CONFIG_SETTINGS.show_debug = clayDebug === 'true';
     CONFIG_SETTINGS.token_expires = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
     CONFIG_SETTINGS.connected = true;
     
-    console.log('Clay configuration detected - using Clay settings');
+    console.log('✅ Clay configuration detected - using Clay settings');
   } else {
     // Check for manual setup tokens (fallback)
     var manualToken = localStorage.getItem('oura_access_token');
     var manualExpires = localStorage.getItem('oura_token_expires');
     var manualConnected = localStorage.getItem('oura_connected');
+    
+    console.log('🔧 Manual token found:', !!manualToken);
+    if (manualToken) {
+      console.log('🔧 Manual token length:', manualToken.length);
+      console.log('🔧 Manual expires:', manualExpires);
+      console.log('🔧 Manual connected:', manualConnected);
+    }
     
     if (manualToken) {
       CONFIG_SETTINGS.access_token = manualToken;
@@ -622,7 +838,9 @@ function loadConfigSettings() {
       CONFIG_SETTINGS.show_debug = false;
       CONFIG_SETTINGS.refresh_frequency = 60;
       
-      console.log('Manual setup detected - using manual token');
+      console.log('✅ Manual setup detected - using manual token');
+    } else {
+      console.log('❌ No tokens found in localStorage');
     }
   }
   
@@ -654,8 +872,16 @@ Pebble.addEventListener('ready', function() {
     sendDebugStatus('JS Ready');
   }
   
-  // Use secure client-side-only flow - check for configuration
-  checkForConfigurationSettings();
+  // Check if we have a valid token and fetch data
+  if (CONFIG_SETTINGS.connected && CONFIG_SETTINGS.access_token) {
+    console.log('Valid token found in CONFIG_SETTINGS, fetching Oura data');
+    sendDebugStatus('Token found, loading data...');
+    fetchAllOuraData();
+  } else {
+    console.log('No valid token found in CONFIG_SETTINGS, showing sample data');
+    sendDebugStatus('Please configure in Pebble app');
+    loadSampleData();
+  }
 });
 
 Pebble.addEventListener('appmessage', function(e) {
