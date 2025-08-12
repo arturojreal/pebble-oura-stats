@@ -297,14 +297,6 @@
         
         <!-- Customization Tab -->
         <div id="customization-tab" class="tab-content">
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin-bottom: 20px; color: #856404;">
-                <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ Work in Progress - August 11, 2025</h4>
-                <p style="margin: 0; font-size: 14px;">
-                    <strong>Layout Customization:</strong> This feature is currently being actively developed and may not work as expected. 
-                    The default layout (Readiness-Sleep-Heart Rate) is stable and working properly. 
-                    Custom layout changes may not apply immediately to the watchface.
-                </p>
-            </div>
             
             <h1>🎛️ Customization</h1>
             
@@ -342,6 +334,8 @@
                             <option value="0">🎉 Readiness</option>
                             <option value="1">😴 Sleep</option>
                             <option value="2">❤️ Heart Rate</option>
+                            <option value="3">🔥 Activity</option>
+                            <option value="4">😰 Stress</option>
                         </select>
                     </div>
                     
@@ -349,8 +343,10 @@
                         <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
                         <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
+                            <option value="1" selected>😴 Sleep</option>
                             <option value="2">❤️ Heart Rate</option>
+                            <option value="3">🔥 Activity</option>
+                            <option value="4">😰 Stress</option>
                         </select>
                     </div>
                     
@@ -360,6 +356,8 @@
                             <option value="0">🎉 Readiness</option>
                             <option value="1">😴 Sleep</option>
                             <option value="2" selected>❤️ Heart Rate</option>
+                            <option value="3">🔥 Activity</option>
+                            <option value="4">😰 Stress</option>
                         </select>
                     </div>
                 </div>
@@ -461,7 +459,9 @@
         var measurementConfig = {
             '0': { emoji: '🎉', label: 'RDY', name: 'readiness' },
             '1': { emoji: '😴', label: 'SLP', name: 'sleep' },
-            '2': { emoji: '❤️', label: 'HR', name: 'heart_rate' }
+            '2': { emoji: '❤️', label: 'HR', name: 'heart_rate' },
+            '3': { emoji: '🔥', label: 'ACT', name: 'activity' },
+            '4': { emoji: '😰', label: 'STR', name: 'stress' }
         };
         
         // Smart duplicate prevention - automatically adjust conflicting selections
