@@ -46,7 +46,9 @@ exports.handler = async (event, context) => {
     const allowedEndpoints = [
       'heartrate',
       'daily_readiness', 
-      'daily_sleep'
+      'daily_sleep',
+      'daily_activity',
+      'daily_stress'
     ];
 
     if (!allowedEndpoints.includes(endpoint)) {
