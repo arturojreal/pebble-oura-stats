@@ -1,23 +1,34 @@
 # Pebble Oura Stats Watchface
 
-A modern Pebble watchface that displays real-time health data from your Oura Ring, including sleep score, readiness score, and heart rate metrics.
+A modern, feature-rich Pebble watchface that displays real-time health data from your Oura Ring, including sleep score, readiness score, and heart rate metrics with beautiful light/dark themes.
 
-This is a work in progress, and is not yet ready for production use. It is currently in beta testing!
+**✨ Now featuring Light/Dark Mode toggle, configurable date formats, and enhanced readability!**
 
-To participate, join [The Rebble Alliance Discord](https://discord.com/channels/221364737269694464/1403471447481122897)
+To participate in beta testing, join [The Rebble Alliance Discord](https://discord.com/channels/221364737269694464/1403471447481122897)
 
 To help support development, please consider [buying me a coffee!](https://ko-fi.com/arturojreal).
 
-![Watchface Preview](https://img.shields.io/badge/Pebble-Compatible-blue) ![OAuth2](https://img.shields.io/badge/OAuth2-Secure-green) ![Status](https://img.shields.io/badge/Status-Beta-yellow)
+![Watchface Preview](https://img.shields.io/badge/Pebble-Compatible-blue) ![OAuth2](https://img.shields.io/badge/OAuth2-Secure-green) ![Status](https://img.shields.io/badge/Status-Ready-brightgreen) ![Themes](https://img.shields.io/badge/Themes-Light%2FDark-purple)
 
-## Features
+## ✨ Features
 
-- **Real-time Oura Data**: Sleep score, readiness score, and heart rate from Oura Ring API v2
+### 🎨 **Visual Customization**
+- **Light/Dark Mode Toggle**: Switch between 🌙 dark and ☀️ light themes with complete UI color inversion
+- **Enhanced Readability**: Large, bold date display with GOTHIC_24_BOLD font
+- **Optimized Layout**: Perfectly positioned time and date elements for maximum visibility
+- **Configurable Date Format**: Choose between MM-DD-YYYY and DD-MM-YYYY formats
+
+### 📊 **Real-time Health Data**
+- **Live Oura Ring Data**: Sleep score, readiness score, and heart rate from Oura API v2
+- **Smart Data Handling**: Uses previous day's data (when Oura data is available)
+- **Intelligent Caching**: Preserves valid scores, prevents displaying zeros
+- **Auto-refresh**: Hourly data updates with manual refresh capability
+
+### 🔒 **Security & Reliability**
 - **Secure OAuth2**: Client-side-only authentication flow (no secrets stored)
-- **Modern UI**: Large fonts, optimized layout, clean design
-- **Diagnostics**: Built-in debugging and API testing tools
-- **Proxy Support**: CORS-compliant API calls via Netlify Functions
-- **Auto-refresh**: Hourly data updates with manual refresh option
+- **CORS-Compliant**: Proxy-routed API calls via Netlify Functions
+- **Token Management**: Automatic expiration handling and re-authentication
+- **Error Handling**: Graceful fallbacks and comprehensive debugging tools
 
 ## Quick Start
 
@@ -50,7 +61,26 @@ pebble install --phone 192.168.1.XXX
 2. Go to your installed watchface → Settings
 3. Tap "Connect to Oura Ring"
 4. Complete OAuth2 authentication
-5. Verify real data appears on your watch
+5. Configure your preferences:
+   - Choose your preferred date format (MM-DD-YYYY or DD-MM-YYYY)
+   - Select theme mode (🌙 Dark or ☀️ Light)
+   - Adjust layout positioning if desired
+6. Verify real data appears on your watch
+
+## 🆕 What's New in Latest Version
+
+### ✨ **Major Feature Updates**
+- **🎨 Light/Dark Mode Toggle**: Complete theme system with emoji indicators
+- **📅 Enhanced Date Display**: Larger, bolder font (GOTHIC_24_BOLD) for better readability
+- **🔧 Improved UI Layout**: Time moved up 10px for optimal positioning
+- **⚙️ Configurable Date Format**: International date format support
+- **🔄 Real-time Theme Switching**: Instant color inversion without app restart
+
+### 🐛 **Critical Bug Fixes**
+- **📅 Date Calculation Bug**: Fixed UTC vs local date issue causing zero scores
+- **🔗 Configuration Sync**: Enhanced settings propagation between config page and watchface
+- **💾 Smart Caching**: Improved data persistence and fallback handling
+- **🔐 Authentication Flow**: Streamlined OAuth2 token management
 
 ## Architecture
 
@@ -69,7 +99,8 @@ pebble install --phone 192.168.1.XXX
 
 ### UI Layout
 ```
-    [Time - Large Font]
+    [Time - Large Bold Font]
+    [Date - Bold 24pt Font]
     
     [Debug Status]
     [Sample Indicator]
@@ -78,12 +109,25 @@ pebble install --phone 192.168.1.XXX
  SLP      RDY         HR
 ```
 
+**Theme Examples:**
+- **🌙 Dark Mode**: White text on black background (default)
+- **☀️ Light Mode**: Black text on white background
+
 ## Configuration
+
+### 🎨 **Watchface Settings**
+Access via Pebble app → Your Watchface → Settings:
+
+- **🔗 Connect to Oura Ring**: OAuth2 authentication setup
+- **📅 Date Format**: Choose MM-DD-YYYY or DD-MM-YYYY
+- **🎨 Theme Mode**: Toggle between 🌙 Dark Mode and ☀️ Light Mode
+- **🔧 Layout Options**: Customize data positioning (left/middle/right)
+- **🐛 Debug Toggle**: Enable/disable diagnostic information
 
 ### Oura Developer Setup
 1. Create account at https://cloud.ouraring.com/oauth/applications
 2. Create new application with these settings:
-   - **Redirect URI**: `https://your-netlify-url.netlify.app/pebble-static-config.html`
+   - **Redirect URI**: `https://peppy-pothos-093b81.netlify.app/pebble-static-config.html`
    - **Scopes**: `daily heartrate`
    - **Application Type**: Public (client-side)
 

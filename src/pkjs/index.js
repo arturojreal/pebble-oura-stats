@@ -83,6 +83,7 @@ var g_aggregated_data = {};
 // Persistent score cache to solve 0-0-65 problem
 var g_cached_sleep_score = 0;
 var g_cached_readiness_score = 0;
+var g_cached_activity_score = 0;
 var g_cache_date = null;
 
 // Helper function to get local date string (YYYY-MM-DD) instead of UTC
@@ -100,10 +101,25 @@ function getLocalDateString() {
   return year + '-' + monthStr + '-' + dayStr;
 }
 
-// Helper function to get yesterday's date for Oura data (Oura data is typically available for previous day)
+// Helper function to get the appropriate date for Oura data
+// Try today first (for fresh data), fall back to yesterday if needed
 function getOuraDataDate() {
   var now = new Date();
-  now.setDate(now.getDate() - 1); // Get yesterday's date
+  var year = now.getFullYear();
+  var month = now.getMonth() + 1;
+  var day = now.getDate();
+  
+  // Manual padding for compatibility (no padStart in Pebble JS)
+  var monthStr = month < 10 ? '0' + month : '' + month;
+  var dayStr = day < 10 ? '0' + day : '' + day;
+  
+  return year + '-' + monthStr + '-' + dayStr;
+}
+
+// Helper function to get yesterday's date as fallback
+function getYesterdayDate() {
+  var now = new Date();
+  now.setDate(now.getDate() - 1);
   var year = now.getFullYear();
   var month = now.getMonth() + 1;
   var day = now.getDate();
@@ -127,13 +143,17 @@ function loadCachedScores() {
       
       // Only use cached data if it's from today
       if (data.cache_date === today) {
-        if (data.sleep_score && !isNaN(parseInt(data.sleep_score))) {
+        if (data.sleep_score) {
           g_cached_sleep_score = parseInt(data.sleep_score);
           console.log('Loaded cached sleep score:', g_cached_sleep_score);
         }
-        if (data.readiness_score && !isNaN(parseInt(data.readiness_score))) {
+        if (data.readiness_score) {
           g_cached_readiness_score = parseInt(data.readiness_score);
           console.log('Loaded cached readiness score:', g_cached_readiness_score);
+        }
+        if (data.activity_score) {
+          g_cached_activity_score = parseInt(data.activity_score);
+          console.log('Loaded cached activity score:', g_cached_activity_score);
         }
         g_cache_date = data.cache_date;
       } else {
@@ -153,7 +173,7 @@ function saveCachedScores() {
     var today = getLocalDateString();
     
     // Only save if we have at least one valid (non-zero) score
-    if (g_cached_sleep_score <= 0 && g_cached_readiness_score <= 0) {
+    if (g_cached_sleep_score <= 0 && g_cached_readiness_score <= 0 && g_cached_activity_score <= 0) {
       console.log('Not saving cache - no valid scores to save');
       return;
     }
@@ -161,6 +181,7 @@ function saveCachedScores() {
     var data = {
       sleep_score: g_cached_sleep_score,
       readiness_score: g_cached_readiness_score,
+      activity_score: g_cached_activity_score,
       cache_date: today  // Always use today's date when saving
     };
     
@@ -184,24 +205,36 @@ loadCachedScores();
 // =============================================================================
 
 function getStoredToken() {
-  // Check manual setup tokens first (priority)
+  console.log('🔍 DIAGNOSTIC: Checking all token storage locations...');
+  
+  // Check all possible token locations
   var manualToken = localStorage.getItem('oura_access_token');
-  
-  if (manualToken) {
-    console.log('Using manual setup token');
-    return manualToken;
-  }
-  
-  // Fallback to webview tokens
+  var clayToken = localStorage.getItem('clay-oura_access_token');
   var webviewToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   var webviewExpires = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES);
   
+  console.log('🔍 Manual token:', manualToken ? 'EXISTS (' + manualToken.length + ' chars)' : 'NONE');
+  console.log('🔍 Clay token:', clayToken ? 'EXISTS (' + clayToken.length + ' chars)' : 'NONE');
+  console.log('🔍 Webview token:', webviewToken ? 'EXISTS (' + webviewToken.length + ' chars)' : 'NONE');
+  console.log('🔍 Webview expires:', webviewExpires);
+  
+  // Priority order: Clay token (from config page) > Manual token > Webview token
+  if (clayToken) {
+    console.log('✅ Using Clay token (highest priority)');
+    return clayToken;
+  }
+  
+  if (manualToken) {
+    console.log('✅ Using manual setup token');
+    return manualToken;
+  }
+  
   if (webviewToken && webviewExpires && Date.now() < parseInt(webviewExpires)) {
-    console.log('Using webview token');
+    console.log('✅ Using webview token');
     return webviewToken;
   }
   
-  console.log('No valid token found in localStorage');
+  console.log('❌ No valid token found in any storage location');
   return null;
 }
 
@@ -371,10 +404,11 @@ function fetchHeartRateData(token, callback) {
 }
 
 function fetchReadinessData(token, callback) {
-  var dataDate = getOuraDataDate(); // Use yesterday's date for Oura data
-  var endpoint = '/usercollection/daily_readiness?start_date=' + dataDate + '&end_date=' + dataDate;
+  // Try today's data first
+  var todayDate = getOuraDataDate();
+  var endpoint = '/usercollection/daily_readiness?start_date=' + todayDate + '&end_date=' + todayDate;
   
-  console.log('[oura] Fetching readiness data for:', dataDate);
+  console.log('[oura] Fetching readiness data for today:', todayDate);
   sendDebugStatus('Getting readiness...');
   
   makeOuraRequest(endpoint, token, function(error, data) {
@@ -401,64 +435,103 @@ function fetchReadinessData(token, callback) {
     
     var result = { data_available: false };
     
+    // Check if we have data for today
     if (data && data.data && data.data.length > 0) {
       var latestData = data.data[data.data.length - 1];
       var currentScore = latestData.score || 0;
       
-      // Always update cache with latest data if it's valid
       if (currentScore > 0) {
+        // Fresh data available for today!
         g_cached_readiness_score = currentScore;
-        g_cache_date = dataDate;
-        console.log('[oura] Readiness: Cached new score:', currentScore);
-        sendDebugStatus('RDY updated');
+        g_cache_date = todayDate;
+        console.log('[oura] Readiness: Fresh data for today:', currentScore);
+        sendDebugStatus('RDY updated (today)');
         saveCachedScores();
-      }
-      
-      // If we have a valid score, use it
-      if (currentScore > 0) {
+        
         result = {
           readiness_score: currentScore,
           temperature_deviation: latestData.temperature_deviation || 0,
           recovery_index: latestData.recovery_index || 0,
           data_available: true
         };
-      } 
-      // If score is 0 but we have a cached value, use the cache
-      else if (g_cached_readiness_score > 0) {
-        console.log('[oura] Readiness: Using cached score instead of zero');
-        result = {
+        callback(result);
+        return;
+      }
+    }
+    
+    // No data for today, try yesterday as fallback
+    console.log('[oura] No readiness data for today, trying yesterday...');
+    var yesterdayDate = getYesterdayDate();
+    var fallbackEndpoint = '/usercollection/daily_readiness?start_date=' + yesterdayDate + '&end_date=' + yesterdayDate;
+    
+    makeOuraRequest(fallbackEndpoint, token, function(fallbackError, fallbackData) {
+      if (fallbackError) {
+        console.error('Failed to fetch yesterday readiness data:', fallbackError);
+        
+        // Use cached value if available
+        if (g_cached_readiness_score > 0) {
+          console.log('[oura] Using cached readiness score');
+          sendDebugStatus('Using cached RDY');
+          callback({
+            readiness_score: g_cached_readiness_score,
+            temperature_deviation: 0,
+            recovery_index: 0,
+            data_available: true
+          });
+          return;
+        }
+        
+        callback({ data_available: false });
+        return;
+      }
+      
+      if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
+        var yesterdayData = fallbackData.data[fallbackData.data.length - 1];
+        var yesterdayScore = yesterdayData.score || 0;
+        
+        if (yesterdayScore > 0) {
+          // Only update cache if this is newer than what we have
+          if (g_cache_date !== yesterdayDate) {
+            g_cached_readiness_score = yesterdayScore;
+            g_cache_date = yesterdayDate;
+            console.log('[oura] Readiness: Updated with yesterday data:', yesterdayScore);
+            sendDebugStatus('RDY updated (yesterday)');
+            saveCachedScores();
+          }
+          
+          callback({
+            readiness_score: yesterdayScore,
+            temperature_deviation: yesterdayData.temperature_deviation || 0,
+            recovery_index: yesterdayData.recovery_index || 0,
+            data_available: true
+          });
+          return;
+        }
+      }
+      
+      // Still no data, use cached if available
+      if (g_cached_readiness_score > 0) {
+        console.log('[oura] Using cached readiness score as final fallback');
+        sendDebugStatus('Using cached RDY');
+        callback({
           readiness_score: g_cached_readiness_score,
           temperature_deviation: 0,
           recovery_index: 0,
           data_available: true
-        };
-        sendDebugStatus('Using cached RDY');
+        });
+      } else {
+        callback({ data_available: false });
       }
-      
-      console.log('[oura] Readiness records:', data.data.length, 'score:', result.readiness_score || 'none');
-    } 
-    
-    // If we still don't have data but have a cached value, use it
-    if (!result.data_available && g_cached_readiness_score > 0) {
-      console.log('[oura] Readiness: No data, using cached score');
-      result = {
-        readiness_score: g_cached_readiness_score,
-        temperature_deviation: 0,
-        recovery_index: 0,
-        data_available: true
-      };
-      sendDebugStatus('Using cached RDY');
-    }
-    
-    callback(result);
+    });
   });
 }
 
 function fetchSleepData(token, callback) {
-  var dataDate = getOuraDataDate(); // Use yesterday's date for Oura data
-  var endpoint = '/usercollection/daily_sleep?start_date=' + dataDate + '&end_date=' + dataDate;
+  // Try today's data first
+  var todayDate = getOuraDataDate();
+  var endpoint = '/usercollection/daily_sleep?start_date=' + todayDate + '&end_date=' + todayDate;
   
-  console.log('[oura] Fetching sleep data for:', dataDate);
+  console.log('[oura] Fetching sleep data for today:', todayDate);
   sendDebugStatus('Getting sleep...');
   
   makeOuraRequest(endpoint, token, function(error, data) {
@@ -485,56 +558,327 @@ function fetchSleepData(token, callback) {
     
     var result = { data_available: false };
     
+    // Check if we have data for today
     if (data && data.data && data.data.length > 0) {
       var latestData = data.data[data.data.length - 1];
       var currentScore = latestData.score || 0;
       
-      // Always update cache with latest data if it's valid
       if (currentScore > 0) {
+        // Fresh data available for today!
         g_cached_sleep_score = currentScore;
-        g_cache_date = dataDate;
-        console.log('[oura] Sleep: Cached new score:', currentScore);
-        sendDebugStatus('Sleep updated');
+        g_cache_date = todayDate;
+        console.log('[oura] Sleep: Fresh data for today:', currentScore);
+        sendDebugStatus('Sleep updated (today)');
         saveCachedScores();
-      }
-      
-      // If we have a valid score, use it
-      if (currentScore > 0) {
+        
         result = {
           sleep_score: currentScore,
           total_sleep_duration: latestData.total_sleep_duration || 0,
           sleep_efficiency: latestData.efficiency || 0,
           data_available: true
         };
-      } 
-      // If score is 0 but we have a cached value, use the cache
-      else if (g_cached_sleep_score > 0) {
-        console.log('[oura] Sleep: Using cached score instead of zero');
-        result = {
+        callback(result);
+        return;
+      }
+    }
+    
+    // No data for today, try yesterday as fallback
+    console.log('[oura] No sleep data for today, trying yesterday...');
+    var yesterdayDate = getYesterdayDate();
+    var fallbackEndpoint = '/usercollection/daily_sleep?start_date=' + yesterdayDate + '&end_date=' + yesterdayDate;
+    
+    makeOuraRequest(fallbackEndpoint, token, function(fallbackError, fallbackData) {
+      if (fallbackError) {
+        console.error('Failed to fetch yesterday sleep data:', fallbackError);
+        
+        // Use cached value if available
+        if (g_cached_sleep_score > 0) {
+          console.log('[oura] Using cached sleep score');
+          sendDebugStatus('Using cached sleep');
+          callback({
+            sleep_score: g_cached_sleep_score,
+            total_sleep_duration: 0,
+            sleep_efficiency: 0,
+            data_available: true
+          });
+          return;
+        }
+        
+        callback({ data_available: false });
+        return;
+      }
+      
+      if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
+        var yesterdayData = fallbackData.data[fallbackData.data.length - 1];
+        var yesterdayScore = yesterdayData.score || 0;
+        
+        if (yesterdayScore > 0) {
+          // Only update cache if this is newer than what we have
+          if (g_cache_date !== yesterdayDate) {
+            g_cached_sleep_score = yesterdayScore;
+            g_cache_date = yesterdayDate;
+            console.log('[oura] Sleep: Updated with yesterday data:', yesterdayScore);
+            sendDebugStatus('Sleep updated (yesterday)');
+            saveCachedScores();
+          }
+          
+          callback({
+            sleep_score: yesterdayScore,
+            total_sleep_duration: yesterdayData.total_sleep_duration || 0,
+            sleep_efficiency: yesterdayData.efficiency || 0,
+            data_available: true
+          });
+          return;
+        }
+      }
+      
+      // Still no data, use cached if available
+      if (g_cached_sleep_score > 0) {
+        console.log('[oura] Using cached sleep score as final fallback');
+        sendDebugStatus('Using cached sleep');
+        callback({
           sleep_score: g_cached_sleep_score,
           total_sleep_duration: 0,
           sleep_efficiency: 0,
           data_available: true
-        };
-        sendDebugStatus('Using cached sleep');
+        });
+      } else {
+        callback({ data_available: false });
+      }
+    });
+  });
+}
+
+function fetchActivityData(token, callback) {
+  // Try a wider date range to find activity data
+  var todayDate = getOuraDataDate();
+  var threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  var startDate = threeDaysAgo.toISOString().split('T')[0];
+  
+  var endpoint = '/usercollection/daily_activity?start_date=' + startDate + '&end_date=' + todayDate;
+  
+  console.log('[oura] Fetching activity data from', startDate, 'to', todayDate);
+  sendDebugStatus('Getting activity (wide range)...');
+  
+  makeOuraRequest(endpoint, token, function(error, data) {
+    console.log('[oura] ===== ACTIVITY DEBUG START =====');
+    console.log('[oura] Activity: Raw response data:', data);
+    if (data && data.data) {
+      console.log('[oura] Activity: Data array length:', data.data.length);
+      if (data.data.length > 0) {
+        console.log('[oura] Activity: First item keys:', Object.keys(data.data[0]));
+        console.log('[oura] Activity: First item score:', data.data[0].score);
+      }
+    }
+    console.log('[oura] ===== ACTIVITY DEBUG END =====');
+    
+    if (error) {
+      console.error('Failed to fetch activity data:', error);
+      sendDebugStatus('Activity API failed');
+      
+      // Try cached activity score if available
+      if (g_cached_activity_score > 0) {
+        console.log('[oura] Using cached activity score after API error:', g_cached_activity_score);
+        callback({
+          activity_score: g_cached_activity_score,
+          active_calories: 0,
+          steps: 0,
+          data_available: true
+        });
+        return;
       }
       
-      console.log('[oura] Sleep records:', data.data.length, 'score:', result.sleep_score || 'none');
-    } 
-    
-    // If we still don't have data but have a cached value, use it
-    if (!result.data_available && g_cached_sleep_score > 0) {
-      console.log('[oura] Sleep: No data, using cached score');
-      result = {
-        sleep_score: g_cached_sleep_score,
-        total_sleep_duration: 0,
-        sleep_efficiency: 0,
-        data_available: true
-      };
-      sendDebugStatus('Using cached sleep');
+      // Try yesterday as fallback
+      var yesterdayDate = getYesterdayDate();
+      var fallbackEndpoint = '/usercollection/daily_activity?start_date=' + yesterdayDate + '&end_date=' + yesterdayDate;
+      
+      makeOuraRequest(fallbackEndpoint, token, function(fallbackError, fallbackData) {
+        if (fallbackError) {
+          console.error('Failed to fetch yesterday activity data:', fallbackError);
+          callback({ data_available: false });
+          return;
+        }
+        
+        if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
+          var yesterdayActivity = fallbackData.data[fallbackData.data.length - 1];
+          callback({
+            activity_score: yesterdayActivity.score || 85,
+            active_calories: yesterdayActivity.active_calories || 0,
+            steps: yesterdayActivity.steps || 0,
+            data_available: true
+          });
+        } else {
+          callback({ data_available: false });
+        }
+      });
+      return;
     }
     
-    callback(result);
+    if (data && data.data && data.data.length > 0) {
+      console.log('[oura] Activity: Found', data.data.length, 'activity records');
+      for (var i = 0; i < data.data.length; i++) {
+        var record = data.data[i];
+        console.log('[oura] Activity record', i + ':', 'day=' + record.day, 'score=' + record.score);
+      }
+      
+      var latestActivity = data.data[data.data.length - 1];
+      var currentScore = latestActivity.score || 0;
+      console.log('[oura] Activity: Using latest record, score:', currentScore);
+      sendDebugStatus('Activity found: ' + currentScore);
+      
+      // Cache valid non-zero activity scores
+      if (currentScore > 0) {
+        g_cached_activity_score = currentScore;
+        g_cache_date = todayDate;
+        saveCachedScores();
+      }
+      
+      callback({
+        activity_score: currentScore || 85,
+        active_calories: latestActivity.active_calories || 0,
+        steps: latestActivity.steps || 0,
+        data_available: true
+      });
+    } else {
+      // No data for today, try yesterday
+      console.log('[oura] No activity data for today, trying yesterday...');
+      var yesterdayDate = getYesterdayDate();
+      var fallbackEndpoint = '/usercollection/daily_activity?start_date=' + yesterdayDate + '&end_date=' + yesterdayDate;
+      
+      makeOuraRequest(fallbackEndpoint, token, function(fallbackError, fallbackData) {
+        if (fallbackError) {
+          console.error('Failed to fetch yesterday activity data:', fallbackError);
+          callback({ data_available: false });
+          return;
+        }
+        
+        if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
+          var yesterdayActivity = fallbackData.data[fallbackData.data.length - 1];
+          console.log('[oura] Activity: Updated with yesterday data, score:', yesterdayActivity.score);
+          sendDebugStatus('Activity updated (yesterday)');
+          
+          callback({
+            activity_score: yesterdayActivity.score || 85,
+            active_calories: yesterdayActivity.active_calories || 0,
+            steps: yesterdayActivity.steps || 0,
+            data_available: true
+          });
+        } else {
+          // No data for yesterday either, try cached activity score
+          if (g_cached_activity_score > 0) {
+            console.log('[oura] Using cached activity score after no data found:', g_cached_activity_score);
+            callback({
+              activity_score: g_cached_activity_score,
+              active_calories: 0,
+              steps: 0,
+              data_available: true
+            });
+          } else {
+            callback({ data_available: false });
+          }
+        }
+      });
+    }
+  });
+}
+
+function fetchStressData(token, callback) {
+  // Try today's data first
+  var todayDate = getOuraDataDate();
+  var endpoint = '/usercollection/daily_stress?start_date=' + todayDate + '&end_date=' + todayDate;
+  
+  console.log('[oura] Fetching stress data for today:', todayDate);
+  sendDebugStatus('Getting stress...');
+  
+  makeOuraRequest(endpoint, token, function(error, data) {
+    if (error) {
+      console.error('Failed to fetch stress data:', error);
+      sendDebugStatus('Stress API failed');
+      
+      // Try yesterday as fallback
+      var yesterdayDate = getYesterdayDate();
+      var fallbackEndpoint = '/usercollection/daily_stress?start_date=' + yesterdayDate + '&end_date=' + yesterdayDate;
+      
+      makeOuraRequest(fallbackEndpoint, token, function(fallbackError, fallbackData) {
+        if (fallbackError) {
+          console.error('Failed to fetch yesterday stress data:', fallbackError);
+          callback({ data_available: false });
+          return;
+        }
+        
+        if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
+          var yesterdayStress = fallbackData.data[fallbackData.data.length - 1];
+          callback({
+            stress_duration: yesterdayStress.stress_high || 720, // Default 12 minutes in seconds
+            stress_high_duration: yesterdayStress.stress_high || 720,
+            data_available: true
+          });
+        } else {
+          callback({ data_available: false });
+        }
+      });
+      return;
+    }
+    
+    if (data && data.data && data.data.length > 0) {
+      var latestStress = data.data[data.data.length - 1];
+      console.log('[oura] ===== STRESS DEBUG START =====');
+      console.log('[oura] Stress: Raw stress data received:', JSON.stringify(latestStress));
+      console.log('[oura] Stress: Available fields:', Object.keys(latestStress));
+      console.log('[oura] Stress: stress_high value:', latestStress.stress_high);
+      console.log('[oura] Stress: stress_high type:', typeof latestStress.stress_high);
+      
+      // stress_high appears to be in seconds already (4500 seconds = 75 minutes = 1h 15m)
+      var stressSeconds = latestStress.stress_high || 720; // Default 12 minutes in seconds
+      var stressMinutes = stressSeconds / 60; // Calculate minutes for display
+      
+      console.log('[oura] Stress: Final stress seconds (raw from API):', stressSeconds);
+      console.log('[oura] Stress: Final stress minutes (calculated):', stressMinutes);
+      console.log('[oura] ===== STRESS DEBUG END =====');
+      sendDebugStatus('Stress updated (today)');
+      
+      callback({
+        stress_duration: stressSeconds, // Send as seconds to match C code expectation
+        stress_high_duration: stressSeconds,
+        data_available: true
+      });
+    } else {
+      // No data for today, try yesterday
+      console.log('[oura] No stress data for today, trying yesterday...');
+      var yesterdayDate = getYesterdayDate();
+      var fallbackEndpoint = '/usercollection/daily_stress?start_date=' + yesterdayDate + '&end_date=' + yesterdayDate;
+      
+      makeOuraRequest(fallbackEndpoint, token, function(fallbackError, fallbackData) {
+        if (fallbackError) {
+          console.error('Failed to fetch yesterday stress data:', fallbackError);
+          callback({ data_available: false });
+          return;
+        }
+        
+        if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
+          var yesterdayStress = fallbackData.data[fallbackData.data.length - 1];
+          console.log('[oura] Stress: Raw yesterday stress data:', JSON.stringify(yesterdayStress));
+          console.log('[oura] Stress: Available yesterday fields:', Object.keys(yesterdayStress));
+          
+          // stress_high appears to be in seconds already
+          var stressSeconds = yesterdayStress.stress_high || 720; // Default 12 minutes in seconds
+          var stressMinutes = stressSeconds / 60; // Calculate minutes for display
+          
+          console.log('[oura] Stress: Yesterday stress_high field:', yesterdayStress.stress_high, 'seconds');
+          console.log('[oura] Stress: Yesterday stress minutes calculated:', stressMinutes, 'minutes');
+          sendDebugStatus('Stress updated (yesterday)');
+          
+          callback({
+            stress_duration: stressSeconds, // Send as seconds to match C code expectation
+            stress_high_duration: stressSeconds,
+            data_available: true
+          });
+        } else {
+          callback({ data_available: false });
+        }
+      });
+    }
   });
 }
 
@@ -582,11 +926,13 @@ function fetchAllOuraDataLegacy(token) {
   var results = {
     heart_rate: null,
     readiness: null,
-    sleep: null
+    sleep: null,
+    activity: null,
+    stress: null
   };
   
   var completed = 0;
-  var total = 3;
+  var total = 5;
   
   function checkComplete() {
     completed++;
@@ -604,6 +950,8 @@ function fetchAllOuraDataLegacy(token) {
         heart_rate: results.heart_rate || { data_available: false },
         readiness: results.readiness || { data_available: false },
         sleep: results.sleep || { data_available: false },
+        activity: results.activity || { data_available: false },
+        stress: results.stress || { data_available: false },
         last_updated: Date.now()
       };
       
@@ -632,6 +980,20 @@ function fetchAllOuraDataLegacy(token) {
     console.log('Sleep callback received:', data);
     results.sleep = data;
     sendDebugStatus('Sleep callback done');
+    checkComplete();
+  });
+  
+  fetchActivityData(token, function(data) {
+    console.log('Activity callback received:', data);
+    results.activity = data;
+    sendDebugStatus('Activity callback done');
+    checkComplete();
+  });
+  
+  fetchStressData(token, function(data) {
+    console.log('Stress callback received:', data);
+    results.stress = data;
+    sendDebugStatus('Stress callback done');
     checkComplete();
   });
 }
@@ -686,6 +1048,17 @@ function sendSampleDataToWatch() {
       sleep_score: 78,
       total_sleep_time: 450,
       deep_sleep_time: 90,
+      data_available: true
+    },
+    activity: {
+      activity_score: 85,
+      active_calories: 320,
+      steps: 8500,
+      data_available: true
+    },
+    stress: {
+      stress_duration: 720, // 12 minutes in seconds
+      stress_high_duration: 720,
       data_available: true
     }
   };
@@ -760,11 +1133,12 @@ function sendDataToWatch(data) {
   var formatName = (flatData.date_format === 1) ? 'DD-MM-YYYY' : 'MM-DD-YYYY';
   console.log('[oura] Sending date format:', formatName, '-> value:', flatData.date_format);
   
-  // Add theme mode configuration - always get the most current value from localStorage
-  var themeMode = localStorage.getItem('oura_theme_mode') || '0'; // Use same key as config page
-  flatData.theme_mode = parseInt(themeMode); // 0 = Dark Mode, 1 = Light Mode
-  var themeName = (flatData.theme_mode === 1) ? '☀️ Light Mode' : '🌙 Dark Mode';
-  console.log('[oura] Sending theme mode:', themeName, '-> value:', flatData.theme_mode);
+  // Add theme mode configuration - DISABLED FOR COLORFUL TEST BUILD
+  // Don't override theme mode when colorful mode (2) is set in C code
+  // var themeMode = localStorage.getItem('oura_theme_mode') || '0'; // Use same key as config page
+  // flatData.theme_mode = parseInt(themeMode); // 0 = Dark Mode, 1 = Light Mode
+  // var themeName = (flatData.theme_mode === 1) ? '☀️ Light Mode' : '🌙 Dark Mode';
+  console.log('[oura] Theme mode override DISABLED for colorful test build');
   
   // Heart rate data
   if (data.heart_rate) {
@@ -790,6 +1164,26 @@ function sendDataToWatch(data) {
     flatData.total_sleep_time = data.sleep.total_sleep_time || 0;
     flatData.deep_sleep_time = data.sleep.deep_sleep_time || 0;
     // Note: reusing data_available key - this might cause issues, need separate keys
+  }
+  
+  // Activity data
+  if (data.activity) {
+    flatData.activity_score = data.activity.activity_score || 85;
+    flatData.active_calories = data.activity.active_calories || 0;
+    flatData.steps = data.activity.steps || 0;
+    console.log('[oura] Activity data included:', data.activity);
+  } else {
+    console.log('[oura] No activity data to send');
+  }
+  
+  // Stress data - send seconds directly (already correct from API)
+  if (data.stress) {
+    flatData.stress_duration = data.stress.stress_duration || 720; // Default 12 minutes in seconds
+    flatData.stress_high_duration = data.stress.stress_high_duration || 720;
+    console.log('[oura] Stress data included:', data.stress);
+    console.log('[oura] Stress duration being sent:', flatData.stress_duration, 'seconds');
+  } else {
+    console.log('[oura] No stress data to send');
   }
   
   console.log('[oura] Sending flattened data to watch (with layout):', flatData);

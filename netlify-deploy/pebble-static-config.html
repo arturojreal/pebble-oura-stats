@@ -4,15 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oura Stats - Pebble Configuration</title>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <!-- FORCE CACHE INVALIDATION: 2025-08-13-14:39 - COMPLETE REBUILD -->
-    <script>
-        // Cache buster - force CDN to serve fresh content
-        console.log('🔄 Config page loaded at:', new Date().toISOString());
-        console.log('📋 Cache bust timestamp: 2025-08-13-14:39');
-    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -306,25 +297,9 @@
         
         <!-- Customization Tab -->
         <div id="customization-tab" class="tab-content">
-
             
             <h1>🎛️ Customization</h1>
             
-            <!-- Layout Configuration -->
-            <div class="section-box" style="margin: 20px 0;">
-                <div class="section-title">📐 Layout Configuration</div>
-                <p style="font-size: 14px; color: #666; margin: 10px 0;">Choose how many rows of measurements to display on your watchface.</p>
-                
-                <div style="margin: 15px 0;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Number of Rows:</label>
-                    <select id="layout-rows" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="1" selected>1 Row (3 measurements, larger emojis)</option>
-                        <option value="2">2 Rows (up to 6 measurements, smaller emojis)</option>
-                    </select>
-                    <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">1 row shows larger emojis, 2 rows allows more measurements</p>
-                </div>
-            </div>
-
             <!-- Measurement Organization -->
             <div class="section-box" style="margin: 20px 0;">
                 <div class="section-title">📊 Measurement Organization</div>
@@ -351,80 +326,38 @@
                     </div>
                 </div>
                 
-                <!-- Row 1 Position Selectors -->
-                <div id="row1-selectors" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
+                <!-- Position Selectors -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
                     <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Row 1 Left:</label>
-                        <select id="row1-left" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0" selected>🎉 Readiness</option>
+                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
+                        <select id="left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <option value="0">🎉 Readiness</option>
                             <option value="1">😴 Sleep</option>
                             <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🏃 Activity</option>
-                            <option value="4">😤 Stress</option>
-                            <option value="-1">-- None --</option>
+                            <option value="3">🔥 Activity</option>
+                            <option value="4">😰 Stress</option>
                         </select>
                     </div>
                     
                     <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Row 1 Middle:</label>
-                        <select id="row1-middle" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
+                        <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="0">🎉 Readiness</option>
                             <option value="1" selected>😴 Sleep</option>
                             <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🏃 Activity</option>
-                            <option value="4">😤 Stress</option>
-                            <option value="-1">-- None --</option>
+                            <option value="3">🔥 Activity</option>
+                            <option value="4">😰 Stress</option>
                         </select>
                     </div>
                     
                     <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Row 1 Right:</label>
-                        <select id="row1-right" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
+                        <select id="right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                             <option value="0">🎉 Readiness</option>
                             <option value="1">😴 Sleep</option>
                             <option value="2" selected>❤️ Heart Rate</option>
-                            <option value="3">🏃 Activity</option>
-                            <option value="4">😤 Stress</option>
-                            <option value="-1">-- None --</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Row 2 Position Selectors (hidden by default) -->
-                <div id="row2-selectors" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Row 2 Left:</label>
-                        <select id="row2-left" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
-                            <option value="2">❤️ Heart Rate</option>
-                            <option value="3" selected>🏃 Activity</option>
-                            <option value="4">😤 Stress</option>
-                            <option value="-1">-- None --</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Row 2 Middle:</label>
-                        <select id="row2-middle" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
-                            <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🏃 Activity</option>
-                            <option value="4" selected>😤 Stress</option>
-                            <option value="-1">-- None --</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Row 2 Right:</label>
-                        <select id="row2-right" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
-                            <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🏃 Activity</option>
-                            <option value="4">😤 Stress</option>
-                            <option value="-1" selected>-- None --</option>
+                            <option value="3">🔥 Activity</option>
+                            <option value="4">😰 Stress</option>
                         </select>
                     </div>
                 </div>
@@ -458,111 +391,8 @@
                         <select id="theme-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                             <option value="0" selected>🌙 Dark Mode (Default)</option>
                             <option value="1">☀️ Light Mode</option>
-                            <option value="2">🎨 Custom Color</option>
                         </select>
                         <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose between dark mode (white text on black) or light mode (black text on white)</p>
-                    </div>
-                    
-                    <!-- Color Picker Section -->
-                    <div id="color-picker-section" style="margin: 15px 0; display: none; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
-                        <h4 style="margin: 0 0 10px 0; color: #495057;">🎨 Custom Color Selection</h4>
-                        <p style="font-size: 12px; color: #666; margin: 0 0 15px 0;">Choose a background color for your watchface. Text color will automatically adjust for readability.</p>
-                        
-                        <!-- Live Preview -->
-                        <div style="margin: 10px 0;">
-                            <div id="color-preview" style="width: 100%; height: 60px; border-radius: 6px; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; font-weight: bold; background: #000000; color: #ffffff;">
-                                Preview: 12:34
-                            </div>
-                            <p style="font-size: 11px; color: #666; margin: 5px 0 0 0; text-align: center;">Selected: <span id="selected-color-name">Black</span></p>
-                        </div>
-                        
-                        <!-- Color Palette Grid - Full 64 Pebble Colors -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(30px, 1fr)); gap: 4px; margin: 15px 0; max-width: 100%;">
-                            <!-- Row 1: Dark Colors -->
-                            <div class="color-option" onclick="selectColor('#000000', 'Black', 0)" style="background: #000000; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Black"></div>
-                            <div class="color-option" onclick="selectColor('#003366', 'Oxford Blue', 1)" style="background: #003366; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Oxford Blue"></div>
-                            <div class="color-option" onclick="selectColor('#003d82', 'Duke Blue', 2)" style="background: #003d82; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Duke Blue"></div>
-                            <div class="color-option" onclick="selectColor('#0055aa', 'Blue', 3)" style="background: #0055aa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Blue"></div>
-                            <div class="color-option" onclick="selectColor('#004400', 'Dark Green', 4)" style="background: #004400; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Dark Green"></div>
-                            <div class="color-option" onclick="selectColor('#004953', 'Midnight Green', 5)" style="background: #004953; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Midnight Green"></div>
-                            <div class="color-option" onclick="selectColor('#0047ab', 'Cobalt Blue', 6)" style="background: #0047ab; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Cobalt Blue"></div>
-                            <div class="color-option" onclick="selectColor('#7366bd', 'Blue Moon', 7)" style="background: #7366bd; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Blue Moon"></div>
-                            
-                            <!-- Row 2: Green/Blue Colors -->
-                            <div class="color-option" onclick="selectColor('#009900', 'Islamic Green', 8)" style="background: #009900; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Islamic Green"></div>
-                            <div class="color-option" onclick="selectColor('#55aa00', 'Jaeger Green', 9)" style="background: #55aa00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Jaeger Green"></div>
-                            <div class="color-option" onclick="selectColor('#00aaaa', 'Tiffany Blue', 10)" style="background: #00aaaa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Tiffany Blue"></div>
-                            <div class="color-option" onclick="selectColor('#00aaff', 'Vivid Cerulean', 11)" style="background: #00aaff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Vivid Cerulean"></div>
-                            <div class="color-option" onclick="selectColor('#00ff00', 'Green', 12)" style="background: #00ff00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Green"></div>
-                            <div class="color-option" onclick="selectColor('#55ff00', 'Malachite', 13)" style="background: #55ff00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Malachite"></div>
-                            <div class="color-option" onclick="selectColor('#00ff55', 'Medium Spring Green', 14)" style="background: #00ff55; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Medium Spring Green"></div>
-                            <div class="color-option" onclick="selectColor('#00ffff', 'Cyan', 15)" style="background: #00ffff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Cyan"></div>
-                            
-                            <!-- Row 3: Purple/Red Colors -->
-                            <div class="color-option" onclick="selectColor('#aa0055', 'Bulgarian Rose', 16)" style="background: #aa0055; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Bulgarian Rose"></div>
-                            <div class="color-option" onclick="selectColor('#550055', 'Imperial Purple', 17)" style="background: #550055; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Imperial Purple"></div>
-                            <div class="color-option" onclick="selectColor('#5500aa', 'Indigo', 18)" style="background: #5500aa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Indigo"></div>
-                            <div class="color-option" onclick="selectColor('#0055ff', 'Electric Ultramarine', 19)" style="background: #0055ff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Electric Ultramarine"></div>
-                            <div class="color-option" onclick="selectColor('#555500', 'Army Green', 20)" style="background: #555500; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Army Green"></div>
-                            <div class="color-option" onclick="selectColor('#555555', 'Dark Gray', 21)" style="background: #555555; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Dark Gray"></div>
-                            <div class="color-option" onclick="selectColor('#5555aa', 'Liberty', 22)" style="background: #5555aa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Liberty"></div>
-                            <div class="color-option" onclick="selectColor('#5555ff', 'Very Light Blue', 23)" style="background: #5555ff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Very Light Blue"></div>
-                            
-                            <!-- Row 4: Medium Colors -->
-                            <div class="color-option" onclick="selectColor('#55aa55', 'Kelly Green', 24)" style="background: #55aa55; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Kelly Green"></div>
-                            <div class="color-option" onclick="selectColor('#aaaa00', 'May Green', 25)" style="background: #aaaa00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="May Green"></div>
-                            <div class="color-option" onclick="selectColor('#55aaaa', 'Cadet Blue', 26)" style="background: #55aaaa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Cadet Blue"></div>
-                            <div class="color-option" onclick="selectColor('#55aaff', 'Picton Blue', 27)" style="background: #55aaff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Picton Blue"></div>
-                            <div class="color-option" onclick="selectColor('#55ff55', 'Bright Green', 28)" style="background: #55ff55; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Bright Green"></div>
-                            <div class="color-option" onclick="selectColor('#aaff00', 'Screamin Green', 29)" style="background: #aaff00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Screamin Green"></div>
-                            <div class="color-option" onclick="selectColor('#55ffaa', 'Medium Aquamarine', 30)" style="background: #55ffaa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Medium Aquamarine"></div>
-                            <div class="color-option" onclick="selectColor('#55ffff', 'Electric Blue', 31)" style="background: #55ffff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Electric Blue"></div>
-                            
-                            <!-- Row 5: Red/Purple Colors -->
-                            <div class="color-option" onclick="selectColor('#aa0000', 'Dark Candy Apple Red', 32)" style="background: #aa0000; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Dark Candy Apple Red"></div>
-                            <div class="color-option" onclick="selectColor('#aa0055', 'Jazzberry Jam', 33)" style="background: #aa0055; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Jazzberry Jam"></div>
-                            <div class="color-option" onclick="selectColor('#aa00aa', 'Purple', 34)" style="background: #aa00aa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Purple"></div>
-                            <div class="color-option" onclick="selectColor('#aa00ff', 'Vivid Violet', 35)" style="background: #aa00ff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Vivid Violet"></div>
-                            <div class="color-option" onclick="selectColor('#aa5500', 'Windsor Tan', 36)" style="background: #aa5500; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Windsor Tan"></div>
-                            <div class="color-option" onclick="selectColor('#aa5555', 'Rose Vale', 37)" style="background: #aa5555; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Rose Vale"></div>
-                            <div class="color-option" onclick="selectColor('#aa55aa', 'Purpureus', 38)" style="background: #aa55aa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Purpureus"></div>
-                            <div class="color-option" onclick="selectColor('#aa55ff', 'Lavender Indigo', 39)" style="background: #aa55ff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Lavender Indigo"></div>
-                            
-                            <!-- Row 6: Yellow/Green Colors -->
-                            <div class="color-option" onclick="selectColor('#aaaa55', 'Limerick', 40)" style="background: #aaaa55; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Limerick"></div>
-                            <div class="color-option" onclick="selectColor('#aaaa00', 'Brass', 41)" style="background: #aaaa00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Brass"></div>
-                            <div class="color-option" onclick="selectColor('#aaaaaa', 'Light Gray', 42)" style="background: #aaaaaa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Light Gray"></div>
-                            <div class="color-option" onclick="selectColor('#aaaaff', 'Baby Blue Eyes', 43)" style="background: #aaaaff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Baby Blue Eyes"></div>
-                            <div class="color-option" onclick="selectColor('#aaff55', 'Spring Bud', 44)" style="background: #aaff55; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Spring Bud"></div>
-                            <div class="color-option" onclick="selectColor('#aaff00', 'Inchworm', 45)" style="background: #aaff00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Inchworm"></div>
-                            <div class="color-option" onclick="selectColor('#aaffaa', 'Mint Green', 46)" style="background: #aaffaa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Mint Green"></div>
-                            <div class="color-option" onclick="selectColor('#aaffff', 'Celeste', 47)" style="background: #aaffff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Celeste"></div>
-                            
-                            <!-- Row 7: Bright Colors -->
-                            <div class="color-option" onclick="selectColor('#ff0000', 'Red', 48)" style="background: #ff0000; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Red"></div>
-                            <div class="color-option" onclick="selectColor('#ff0055', 'Folly', 49)" style="background: #ff0055; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Folly"></div>
-                            <div class="color-option" onclick="selectColor('#ff00aa', 'Fashion Magenta', 50)" style="background: #ff00aa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Fashion Magenta"></div>
-                            <div class="color-option" onclick="selectColor('#ff00ff', 'Magenta', 51)" style="background: #ff00ff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Magenta"></div>
-                            <div class="color-option" onclick="selectColor('#ff5500', 'Orange', 52)" style="background: #ff5500; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Orange"></div>
-                            <div class="color-option" onclick="selectColor('#ff5555', 'Sunset Orange', 53)" style="background: #ff5555; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Sunset Orange"></div>
-                            <div class="color-option" onclick="selectColor('#ff55aa', 'Brilliant Rose', 54)" style="background: #ff55aa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Brilliant Rose"></div>
-                            <div class="color-option" onclick="selectColor('#ff55ff', 'Shocking Pink', 55)" style="background: #ff55ff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Shocking Pink"></div>
-                            
-                            <!-- Row 8: Light Colors -->
-                            <div class="color-option" onclick="selectColor('#ffaa00', 'Chrome Yellow', 56)" style="background: #ffaa00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Chrome Yellow"></div>
-                            <div class="color-option" onclick="selectColor('#ffaa55', 'Rajah', 57)" style="background: #ffaa55; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Rajah"></div>
-                            <div class="color-option" onclick="selectColor('#ffaaaa', 'Melon', 58)" style="background: #ffaaaa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Melon"></div>
-                            <div class="color-option" onclick="selectColor('#ffaaff', 'Rich Brilliant Lavender', 59)" style="background: #ffaaff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Rich Brilliant Lavender"></div>
-                            <div class="color-option" onclick="selectColor('#ffff00', 'Yellow', 60)" style="background: #ffff00; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Yellow"></div>
-                            <div class="color-option" onclick="selectColor('#ffff55', 'Icterine', 61)" style="background: #ffff55; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Icterine"></div>
-                            <div class="color-option" onclick="selectColor('#ffffaa', 'Pastel Yellow', 62)" style="background: #ffffaa; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #ddd; touch-action: manipulation;" title="Pastel Yellow"></div>
-                            <div class="color-option" onclick="selectColor('#ffffff', 'White', 63)" style="background: #ffffff; width: 100%; height: 30px; min-width: 30px; border-radius: 4px; cursor: pointer; border: 2px solid #333; touch-action: manipulation;" title="White"></div>
-                        </div>
-                        
-                        <!-- Apply Button -->
-                        <div style="text-align: center; margin: 15px 0 0 0;">
-                            <button onclick="applySelectedColor()" class="connect-btn" style="width: auto; padding: 8px 16px; font-size: 14px;">Apply Selected Color</button>
-                        </div>
                     </div>
                     
                     <div style="margin: 15px 0;">
@@ -577,7 +407,15 @@
                     <button onclick="applyMeasurementLayout()" class="connect-btn" style="width: auto; padding: 10px 20px;">Apply Layout</button>
                 </div>
                 
-
+                <!-- Future Customization Options -->
+                <div style="padding: 20px; background: #f8f9fa; border-radius: 6px; color: #6c757d; margin-top: 20px;">
+                    <strong>Coming Soon:</strong>
+                    <ul style="text-align: left; margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                        <li>Font size options</li>
+                        <li>Custom emoji selection</li>
+                        <li>Refresh interval customization</li>
+                    </ul>
+                </div>
             </div>
         </div>
         
@@ -621,7 +459,9 @@
         var measurementConfig = {
             '0': { emoji: '🎉', label: 'RDY', name: 'readiness' },
             '1': { emoji: '😴', label: 'SLP', name: 'sleep' },
-            '2': { emoji: '❤️', label: 'HR', name: 'heart_rate' }
+            '2': { emoji: '❤️', label: 'HR', name: 'heart_rate' },
+            '3': { emoji: '🔥', label: 'ACT', name: 'activity' },
+            '4': { emoji: '😰', label: 'STR', name: 'stress' }
         };
         
         // Smart duplicate prevention - automatically adjust conflicting selections
@@ -754,40 +594,68 @@
         }
         
         function applyMeasurementLayout() {
-            // Get layout rows setting
-            var layoutRows = localStorage.getItem('oura_layout_rows') || '1';
+            var leftValue = document.getElementById('left-position').value;
+            var middleValue = document.getElementById('middle-position').value;
+            var rightValue = document.getElementById('right-position').value;
             
-            // Get row 1 values
-            var row1Left = document.getElementById('row1-left').value;
-            var row1Middle = document.getElementById('row1-middle').value;
-            var row1Right = document.getElementById('row1-right').value;
+            // Check for duplicates
+            var positions = [leftValue, middleValue, rightValue];
+            if (positions.length !== new Set(positions).size) {
+                alert('Please ensure each measurement appears in only one position.');
+                return;
+            }
             
-            // Get row 2 values (if 2-row layout)
-            var row2Left = layoutRows === '2' ? document.getElementById('row2-left').value : '-1';
-            var row2Middle = layoutRows === '2' ? document.getElementById('row2-middle').value : '-1';
-            var row2Right = layoutRows === '2' ? document.getElementById('row2-right').value : '-1';
+            // Store the layout configuration
+            var layoutConfig = {
+                left: leftValue,
+                middle: middleValue,
+                right: rightValue
+            };
             
-            // Store all layout settings in localStorage
-            localStorage.setItem('oura_layout_rows', layoutRows);
-            localStorage.setItem('oura_row1_left', row1Left);
-            localStorage.setItem('oura_row1_middle', row1Middle);
-            localStorage.setItem('oura_row1_right', row1Right);
-            localStorage.setItem('oura_row2_left', row2Left);
-            localStorage.setItem('oura_row2_middle', row2Middle);
-            localStorage.setItem('oura_row2_right', row2Right);
-            
-            debugLog('📊 Applying flexible layout:');
-            debugLog('📊 Rows: ' + layoutRows);
-            debugLog('📊 Row 1: L=' + row1Left + ' M=' + row1Middle + ' R=' + row1Right);
-            debugLog('📊 Row 2: L=' + row2Left + ' M=' + row2Middle + ' R=' + row2Right);
+            // Store in localStorage for persistence
+            localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
             
             // Send layout update to Pebble immediately
+            debugLog('📊 Applying measurement layout: ' + JSON.stringify(layoutConfig));
+            
+            // Send layout data to watchface via webview close
             var currentToken = localStorage.getItem('oura_access_token');
             debugLog('🔍 Current token status: ' + (currentToken ? 'Found' : 'Not found'));
             
             if (currentToken) {
-                debugLog('🔄 Sending flexible layout update with token...');
-                sendToPebble(currentToken);
+                debugLog('🔄 Sending layout update with token...');
+                
+                // Get date format setting
+                var dateFormat = localStorage.getItem('oura_date_format') || '0';
+                
+                // Get theme mode setting
+                var themeMode = localStorage.getItem('oura_theme_mode') || '0';
+                
+                // Include layout configuration, date format, and theme mode in the settings
+                var settings = {
+                    oura_access_token: currentToken,
+                    layout_left: parseInt(leftValue),
+                    layout_middle: parseInt(middleValue),
+                    layout_right: parseInt(rightValue),
+                    date_format: parseInt(dateFormat),
+                    theme_mode: parseInt(themeMode),
+                    config_action: 'layout_update'
+                };
+                
+                debugLog('📊 Layout values: L=' + leftValue + ' M=' + middleValue + ' R=' + rightValue);
+                debugLog('📊 Parsed layout: L=' + settings.layout_left + ' M=' + settings.layout_middle + ' R=' + settings.layout_right);
+                
+                var settingsJson = JSON.stringify(settings);
+                var encodedSettings = encodeURIComponent(settingsJson);
+                var returnUrl = 'pebblejs://close#' + encodedSettings;
+                
+                debugLog('📤 Settings JSON: ' + settingsJson);
+                debugLog('📤 Encoded settings length: ' + encodedSettings.length);
+                debugLog('📤 Return URL: ' + returnUrl.substring(0, 100) + '...');
+                
+                // Close the webview with the layout data
+                debugLog('🚀 Closing webview with layout data...');
+                window.location = returnUrl;
             } else {
                 debugLog('⚠️ No token found - cannot send layout update');
                 debugLog('💡 Layout saved to localStorage - will apply on next data refresh');
@@ -922,45 +790,36 @@
         // Send settings to Pebble
         function sendToPebble(token) {
             try {
-                // Get flexible layout configuration
-                var layoutRows = localStorage.getItem('oura_layout_rows') || '1';
-                var row1Left = localStorage.getItem('oura_row1_left') || '0';   // Readiness
-                var row1Middle = localStorage.getItem('oura_row1_middle') || '1'; // Sleep
-                var row1Right = localStorage.getItem('oura_row1_right') || '2';   // Heart Rate
-                var row2Left = localStorage.getItem('oura_row2_left') || '3';   // Activity
-                var row2Middle = localStorage.getItem('oura_row2_middle') || '4'; // Stress
-                var row2Right = localStorage.getItem('oura_row2_right') || '-1'; // None
+                // Get current layout configuration
+                var savedLayout = localStorage.getItem('oura_measurement_layout');
+                var layoutConfig = { left: '0', middle: '1', right: '2' }; // defaults
+                if (savedLayout) {
+                    try {
+                        layoutConfig = JSON.parse(savedLayout);
+                    } catch (e) {
+                        debugLog('⚠️ Error parsing saved layout, using defaults');
+                    }
+                }
                 
-                // Get other settings
+                // Get date format setting
                 var dateFormat = localStorage.getItem('oura_date_format') || '0';
+                
+                // Get theme mode setting
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
-                var showDebug = localStorage.getItem('oura_show_debug') === 'true';
-                var refreshFrequency = localStorage.getItem('oura_refresh_frequency') || '15';
-                var customColorIndex = localStorage.getItem('oura_custom_color_index') || '0';
                 
                 var settings = { 
                     oura_access_token: token,
-                    layout_rows: parseInt(layoutRows),
-                    row1_left: parseInt(row1Left),
-                    row1_middle: parseInt(row1Middle),
-                    row1_right: parseInt(row1Right),
-                    row2_left: parseInt(row2Left),
-                    row2_middle: parseInt(row2Middle),
-                    row2_right: parseInt(row2Right),
+                    layout_left: parseInt(layoutConfig.left),
+                    layout_middle: parseInt(layoutConfig.middle),
+                    layout_right: parseInt(layoutConfig.right),
                     date_format: parseInt(dateFormat),
-                    theme_mode: parseInt(themeMode),
-                    show_debug: showDebug,
-                    refresh_frequency: parseInt(refreshFrequency),
-                    custom_color_index: parseInt(customColorIndex)
+                    theme_mode: parseInt(themeMode)
                 };
                 var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
                 
                 debugLog('📱 Sending settings to Pebble:');
                 debugLog('Token: ' + token.substring(0, 10) + '...' + token.substring(token.length - 6));
-                debugLog('Layout Rows: ' + layoutRows);
-                debugLog('Row 1: L=' + row1Left + ' M=' + row1Middle + ' R=' + row1Right);
-                debugLog('Row 2: L=' + row2Left + ' M=' + row2Middle + ' R=' + row2Right);
-                debugLog('Theme Mode: ' + themeMode + ', Debug: ' + showDebug);
+                debugLog('Layout: L=' + layoutConfig.left + ' M=' + layoutConfig.middle + ' R=' + layoutConfig.right);
                 debugLog('Settings: ' + JSON.stringify(settings));
                 debugLog('Return URL: ' + returnUrl);
                 
@@ -1430,277 +1289,7 @@
             updateDevPanel();
             renderTokenDetails();
             clearApiResults();
-            
-            // Initialize color picker and theme mode
-            initializeColorPicker();
-            loadSavedThemeMode();
-            
-            // Ensure color picker and row selectors are properly initialized
-            setTimeout(function() {
-                updateColorPickerVisibility();
-                updateRowSelectorsVisibility();
-                console.log('🔧 Post-initialization visibility updates complete');
-            }, 100);
         });
-        
-        // Color Picker Functions
-        var selectedColorHex = '#000000';
-        var selectedColorName = 'Black';
-        var selectedColorIndex = 0;
-        
-        function initializeColorPicker() {
-            console.log('🎨 Initializing color picker...');
-            
-            // Add theme mode change listener
-            var themeModeSelect = document.getElementById('theme-mode');
-            if (themeModeSelect) {
-                themeModeSelect.addEventListener('change', function() {
-                    console.log('🎨 Theme mode changed to:', this.value);
-                    saveThemeMode();
-                    updateColorPickerVisibility();
-                });
-            }
-            
-            // Add layout rows change listener
-            var layoutRowsSelect = document.getElementById('layout-rows');
-            if (layoutRowsSelect) {
-                layoutRowsSelect.addEventListener('change', function() {
-                    console.log('📊 Layout rows changed to:', this.value);
-                    saveLayoutRows();
-                    updateRowSelectorsVisibility();
-                });
-                // Load saved value
-                var savedRows = localStorage.getItem('oura_layout_rows') || '1';
-                layoutRowsSelect.value = savedRows;
-                console.log('📊 Loaded saved rows:', savedRows);
-                
-                // Show row 2 selectors if 2-row layout is selected
-                updateRowSelectorsVisibility();
-            }
-            
-            // Load saved position values
-            loadSavedPositions();
-        }
-        
-        // Load saved position values into dropdowns
-        function loadSavedPositions() {
-            // Load row 1 positions
-            var row1Left = localStorage.getItem('oura_row1_left') || '0';
-            var row1Middle = localStorage.getItem('oura_row1_middle') || '1';
-            var row1Right = localStorage.getItem('oura_row1_right') || '2';
-            
-            var row1LeftSelect = document.getElementById('row1-left');
-            var row1MiddleSelect = document.getElementById('row1-middle');
-            var row1RightSelect = document.getElementById('row1-right');
-            
-            if (row1LeftSelect) row1LeftSelect.value = row1Left;
-            if (row1MiddleSelect) row1MiddleSelect.value = row1Middle;
-            if (row1RightSelect) row1RightSelect.value = row1Right;
-            
-            // Load row 2 positions
-            var row2Left = localStorage.getItem('oura_row2_left') || '3';
-            var row2Middle = localStorage.getItem('oura_row2_middle') || '4';
-            var row2Right = localStorage.getItem('oura_row2_right') || '-1';
-            
-            var row2LeftSelect = document.getElementById('row2-left');
-            var row2MiddleSelect = document.getElementById('row2-middle');
-            var row2RightSelect = document.getElementById('row2-right');
-            
-            if (row2LeftSelect) row2LeftSelect.value = row2Left;
-            if (row2MiddleSelect) row2MiddleSelect.value = row2Middle;
-            if (row2RightSelect) row2RightSelect.value = row2Right;
-            
-            console.log('📊 Loaded saved positions:');
-            console.log('📊 Row 1: L=' + row1Left + ' M=' + row1Middle + ' R=' + row1Right);
-            console.log('📊 Row 2: L=' + row2Left + ' M=' + row2Middle + ' R=' + row2Right);
-        }
-        
-        // Save layout rows setting
-        function saveLayoutRows() {
-            var layoutRowsSelect = document.getElementById('layout-rows');
-            if (layoutRowsSelect) {
-                localStorage.setItem('oura_layout_rows', layoutRowsSelect.value);
-                var rowText = layoutRowsSelect.value === '1' ? '1 Row (larger emojis)' : '2 Rows (smaller emojis)';
-                debugLog('📐 Layout rows saved: ' + rowText);
-                
-                // Show/hide row 2 selectors based on selection
-                var row2Selectors = document.getElementById('row2-selectors');
-                if (row2Selectors) {
-                    if (layoutRowsSelect.value === '2') {
-                        row2Selectors.style.display = 'grid';
-                        console.log('✅ Row 2 selectors shown');
-                    } else {
-                        row2Selectors.style.display = 'none';
-                        console.log('✅ Row 2 selectors hidden');
-                    }
-                }
-            }
-        }
-        
-        // Load saved theme mode setting
-        function loadSavedThemeMode() {
-            var savedThemeMode = localStorage.getItem('oura_theme_mode');
-            var themeModeSelect = document.getElementById('theme-mode');
-            console.log('🎨 Loading theme mode, saved value:', savedThemeMode);
-            
-            if (themeModeSelect) {
-                // Default to dark mode (0) if no saved value
-                themeModeSelect.value = savedThemeMode !== null ? savedThemeMode : '0';
-                console.log('🎨 Theme mode dropdown set to:', themeModeSelect.value);
-                
-                // Initialize color picker if custom color mode is selected
-                if (themeModeSelect.value === '2') {
-                    console.log('🌈 Custom color mode detected, showing picker...');
-                    setTimeout(function() {
-                        showColorPicker();
-                    }, 200);
-                } else {
-                    console.log('🌈 Not custom color mode, hiding picker');
-                    hideColorPicker();
-                }
-            }
-        }
-        
-        // Show color picker
-        function showColorPicker() {
-            var colorSection = document.getElementById('color-picker-section');
-            if (colorSection) {
-                colorSection.style.display = 'block';
-                console.log('✅ Color picker section is now visible');
-            } else {
-                console.log('❌ Color picker section not found');
-            }
-        }
-        
-        // Hide color picker
-        function hideColorPicker() {
-            var colorSection = document.getElementById('color-picker-section');
-            if (colorSection) {
-                colorSection.style.display = 'none';
-                console.log('✅ Color picker section is now hidden');
-            }
-        }
-        
-        // Save theme mode setting
-        function saveThemeMode() {
-            var themeMode = document.getElementById('theme-mode').value;
-            localStorage.setItem('oura_theme_mode', themeMode);
-            console.log('💾 Saved theme mode:', themeMode);
-            
-            // Update color picker visibility
-            updateColorPickerVisibility();
-            
-            // Send to Pebble immediately
-            sendDataToWatch();
-        }
-        
-        function updateColorPickerVisibility() {
-            var themeMode = document.getElementById('theme-mode').value;
-            var colorPickerSection = document.getElementById('color-picker-section');
-            
-            console.log('🎨 Updating color picker visibility for theme mode:', themeMode);
-            
-            if (colorPickerSection) {
-                if (themeMode === '2') { // Custom Color
-                    colorPickerSection.style.display = 'block';
-                    console.log('🎨 Color picker shown');
-                    console.log('🌈 Showing color picker for custom color mode');
-                    showColorPicker();
-                } else {
-                    colorPickerSection.style.display = 'none';
-                    console.log('🎨 Color picker hidden');
-                    console.log('🌈 Hiding color picker for standard mode');
-                    hideColorPicker();
-                }
-            } else {
-                console.error('❌ Color picker section not found!');
-            }
-        }
-        
-        function updateRowSelectorsVisibility() {
-            var layoutRows = document.getElementById('layout-rows').value;
-            var row2Selectors = document.getElementById('row2-selectors');
-            
-            console.log('📊 Updating row selectors visibility for rows:', layoutRows);
-            
-            if (row2Selectors) {
-                if (layoutRows === '2') {
-                    row2Selectors.style.display = 'grid';
-                    console.log('📊 Row 2 selectors shown');
-                } else {
-                    row2Selectors.style.display = 'none';
-                    console.log('📊 Row 2 selectors hidden');
-                }
-            } else {
-                console.error('❌ Row 2 selectors not found!');
-            }
-        }
-        
-        function testColorPicker() {
-            console.log('🧪 Manual color picker test triggered');
-            var colorSection = document.getElementById('color-picker-section');
-            if (colorSection) {
-                colorSection.style.display = 'block';
-                console.log('✅ Color picker section is now visible');
-            } else {
-                console.log('❌ Color picker section not found');
-            }
-        }
-        
-        function selectColor(hex, name, colorIndex) {
-            selectedColorHex = hex;
-            selectedColorName = name;
-            selectedColorIndex = colorIndex;
-            
-            // Update preview
-            var preview = document.getElementById('color-preview');
-            var colorName = document.getElementById('selected-color-name');
-            
-            if (preview) {
-                preview.style.background = hex;
-                // Automatic contrast detection based on luminance
-                var textColor = getContrastColor(hex);
-                preview.style.color = textColor;
-            }
-            
-            if (colorName) {
-                colorName.textContent = name;
-            }
-            
-            console.log('🎨 Color selected:', name, hex, 'Index:', selectedColorIndex);
-        }
-        
-        // Calculate optimal text color for contrast based on background luminance
-        function getContrastColor(hexColor) {
-            // Convert hex to RGB
-            var r = parseInt(hexColor.substr(1, 2), 16);
-            var g = parseInt(hexColor.substr(3, 2), 16);
-            var b = parseInt(hexColor.substr(5, 2), 16);
-            
-            // Calculate luminance using standard formula
-            var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            
-            // Return white text for dark backgrounds, black text for light backgrounds
-            return luminance > 0.5 ? '#000000' : '#ffffff';
-        }
-        
-        function applySelectedColor() {
-            // Store the selected color
-            localStorage.setItem('oura_custom_color_index', selectedColorIndex.toString());
-            localStorage.setItem('oura_custom_color_hex', selectedColorHex);
-            localStorage.setItem('oura_custom_color_name', selectedColorName);
-            
-            console.log('🎨 Applying color:', selectedColorName, selectedColorHex, 'Index:', selectedColorIndex);
-            debugLog('🎨 Custom color applied: ' + selectedColorName + ' (' + selectedColorHex + ')');
-            
-            // Send to watchface immediately
-            var token = localStorage.getItem('oura_access_token');
-            if (token) {
-                sendToPebble(token);
-            } else {
-                debugLog('⚠️ No token found - color will be applied when watchface is configured');
-            }
-        }
     </script>
 </body>
 </html>

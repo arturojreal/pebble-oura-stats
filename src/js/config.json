@@ -73,6 +73,168 @@
             "value": 1
           }
         ]
+      },
+      {
+        "type": "select",
+        "messageKey": "layout_rows",
+        "label": "Layout Rows",
+        "description": "Choose 1 or 2 rows of complications",
+        "defaultValue": 1,
+        "options": [
+          {
+            "label": "1 Row (3 complications)",
+            "value": 1
+          },
+          {
+            "label": "2 Rows (2-3 complications each)",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "row1_left",
+        "label": "Row 1 - Left",
+        "description": "Choose left complication for row 1",
+        "defaultValue": 0,
+        "options": [
+          {
+            "label": "💤 Readiness",
+            "value": 0
+          },
+          {
+            "label": "🛏️ Sleep",
+            "value": 1
+          },
+          {
+            "label": "❤️ Heart Rate",
+            "value": 2
+          },
+          {
+            "label": "🔥 Activity",
+            "value": 3
+          },
+          {
+            "label": "😰 Stress",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "row1_middle",
+        "label": "Row 1 - Middle",
+        "description": "Choose middle complication for row 1",
+        "defaultValue": 1,
+        "options": [
+          {
+            "label": "💤 Readiness",
+            "value": 0
+          },
+          {
+            "label": "🛏️ Sleep",
+            "value": 1
+          },
+          {
+            "label": "❤️ Heart Rate",
+            "value": 2
+          },
+          {
+            "label": "🔥 Activity",
+            "value": 3
+          },
+          {
+            "label": "😰 Stress",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "row1_right",
+        "label": "Row 1 - Right",
+        "description": "Choose right complication for row 1",
+        "defaultValue": 2,
+        "options": [
+          {
+            "label": "💤 Readiness",
+            "value": 0
+          },
+          {
+            "label": "🛏️ Sleep",
+            "value": 1
+          },
+          {
+            "label": "❤️ Heart Rate",
+            "value": 2
+          },
+          {
+            "label": "🔥 Activity",
+            "value": 3
+          },
+          {
+            "label": "😰 Stress",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "row2_left",
+        "label": "Row 2 - Left",
+        "description": "Choose left complication for row 2 (only if 2 rows selected)",
+        "defaultValue": 3,
+        "options": [
+          {
+            "label": "💤 Readiness",
+            "value": 0
+          },
+          {
+            "label": "🛏️ Sleep",
+            "value": 1
+          },
+          {
+            "label": "❤️ Heart Rate",
+            "value": 2
+          },
+          {
+            "label": "🔥 Activity",
+            "value": 3
+          },
+          {
+            "label": "😰 Stress",
+            "value": 4
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "messageKey": "row2_right",
+        "label": "Row 2 - Right",
+        "description": "Choose right complication for row 2 (only if 2 rows selected)",
+        "defaultValue": 4,
+        "options": [
+          {
+            "label": "💤 Readiness",
+            "value": 0
+          },
+          {
+            "label": "🛏️ Sleep",
+            "value": 1
+          },
+          {
+            "label": "❤️ Heart Rate",
+            "value": 2
+          },
+          {
+            "label": "🔥 Activity",
+            "value": 3
+          },
+          {
+            "label": "😰 Stress",
+            "value": 4
+          }
+        ]
       }
     ]
   },
