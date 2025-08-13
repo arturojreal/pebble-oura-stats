@@ -46,6 +46,11 @@
       "sleep_score",
       "total_sleep_time",
       "deep_sleep_time",
+      "activity_score",
+      "active_calories",
+      "steps",
+      "stress_duration",
+      "stress_high_duration",
       "data_available",
       "last_updated",
       "error",
@@ -53,7 +58,15 @@
       "layout_middle",
       "layout_right",
       "date_format",
-      "theme_mode"
+      "theme_mode",
+      "custom_color_index",
+      "layout_rows",
+      "row1_left",
+      "row1_middle",
+      "row1_right",
+      "row2_left",
+      "row2_middle",
+      "row2_right"
     ],
     "resources": {
       "media": []
