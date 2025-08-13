@@ -1,0 +1,18 @@
+[build]
+  publish = "."
+  functions = "./netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = []
+  included_files = []
+
+# Cache control headers to prevent stale content
+[[headers]]
+  for = "/pebble-static-config.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Netlify-CDN-Cache-Control = "public, max-age=0, must-revalidate"
+
+# Optional: set Node runtime (Netlify defaults to a recent LTS)
+# [functions."*"].node_bundler = "esbuild"
