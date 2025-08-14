@@ -212,7 +212,7 @@ function loadCachedScores() {
       if (settings.show_loading !== undefined && settings.show_loading !== null) {
         try {
           var sl = (settings.show_loading === true || settings.show_loading === 1 || settings.show_loading === '1');
-          localStorage.setItem('oura_show_loading', sl ? 'true' : 'false');
+          localStorage.setItem('oura_show_loading', sl ? '1' : '0'); // Use '1'/'0' format to match config page
           console.log('💾 show_loading stored:', sl);
           // Send immediately to watchface
           Pebble.sendAppMessage({ 'show_loading': sl ? 1 : 0 }, function() {
@@ -1324,8 +1324,18 @@ function sendDataToWatch(data) {
       flatData.layout_middle = (layoutConfig.middle !== undefined && layoutConfig.middle !== null) ? parseInt(layoutConfig.middle) : 1;
       flatData.layout_right = (layoutConfig.right !== undefined && layoutConfig.right !== null) ? parseInt(layoutConfig.right) : 2;
       
+      // Add flexible layout fields for 2-row support
+      flatData.layout_rows = (layoutConfig.rows !== undefined && layoutConfig.rows !== null) ? parseInt(layoutConfig.rows) : 1;
+      flatData.row1_left = flatData.layout_left;
+      flatData.row1_middle = flatData.layout_middle;
+      flatData.row1_right = flatData.layout_right;
+      flatData.row2_left = (layoutConfig.row2_left !== undefined && layoutConfig.row2_left !== null) ? parseInt(layoutConfig.row2_left) : 3;
+      flatData.row2_right = (layoutConfig.row2_right !== undefined && layoutConfig.row2_right !== null) ? parseInt(layoutConfig.row2_right) : 4;
+      
       console.log('[oura] Sending layout config:', layoutConfig, '-> positions:', 
                   flatData.layout_left, flatData.layout_middle, flatData.layout_right);
+      console.log('[oura] Sending flexible layout: rows=' + flatData.layout_rows + 
+                  ', row2_left=' + flatData.row2_left + ', row2_right=' + flatData.row2_right);
     } catch (e) {
       console.log('[oura] Error parsing layout config, using defaults:', e);
       // Default layout: readiness-sleep-heart_rate
@@ -1375,11 +1385,12 @@ function sendDataToWatch(data) {
   // Include show_loading preference so watchface can control overlay per refresh
   try {
     var showLoadingPref = localStorage.getItem('oura_show_loading');
-    var showLoading = (showLoadingPref === null || showLoadingPref === undefined) ? true : (showLoadingPref === 'true' || showLoadingPref === 1 || showLoadingPref === '1');
+    // Config page stores '1'/'0', default to '0' (false) if not set
+    var showLoading = (showLoadingPref === '1');
     flatData.show_loading = showLoading ? 1 : 0;
     console.log('[oura] Sending show_loading:', flatData.show_loading);
   } catch (e) {
-    flatData.show_loading = 1;
+    flatData.show_loading = 0; // Default to false (no loading screen)
   }
   
   // Heart rate data
@@ -1545,15 +1556,16 @@ Pebble.addEventListener('ready', function() {
   
   // Load configuration settings
   loadConfigSettings();
-  // Load show_loading preference (defaults to true)
+  // Load show_loading preference (defaults to false)
   try {
     var storedShowLoading = localStorage.getItem('oura_show_loading');
     if (typeof CONFIG_SETTINGS !== 'undefined') {
-      CONFIG_SETTINGS.show_loading = (storedShowLoading === null || storedShowLoading === undefined) ? true : (storedShowLoading === 'true' || storedShowLoading === 1 || storedShowLoading === '1');
+      // Config page stores '1'/'0', default to false if not set
+      CONFIG_SETTINGS.show_loading = (storedShowLoading === '1');
     }
   } catch (e) {
-    console.log('Error loading show_loading, defaulting true', e);
-    if (typeof CONFIG_SETTINGS !== 'undefined') CONFIG_SETTINGS.show_loading = true;
+    console.log('Error loading show_loading, defaulting false', e);
+    if (typeof CONFIG_SETTINGS !== 'undefined') CONFIG_SETTINGS.show_loading = false;
   }
   
   if (CONFIG_SETTINGS.show_debug) {
@@ -1563,7 +1575,8 @@ Pebble.addEventListener('ready', function() {
   // Immediately send show_loading preference to the watchface
   try {
     var slPref = localStorage.getItem('oura_show_loading');
-    var slVal = (slPref === null || slPref === undefined) ? true : (slPref === 'true' || slPref === 1 || slPref === '1');
+    // Config page stores '1'/'0', default to false if not set
+    var slVal = (slPref === '1');
     CONFIG_SETTINGS.show_loading = slVal;
     Pebble.sendAppMessage({ 'show_loading': slVal ? 1 : 0 }, function() {
       console.log('✅ Initial show_loading sent:', slVal ? 1 : 0);
@@ -1592,7 +1605,8 @@ Pebble.addEventListener('appmessage', function(e) {
     // Ensure show_loading is sent right before data fetch cycle
     try {
       var slPrefNow = localStorage.getItem('oura_show_loading');
-      var slNow = (slPrefNow === null || slPrefNow === undefined) ? true : (slPrefNow === 'true' || slPrefNow === 1 || slPrefNow === '1');
+      // Config page stores '1'/'0', default to false if not set
+      var slNow = (slPrefNow === '1');
       Pebble.sendAppMessage({ 'show_loading': slNow ? 1 : 0 }, function() {
         console.log('✅ show_loading re-sent on request_data:', slNow ? 1 : 0);
       }, function(err) {
@@ -1659,9 +1673,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
         var layoutConfig = {
           left: settings.layout_left.toString(),
           middle: settings.layout_middle.toString(),
-          right: settings.layout_right.toString()
+          right: settings.layout_right.toString(),
+          // Add flexible layout fields from config page
+          rows: (settings.layout_rows !== undefined && settings.layout_rows !== null) ? settings.layout_rows.toString() : '1',
+          row2_left: (settings.row2_left !== undefined && settings.row2_left !== null) ? settings.row2_left.toString() : '3',
+          row2_right: (settings.row2_right !== undefined && settings.row2_right !== null) ? settings.row2_right.toString() : '4'
         };
         console.log('💾 Storing layout config:', JSON.stringify(layoutConfig));
+        console.log('🔍 Flexible layout fields - rows:', layoutConfig.rows, 'row2_left:', layoutConfig.row2_left, 'row2_right:', layoutConfig.row2_right);
         localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
         console.log('✅ Layout configuration stored in localStorage');
         sendDebugStatus('Layout config stored');

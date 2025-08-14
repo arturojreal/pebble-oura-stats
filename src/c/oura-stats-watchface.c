@@ -1,9 +1,9 @@
 #include <pebble.h>
 
 // =============================================================================
-// OURA STATS WATCHFACE - MODULAR DESIGN
+// OURA STATS WATCHFACE by Arturo J. Real
 // =============================================================================
-// Layout: Time (center top), Heart Rate (bottom left), 
+// Default Layout: Time (center top), Heart Rate (bottom left), 
 //         Activity (bottom center), Sleep (bottom right)
 // API: Oura Ring API v2
 // =============================================================================
@@ -44,7 +44,8 @@ static AppTimer *s_debug_timer = NULL;
 static bool s_real_data_received = false;
 static bool s_loading = true;
 static AppTimer *s_loading_hide_timer = NULL;
-static bool s_show_loading = true; // Controls whether to show the loading overlay on refresh (configurable from JS)
+static bool s_show_loading = false; // Controls whether to show the loading overlay on refresh (configurable from JS)
+static bool s_initial_startup = true; // Skip loading screen on first startup until JS sends preference
 // becomes true when any real data or payload_complete received
 static bool s_fetch_completed = false;
 
@@ -53,6 +54,9 @@ static bool s_fetch_completed = false;
 static int s_layout_left = 0;    // Default: readiness
 static int s_layout_middle = 1;  // Default: sleep
 static int s_layout_right = 2;   // Default: heart_rate
+static int s_layout_rows = 1;    // Default: 1 row
+static int s_layout_row2_left = 3;   // Default: activity
+static int s_layout_row2_right = 4;  // Default: stress
 
 // Date format configuration
 // 0=MM-DD-YYYY, 1=DD-MM-YYYY
@@ -277,6 +281,104 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 // DYNAMIC LAYOUT SYSTEM
 // =============================================================================
 
+// Dynamic layout positioning function
+static void apply_dynamic_layout_positioning() {
+  if (!s_window) return; // Safety check
+  
+  Layer *window_layer = window_get_root_layer(s_window);
+  GRect bounds = layer_get_bounds(window_layer);
+  
+  if (s_layout_rows == 1) {
+    // 1-row mode: Large complications, normal positioning
+    int row1_y_value = bounds.size.h - 79;  // Original position
+    int row1_y_emoji = bounds.size.h - 59;  // Original emoji position
+    
+    // Update row 1 positions (large size)
+    layer_set_frame(text_layer_get_layer(s_readiness_layer), 
+                    GRect(0, row1_y_value, bounds.size.w/3, 24));
+    layer_set_frame(text_layer_get_layer(s_readiness_label_layer), 
+                    GRect(0, row1_y_emoji, bounds.size.w/3, 24));
+    
+    layer_set_frame(text_layer_get_layer(s_sleep_layer), 
+                    GRect(bounds.size.w/3, row1_y_value, bounds.size.w/3, 24));
+    layer_set_frame(text_layer_get_layer(s_sleep_label_layer), 
+                    GRect(bounds.size.w/3, row1_y_emoji, bounds.size.w/3, 24));
+    
+    layer_set_frame(text_layer_get_layer(s_heart_rate_layer), 
+                    GRect(2*bounds.size.w/3, row1_y_value, bounds.size.w/3, 24));
+    layer_set_frame(text_layer_get_layer(s_heart_rate_label_layer), 
+                    GRect(2*bounds.size.w/3, row1_y_emoji, bounds.size.w/3, 24));
+    
+    // Set large fonts for 1-row mode
+    text_layer_set_font(s_readiness_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_readiness_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_sleep_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_sleep_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_heart_rate_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_font(s_heart_rate_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    
+    // Hide row 2
+    layer_set_hidden(text_layer_get_layer(s_activity_layer), true);
+    layer_set_hidden(text_layer_get_layer(s_activity_label_layer), true);
+    layer_set_hidden(text_layer_get_layer(s_stress_layer), true);
+    layer_set_hidden(text_layer_get_layer(s_stress_label_layer), true);
+    
+  } else if (s_layout_rows == 2) {
+    // 2-row mode: Shrink row 1, move it up, add row 2 below, all same size
+    int row1_y_value = bounds.size.h - 90;  // Move row 1 up (moved down 1px)
+    int row1_y_emoji = bounds.size.h - 75;  // Move row 1 emoji up (moved down 1px)
+    int row2_y_value = bounds.size.h - 50;  // Row 2 position (moved down 1px)
+    int row2_y_emoji = bounds.size.h - 35;  // Row 2 emoji position (moved down 1px)
+    
+    // Update row 1 positions (smaller size, moved up)
+    layer_set_frame(text_layer_get_layer(s_readiness_layer), 
+                    GRect(0, row1_y_value, bounds.size.w/3, 20));
+    layer_set_frame(text_layer_get_layer(s_readiness_label_layer), 
+                    GRect(0, row1_y_emoji, bounds.size.w/3, 20));
+    
+    layer_set_frame(text_layer_get_layer(s_sleep_layer), 
+                    GRect(bounds.size.w/3, row1_y_value, bounds.size.w/3, 20));
+    layer_set_frame(text_layer_get_layer(s_sleep_label_layer), 
+                    GRect(bounds.size.w/3, row1_y_emoji, bounds.size.w/3, 20));
+    
+    layer_set_frame(text_layer_get_layer(s_heart_rate_layer), 
+                    GRect(2*bounds.size.w/3, row1_y_value, bounds.size.w/3, 20));
+    layer_set_frame(text_layer_get_layer(s_heart_rate_label_layer), 
+                    GRect(2*bounds.size.w/3, row1_y_emoji, bounds.size.w/3, 20));
+    
+    // Update row 2 positions (same size as shrunken row 1)
+    layer_set_frame(text_layer_get_layer(s_activity_layer), 
+                    GRect(0, row2_y_value, bounds.size.w/2, 20));
+    layer_set_frame(text_layer_get_layer(s_activity_label_layer), 
+                    GRect(0, row2_y_emoji, bounds.size.w/2, 20));
+    
+    layer_set_frame(text_layer_get_layer(s_stress_layer), 
+                    GRect(bounds.size.w/2, row2_y_value, bounds.size.w/2, 20));
+    layer_set_frame(text_layer_get_layer(s_stress_label_layer), 
+                    GRect(bounds.size.w/2, row2_y_emoji, bounds.size.w/2, 20));
+    
+    // Show row 2
+    layer_set_hidden(text_layer_get_layer(s_activity_layer), false);
+    layer_set_hidden(text_layer_get_layer(s_activity_label_layer), false);
+    layer_set_hidden(text_layer_get_layer(s_stress_layer), false);
+    layer_set_hidden(text_layer_get_layer(s_stress_label_layer), false);
+    
+    // Update fonts to smaller size for both rows
+    text_layer_set_font(s_readiness_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_readiness_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_sleep_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_sleep_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_heart_rate_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_heart_rate_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_activity_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_activity_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_stress_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+    text_layer_set_font(s_stress_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  }
+  
+  APP_LOG(APP_LOG_LEVEL_INFO, "Applied dynamic layout positioning: %d rows", s_layout_rows);
+}
+
 // Helper function to get the correct layer and buffer for a measurement type at a position
 static void update_measurement_at_position(int measurement_type, int position) {
   TextLayer *layer = NULL;
@@ -302,6 +404,16 @@ static void update_measurement_at_position(int measurement_type, int position) {
       layer = s_heart_rate_layer;
       label_layer = s_heart_rate_label_layer;
       buffer = s_heart_rate_buffer;
+      break;
+    case 3: // Row 2 Left position (using activity layers)
+      layer = s_activity_layer;
+      label_layer = s_activity_label_layer;
+      buffer = s_activity_buffer;
+      break;
+    case 4: // Row 2 Right position (using stress layers)
+      layer = s_stress_layer;
+      label_layer = s_stress_label_layer;
+      buffer = s_stress_buffer;
       break;
     default:
       return; // Invalid position
@@ -330,6 +442,27 @@ static void update_measurement_at_position(int measurement_type, int position) {
         value_text = value_buffer;
       } else if (s_fetch_completed) { value_text = "--"; }
       break;
+    case 3: // Activity
+      emoji_text = "🔥";
+      if (s_activity_data.data_available && s_activity_data.activity_score > 0) {
+        snprintf(value_buffer, sizeof(value_buffer), "%d", s_activity_data.activity_score);
+        value_text = value_buffer;
+      } else if (s_fetch_completed) { value_text = "--"; }
+      break;
+    case 4: // Stress
+      emoji_text = "😰";
+      if (s_stress_data.data_available) {
+        int total_minutes = s_stress_data.stress_duration / 60;
+        int hours = total_minutes / 60;
+        int minutes = total_minutes % 60;
+        if (hours > 0) {
+          snprintf(value_buffer, sizeof(value_buffer), "%dh %dm", hours, minutes);
+        } else {
+          snprintf(value_buffer, sizeof(value_buffer), "%dm", minutes);
+        }
+        value_text = value_buffer;
+      } else if (s_fetch_completed) { value_text = "--"; }
+      break;
   }
   
   // Update the display
@@ -347,6 +480,12 @@ static void update_all_measurements() {
   update_measurement_at_position(s_layout_left, 0);    // Left position
   update_measurement_at_position(s_layout_middle, 1);  // Middle position
   update_measurement_at_position(s_layout_right, 2);   // Right position
+  
+  // Update row 2 if visible
+  if (!layer_get_hidden(text_layer_get_layer(s_activity_layer))) {
+    update_measurement_at_position(s_layout_row2_left, 3);   // Row 2 Left position
+    update_measurement_at_position(s_layout_row2_right, 4);  // Row 2 Right position
+  }
 }
 
 // =============================================================================
@@ -366,35 +505,13 @@ static void update_sleep_display() {
 }
 
 static void update_activity_display() {
-  if (s_activity_data.data_available && s_activity_data.activity_score > 0) {
-    snprintf(s_activity_buffer, sizeof(s_activity_buffer), "%d", s_activity_data.activity_score);
-  } else {
-    snprintf(s_activity_buffer, sizeof(s_activity_buffer), "--");
-  }
-  
-  if (s_activity_layer) {
-    text_layer_set_text(s_activity_layer, s_activity_buffer);
-  }
+  // Use flexible layout system for activity display
+  update_all_measurements();
 }
 
 static void update_stress_display() {
-  if (s_stress_data.data_available) {
-    int total_minutes = s_stress_data.stress_duration / 60; // allow 0m
-    int hours = total_minutes / 60;
-    int minutes = total_minutes % 60;
-    
-    if (hours > 0) {
-      snprintf(s_stress_buffer, sizeof(s_stress_buffer), "%dh %dm", hours, minutes);
-    } else {
-      snprintf(s_stress_buffer, sizeof(s_stress_buffer), "%dm", minutes);
-    }
-  } else {
-    snprintf(s_stress_buffer, sizeof(s_stress_buffer), "--");
-  }
-  
-  if (s_stress_layer) {
-    text_layer_set_text(s_stress_layer, s_stress_buffer);
-  }
+  // Use flexible layout system for stress display
+  update_all_measurements();
 }
 
 // =============================================================================
@@ -403,10 +520,16 @@ static void update_stress_display() {
 
 static void request_oura_data() {
   // Request fresh data from JavaScript component
-  // If enabled, show loading overlay for this refresh
-  if (s_show_loading) {
+  // Show loading overlay if user has enabled it (allow on any refresh after initial startup)
+  if (s_show_loading && !s_initial_startup) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Showing loading overlay (user enabled, not initial startup)");
     show_loading_overlay();
+  } else if (s_show_loading && s_initial_startup) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Loading overlay enabled but skipping during initial startup");
+  } else {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Loading overlay disabled by user (show_loading: %d)", s_show_loading);
   }
+  
   DictionaryIterator *iter;
   app_message_outbox_begin(&iter);
   dict_write_uint8(iter, MESSAGE_KEY_request_data, 1);
@@ -536,29 +659,10 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(s_sample_indicator_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_sample_indicator_layer));
   
-  // Main measurements row (3 columns) - repositioned higher to make room for activity/stress
-  // Sleep (middle row left)
-  s_sleep_layer = text_layer_create(
-      GRect(0, bounds.size.h - 91, bounds.size.w/3, 25));
-  text_layer_set_background_color(s_sleep_layer, GColorClear);
-  text_layer_set_text_color(s_sleep_layer, get_text_color());
-  text_layer_set_font(s_sleep_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  text_layer_set_text_alignment(s_sleep_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_sleep_layer));
-  
-  // Sleep Label (emoji)
-  s_sleep_label_layer = text_layer_create(
-      GRect(0, bounds.size.h - 66, bounds.size.w/3, 20));
-  text_layer_set_background_color(s_sleep_label_layer, GColorClear);
-  text_layer_set_text_color(s_sleep_label_layer, get_text_color());
-  text_layer_set_font(s_sleep_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
-  text_layer_set_text_alignment(s_sleep_label_layer, GTextAlignmentCenter);
-  text_layer_set_text(s_sleep_label_layer, "😴");
-  layer_add_child(window_layer, text_layer_get_layer(s_sleep_label_layer));
-
-  // Readiness (middle row middle)
+  // Top row for readiness, sleep, heart rate (3 columns) - moved down 2px, size up 20%
+  // Readiness (top row left)
   s_readiness_layer = text_layer_create(
-      GRect(bounds.size.w/3, bounds.size.h - 91, bounds.size.w/3, 25));
+      GRect(0, bounds.size.h - 79, bounds.size.w/3, 24));
   text_layer_set_background_color(s_readiness_layer, GColorClear);
   text_layer_set_text_color(s_readiness_layer, get_text_color());
   text_layer_set_font(s_readiness_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
@@ -567,17 +671,36 @@ static void window_load(Window *window) {
 
   // Readiness Label (emoji)
   s_readiness_label_layer = text_layer_create(
-      GRect(bounds.size.w/3, bounds.size.h - 66, bounds.size.w/3, 20));
+      GRect(0, bounds.size.h - 59, bounds.size.w/3, 24));
   text_layer_set_background_color(s_readiness_label_layer, GColorClear);
   text_layer_set_text_color(s_readiness_label_layer, get_text_color());
-  text_layer_set_font(s_readiness_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_font(s_readiness_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_text_alignment(s_readiness_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_readiness_label_layer, "🎉");
   layer_add_child(window_layer, text_layer_get_layer(s_readiness_label_layer));
 
-  // Heart Rate (middle row right)
+  // Sleep (top row middle)
+  s_sleep_layer = text_layer_create(
+      GRect(bounds.size.w/3, bounds.size.h - 79, bounds.size.w/3, 24));
+  text_layer_set_background_color(s_sleep_layer, GColorClear);
+  text_layer_set_text_color(s_sleep_layer, get_text_color());
+  text_layer_set_font(s_sleep_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_alignment(s_sleep_layer, GTextAlignmentCenter);
+  layer_add_child(window_layer, text_layer_get_layer(s_sleep_layer));
+
+  // Sleep Label (emoji)
+  s_sleep_label_layer = text_layer_create(
+      GRect(bounds.size.w/3, bounds.size.h - 59, bounds.size.w/3, 24));
+  text_layer_set_background_color(s_sleep_label_layer, GColorClear);
+  text_layer_set_text_color(s_sleep_label_layer, get_text_color());
+  text_layer_set_font(s_sleep_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_alignment(s_sleep_label_layer, GTextAlignmentCenter);
+  text_layer_set_text(s_sleep_label_layer, "😴");
+  layer_add_child(window_layer, text_layer_get_layer(s_sleep_label_layer));
+
+  // Heart Rate (top row right)
   s_heart_rate_layer = text_layer_create(
-      GRect(2*bounds.size.w/3, bounds.size.h - 91, bounds.size.w/3, 25));
+      GRect(2*bounds.size.w/3, bounds.size.h - 79, bounds.size.w/3, 24));
   text_layer_set_background_color(s_heart_rate_layer, GColorClear);
   text_layer_set_text_color(s_heart_rate_layer, get_text_color());
   text_layer_set_font(s_heart_rate_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
@@ -586,15 +709,15 @@ static void window_load(Window *window) {
 
   // Heart Rate Label (emoji)
   s_heart_rate_label_layer = text_layer_create(
-      GRect(2*bounds.size.w/3, bounds.size.h - 66, bounds.size.w/3, 20));
+      GRect(2*bounds.size.w/3, bounds.size.h - 59, bounds.size.w/3, 24));
   text_layer_set_background_color(s_heart_rate_label_layer, GColorClear);
   text_layer_set_text_color(s_heart_rate_label_layer, get_text_color());
-  text_layer_set_font(s_heart_rate_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_font(s_heart_rate_label_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_text_alignment(s_heart_rate_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_heart_rate_label_layer, "❤");
   layer_add_child(window_layer, text_layer_get_layer(s_heart_rate_label_layer));
 
-  // Bottom row for activity and stress (2 columns) - moved up by 1 pixel
+  // Bottom row for activity and stress (2 columns) - HIDDEN BY DEFAULT (1-row layout)
   // Activity (bottom row left)
   s_activity_layer = text_layer_create(
       GRect(0, bounds.size.h - 41, bounds.size.w/2, 20));
@@ -603,6 +726,7 @@ static void window_load(Window *window) {
   text_layer_set_font(s_activity_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_activity_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_activity_layer));
+  layer_set_hidden(text_layer_get_layer(s_activity_layer), true); // Hidden by default
 
   // Activity Label (emoji)
   s_activity_label_layer = text_layer_create(
@@ -613,6 +737,7 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(s_activity_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_activity_label_layer, "🔥");
   layer_add_child(window_layer, text_layer_get_layer(s_activity_label_layer));
+  layer_set_hidden(text_layer_get_layer(s_activity_label_layer), true); // Hidden by default
 
   // Stress (bottom row right)
   s_stress_layer = text_layer_create(
@@ -622,6 +747,7 @@ static void window_load(Window *window) {
   text_layer_set_font(s_stress_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_text_alignment(s_stress_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_stress_layer));
+  layer_set_hidden(text_layer_get_layer(s_stress_layer), true); // Hidden by default
 
   // Stress Label (emoji)
   s_stress_label_layer = text_layer_create(
@@ -632,6 +758,7 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(s_stress_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_stress_label_layer, "😰");
   layer_add_child(window_layer, text_layer_get_layer(s_stress_label_layer));
+  layer_set_hidden(text_layer_get_layer(s_stress_label_layer), true); // Hidden by default
 
   // Loading overlay (top-most): deep green background with "Loading..." header and logs below
   s_loading_layer = layer_create(bounds);
@@ -658,15 +785,19 @@ static void window_load(Window *window) {
   text_layer_set_text(s_loading_logs_layer, "");
   layer_add_child(window_layer, text_layer_get_layer(s_loading_logs_layer));
   
-  // Ensure overlay visibility according to state
-  layer_set_hidden(s_loading_layer, !s_loading);
-  layer_set_hidden(text_layer_get_layer(s_loading_text_layer), !s_loading);
-  layer_set_hidden(text_layer_get_layer(s_loading_logs_layer), !s_loading);
+  // Initialize loading overlay as hidden by default, but don't force s_loading state
+  // The loading screen will be shown/hidden based on user preference and data requests
+  layer_set_hidden(s_loading_layer, true);
+  layer_set_hidden(text_layer_get_layer(s_loading_text_layer), true);
+  layer_set_hidden(text_layer_get_layer(s_loading_logs_layer), true);
 
   // We no longer want debug text on the main watchface; hide it permanently
   if (s_debug_layer) {
     layer_set_hidden(text_layer_get_layer(s_debug_layer), true);
   }
+  
+  // Apply initial dynamic layout positioning (defaults to 1-row layout)
+  apply_dynamic_layout_positioning();
 }
 
 static void loading_layer_update_proc(Layer *layer, GContext *ctx) {
@@ -838,6 +969,34 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     update_sleep_display();
   }
   
+  // Process flexible layout configuration (row 2 support)
+  Tuple *layout_rows_tuple = dict_find(iterator, MESSAGE_KEY_layout_rows);
+  Tuple *row2_left_tuple = dict_find(iterator, MESSAGE_KEY_row2_left);
+  Tuple *row2_right_tuple = dict_find(iterator, MESSAGE_KEY_row2_right);
+  
+  if (layout_rows_tuple) {
+    s_layout_rows = layout_rows_tuple->value->int32;
+    APP_LOG(APP_LOG_LEVEL_INFO, "Layout rows updated: %d", s_layout_rows);
+    
+    if (row2_left_tuple && row2_right_tuple) {
+      s_layout_row2_left = row2_left_tuple->value->int32;
+      s_layout_row2_right = row2_right_tuple->value->int32;
+      
+      APP_LOG(APP_LOG_LEVEL_INFO, "Row 2 config updated: L=%d R=%d", 
+              s_layout_row2_left, s_layout_row2_right);
+    }
+    
+    // Apply dynamic layout positioning based on row count
+    apply_dynamic_layout_positioning();
+    
+    // Update all displays to reflect new layout (including row positioning)
+    update_heart_rate_display();
+    update_readiness_display();
+    update_sleep_display();
+    update_activity_display();
+    update_stress_display();
+  }
+  
   // Process date format configuration
   Tuple *date_format_tuple = dict_find(iterator, MESSAGE_KEY_date_format);
   if (date_format_tuple) {
@@ -869,45 +1028,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   Tuple *show_loading_tuple = dict_find(iterator, MESSAGE_KEY_show_loading);
   if (show_loading_tuple) {
     s_show_loading = show_loading_tuple->value->int32 ? true : false;
-    APP_LOG(APP_LOG_LEVEL_INFO, "Show loading overlay setting: %d", s_show_loading);
-  }
-  
-  // Process flexible layout configuration
-  Tuple *layout_rows_tuple = dict_find(iterator, MESSAGE_KEY_layout_rows);
-  Tuple *row1_left_tuple = dict_find(iterator, MESSAGE_KEY_row1_left);
-  Tuple *row1_middle_tuple = dict_find(iterator, MESSAGE_KEY_row1_middle);
-  Tuple *row1_right_tuple = dict_find(iterator, MESSAGE_KEY_row1_right);
-  Tuple *row2_left_tuple = dict_find(iterator, MESSAGE_KEY_row2_left);
-  Tuple *row2_middle_tuple = dict_find(iterator, MESSAGE_KEY_row2_middle);
-  Tuple *row2_right_tuple = dict_find(iterator, MESSAGE_KEY_row2_right);
-  // Silence potential unused variable warnings until row2 support is wired to UI
-  (void)row2_left_tuple; (void)row2_middle_tuple; (void)row2_right_tuple;
-  
-  if (layout_rows_tuple && row1_left_tuple && row1_middle_tuple && row1_right_tuple) {
-    int layout_rows = layout_rows_tuple->value->int32;
-    int row1_left = row1_left_tuple->value->int32;
-    int row1_middle = row1_middle_tuple->value->int32;
-    int row1_right = row1_right_tuple->value->int32;
-    
-    APP_LOG(APP_LOG_LEVEL_INFO, "Flexible layout config received: %d rows", layout_rows);
-    APP_LOG(APP_LOG_LEVEL_INFO, "Row 1 layout: L=%d M=%d R=%d", row1_left, row1_middle, row1_right);
-    
-    // Apply flexible layout configuration to simple layout variables
-    s_layout_left = row1_left;
-    s_layout_middle = row1_middle;
-    s_layout_right = row1_right;
-    
-    APP_LOG(APP_LOG_LEVEL_INFO, "Applied flexible layout: L=%d M=%d R=%d", 
-            s_layout_left, s_layout_middle, s_layout_right);
-    
-    // Update all displays with new layout configuration
-    update_heart_rate_display();
-    update_readiness_display();
-    update_sleep_display();
-    update_activity_display();
-    update_stress_display();
-    
-    APP_LOG(APP_LOG_LEVEL_INFO, "All displays updated with new flexible layout");
+    s_initial_startup = false; // Initial startup complete, now respect user preference
+    APP_LOG(APP_LOG_LEVEL_INFO, "Show loading overlay setting: %d (initial startup complete)", s_show_loading);
   }
   
   // If we received any real data, hide the sample indicator
@@ -919,9 +1041,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   Tuple *payload_complete_tuple = dict_find(iterator, MESSAGE_KEY_payload_complete);
   if (payload_complete_tuple) {
     s_fetch_completed = true;
-    // Hold loading screen for 3 seconds to allow reading logs
-    if (s_loading_hide_timer) { app_timer_cancel(s_loading_hide_timer); }
-    s_loading_hide_timer = app_timer_register(3000, (AppTimerCallback) hide_loading_overlay, NULL);
+    // Always hide loading screen when data arrives, regardless of how it was shown
+    if (s_loading) {
+      // Hold loading screen for 2 seconds to allow reading logs
+      if (s_loading_hide_timer) { app_timer_cancel(s_loading_hide_timer); }
+      s_loading_hide_timer = app_timer_register(2000, (AppTimerCallback) hide_loading_overlay, NULL);
+    }
   }
   if (s_debug_timer) {
     app_timer_cancel(s_debug_timer);

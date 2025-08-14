@@ -10,8 +10,49 @@
             padding: 20px;
             max-width: 400px;
             margin: 0 auto;
-            background: #f5f5f5;
-            line-height: 1.4;
+            background-color: #f5f5f5;
+            color: #333;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .container {
+            background-color: #2a2a2a;
+        }
+        
+        body.dark-mode .section-box {
+            background-color: #333;
+            border-color: #555;
+        }
+        
+        body.dark-mode .tab-button {
+            background-color: #444;
+            color: #e0e0e0;
+            border-color: #666;
+        }
+        
+        body.dark-mode .tab-button.active {
+            background-color: #0066cc;
+        }
+        
+        body.dark-mode select, body.dark-mode input[type="checkbox"] {
+            background-color: #444;
+            color: #e0e0e0;
+            border-color: #666;
+        }
+        
+        body.dark-mode .connect-btn {
+            background-color: #0066cc;
+        }
+        
+        body.dark-mode .debug-log {
+            background-color: #222;
+            color: #ccc;
+            border-color: #555;
         }
         .container {
             background: white;
@@ -433,6 +474,15 @@
                     </div>
                     
                     <div style="margin: 15px 0;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">🌙 Config Page Theme:</label>
+                        <select id="config-theme" onchange="toggleConfigTheme()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="light">☀️ Light Mode</option>
+                            <option value="dark">🌙 Dark Mode</option>
+                        </select>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose the appearance of this configuration page</p>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
                         <label style="display: block; margin-bottom: 5px; font-weight: 500;">🎨 Theme Mode:</label>
                         <select id="theme-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                             <option value="0" selected>🌙 Dark Mode (Default)</option>
@@ -462,8 +512,8 @@
                     
                     <div style="margin: 15px 0;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="show-debug-watchface" checked style="margin-right: 10px;">
-                            <span>Show debug messages on watchface</span>
+                            <input type="checkbox" id="show-loading-screen" style="margin-right: 10px;">
+                            <span>Show loading screen</span>
                         </label>
                     </div>
                 </div>
@@ -472,13 +522,15 @@
                     <button onclick="applyMeasurementLayout()" class="connect-btn" style="width: auto; padding: 10px 20px;">Apply Layout</button>
                 </div>
                 
-                <!-- Future Customization Options -->
-                <div style="padding: 20px; background: #f8f9fa; border-radius: 6px; color: #6c757d; margin-top: 20px;">
-                    <strong>Coming Soon:</strong>
-                    <ul style="text-align: left; margin: 10px 0; padding-left: 20px; font-size: 14px;">
-                        <li>Font size options</li>
-                        <li>Custom emoji selection</li>
-                    </ul>
+                <!-- Coming Soon section commented out
+        <div>
+            <strong>Coming Soon:</strong>
+            <ul>
+                <li>Font size options</li>
+                <li>Custom emoji selection</li>
+            </ul>
+        </div>
+        -->
                 </div>
             </div>
         </div>
@@ -510,9 +562,9 @@
         // Toggle debug information visibility
         function toggleDebugVisibility() {
             var debugSection = document.querySelector('.debug-section');
-            var showDebug = document.getElementById('show-debug').checked;
+            var showLoading = document.getElementById('show-loading-screen').checked;
             
-            if (showDebug) {
+            if (showLoading) {
                 debugSection.style.display = 'block';
             } else {
                 debugSection.style.display = 'none';
@@ -717,6 +769,9 @@
                 
                 // Get theme mode setting
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
+                                
+                // Get show loading setting
+                var showLoading = localStorage.getItem('oura_show_loading') || '0';
                 
                 // Get custom color data if theme mode is custom color
                 var customColorData = null;
@@ -747,6 +802,7 @@
                     row2_right: parseInt(row2Right),
                     date_format: parseInt(dateFormat),
                     theme_mode: parseInt(themeMode),
+                    show_loading: parseInt(showLoading),
                     config_action: 'flexible_layout_update'
                 };
                 
@@ -924,6 +980,9 @@
                 // Get theme mode setting
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
                 
+                // Get show loading setting
+                var showLoading = localStorage.getItem('oura_show_loading') || '0';
+                
                 // Get custom color data if theme mode is custom color
                 var customColorData = null;
                 if (themeMode === '2') {
@@ -937,11 +996,17 @@
                     }
                 }
                 
-                var settings = { 
-                    oura_access_token: token,
+                var settings = {
+                    oura_token: token,
                     layout_left: parseInt(layoutConfig.left),
                     layout_middle: parseInt(layoutConfig.middle),
                     layout_right: parseInt(layoutConfig.right),
+                    layout_rows: parseInt(layoutConfig.rows),
+                    row1_left: parseInt(layoutConfig.left),
+                    row1_middle: parseInt(layoutConfig.middle),
+                    row1_right: parseInt(layoutConfig.right),
+                    row2_left: parseInt(layoutConfig.row2_left),
+                    row2_right: parseInt(layoutConfig.row2_right),
                     date_format: parseInt(dateFormat),
                     theme_mode: parseInt(themeMode)
                 };
@@ -957,7 +1022,9 @@
                 
                 debugLog('📱 Sending settings to Pebble:');
                 debugLog('Token: ' + token.substring(0, 10) + '...' + token.substring(token.length - 6));
-                debugLog('Layout: L=' + layoutConfig.left + ' M=' + layoutConfig.middle + ' R=' + layoutConfig.right);
+                debugLog('Layout Rows: ' + layoutConfig.rows);
+                debugLog('Row 1: L=' + layoutConfig.left + ' M=' + layoutConfig.middle + ' R=' + layoutConfig.right);
+                debugLog('Row 2: L=' + layoutConfig.row2_left + ' R=' + layoutConfig.row2_right);
                 debugLog('Settings: ' + JSON.stringify(settings));
                 debugLog('Return URL: ' + returnUrl);
                 
@@ -1281,11 +1348,11 @@
         // Initialize debug section as hidden by default
         function initializeDebugVisibility() {
             var debugSection = document.querySelector('.debug-section');
-            var showDebug = document.getElementById('show-debug').checked;
+            var showLoading = document.getElementById('show-loading-screen').checked;
             
             // Hide debug section by default
             if (debugSection) {
-                debugSection.style.display = showDebug ? 'block' : 'none';
+                debugSection.style.display = showLoading ? 'block' : 'none';
             }
         }
         
@@ -1353,6 +1420,26 @@
             }
         }
         
+        // Save show loading screen setting
+        function saveShowLoadingSetting() {
+            var showLoadingCheckbox = document.getElementById('show-loading-screen');
+            if (showLoadingCheckbox) {
+                localStorage.setItem('oura_show_loading', showLoadingCheckbox.checked ? '1' : '0');
+                debugLog('🔄 Show loading screen saved: ' + (showLoadingCheckbox.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+        
+        // Load saved show loading screen setting
+        function loadSavedShowLoadingSetting() {
+            var saved = localStorage.getItem('oura_show_loading');
+            var showLoadingCheckbox = document.getElementById('show-loading-screen');
+            if (showLoadingCheckbox) {
+                // Default to false (unchecked) if no setting saved
+                showLoadingCheckbox.checked = (saved === '1');
+                debugLog('🔄 Show loading screen loaded: ' + (showLoadingCheckbox.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+        
         // Initialize - PURE STATIC, NO DYNAMIC LOADING
         document.addEventListener('DOMContentLoaded', function() {
             // Update construction banner with current date
@@ -1370,6 +1457,9 @@
             // Load saved theme mode
             loadSavedThemeMode();
             
+            // Load saved show loading setting
+            loadSavedShowLoadingSetting();
+            
             // Add date format change listener
             var dateFormatSelect = document.getElementById('date-format');
             if (dateFormatSelect) {
@@ -1380,6 +1470,12 @@
             var themeModeSelect = document.getElementById('theme-mode');
             if (themeModeSelect) {
                 themeModeSelect.addEventListener('change', saveThemeMode);
+            }
+            
+            // Add show loading screen change listener
+            var showLoadingCheckbox = document.getElementById('show-loading-screen');
+            if (showLoadingCheckbox) {
+                showLoadingCheckbox.addEventListener('change', saveShowLoadingSetting);
             }
             
             // Add smart duplicate prevention event listeners
@@ -1406,7 +1502,8 @@
             
             // Always initialize UI subsystems regardless of auth state
             // Ensures color picker visibility/behavior, theme mode handling,
-            // and flexible layout controls work even when a token is present
+            // and flexible layout controls work
+            loadConfigTheme();
             initializeColorPicker();
             setupThemeModeHandler();
             setupFlexibleLayout();
@@ -1449,6 +1546,32 @@
             renderTokenDetails();
             clearApiResults();
         });
+        
+        // ===== CONFIG PAGE DARK MODE =====
+        
+        function toggleConfigTheme() {
+            var theme = document.getElementById('config-theme').value;
+            var body = document.body;
+            
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+            } else {
+                body.classList.remove('dark-mode');
+            }
+            
+            // Save preference
+            localStorage.setItem('config_page_theme', theme);
+            debugLog('🌙 Config page theme changed to: ' + theme);
+        }
+        
+        function loadConfigTheme() {
+            var savedTheme = localStorage.getItem('config_page_theme') || 'light';
+            document.getElementById('config-theme').value = savedTheme;
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        }
         
         // ===== COLOR PICKER FUNCTIONALITY =====
         
@@ -1751,18 +1874,21 @@
         
         // Set default flexible layout configuration
         function setDefaultFlexibleLayout() {
-            // Default: 1 row with Readiness, Sleep, Heart Rate
+            // Default: 1 row with Readiness, Sleep, Heart Rate (matches watchface C code defaults)
             document.getElementById('layout-rows').value = '1';
             document.getElementById('left-position').value = '0';  // Readiness
             document.getElementById('middle-position').value = '1';  // Sleep
             document.getElementById('right-position').value = '2';  // Heart Rate
             
-            // Default Row 2: Activity, Stress
+            // Default Row 2: Activity, Stress (only used when 2-row is selected)
             document.getElementById('row2-left-position').value = '3';  // Activity
             document.getElementById('row2-right-position').value = '4';  // Stress
             
+            // Hide row 2 selectors since default is 1 row
+            updateRowSelectorsVisibility();
+            
             saveLayoutConfiguration();
-            debugLog('📐 Set default flexible layout configuration');
+            debugLog('📐 Set default flexible layout configuration (1 row, 3 complications)');
         }
     </script>
 </body>
