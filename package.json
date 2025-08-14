@@ -52,6 +52,7 @@
       "stress_duration",
       "stress_high_duration",
       "data_available",
+      "payload_complete",
       "last_updated",
       "error",
       "layout_left",
@@ -67,6 +68,8 @@
       "row2_left",
       "row2_middle",
       "row2_right"
+      ,
+      "show_loading"
     ],
     "resources": {
       "media": []

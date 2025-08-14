@@ -6,6 +6,59 @@
 // Runs on phone, sends data to Pebble watch
 // =============================================================================
 
+// Debug logging control
+var DEBUG = true; // enable verbose console logs
+var WATCH_DEBUG = false; // do not spam watch debug layer unless explicitly enabled
+(function(){
+  var _log = console.log;
+  console.log = function() {
+    if (DEBUG) {
+      try { _log.apply(console, arguments); } catch (e) { /* older JS env */ _log(arguments && arguments[0]); }
+    }
+  };
+})();
+
+// -----------------------------------------------------------------------------
+// AppMessage queue: serialize sends and retry on transient errors
+// -----------------------------------------------------------------------------
+var MSG_MAX_RETRIES = 3;
+var MSG_RETRY_DELAY_MS = 250; // short backoff
+var ACTIVITY_SEND_DELAY_MS = 1000; // delay aggregated send slightly
+var g_msg_queue = [];
+var g_msg_sending = false;
+
+function enqueueMessage(payload, onSuccess, onError) {
+  g_msg_queue.push({ payload: payload, tries: 0, onSuccess: onSuccess, onError: onError });
+  processMessageQueue();
+}
+
+function processMessageQueue() {
+  if (g_msg_sending) return;
+  if (!g_msg_queue.length) return;
+  var item = g_msg_queue[0];
+  g_msg_sending = true;
+  Pebble.sendAppMessage(item.payload, function() {
+    console.log('[queue] sent ok:', item.payload);
+    g_msg_sending = false;
+    // pop and continue
+    g_msg_queue.shift();
+    if (item.onSuccess) { try { item.onSuccess(); } catch (e) {} }
+    processMessageQueue();
+  }, function(err) {
+    g_msg_sending = false;
+    item.tries += 1;
+    console.warn('[queue] send failed (try ' + item.tries + '):', err);
+    if (item.tries < MSG_MAX_RETRIES) {
+      setTimeout(function(){ processMessageQueue(); }, MSG_RETRY_DELAY_MS);
+    } else {
+      // give up on this message; drop it to unblock queue
+      g_msg_queue.shift();
+      if (item.onError) { try { item.onError(err); } catch (e) {} }
+      processMessageQueue();
+    }
+  });
+}
+
 // Cache management
 var CACHE_VERSION = 'v1';
 
@@ -135,6 +188,13 @@ function getYesterdayDate() {
 function loadCachedScores() {
   try {
     var today = getLocalDateString();
+    // One-time cache schema migration to purge stale activity caches
+    var schema = localStorage.getItem('oura_cache_schema');
+    if (schema !== '2') {
+      console.log('Migrating cache schema to v2: purging old oura_cached_scores');
+      localStorage.removeItem('oura_cached_scores');
+      localStorage.setItem('oura_cache_schema', '2');
+    }
     var cachedData = localStorage.getItem('oura_cached_scores');
     
     if (cachedData) {
@@ -147,17 +207,42 @@ function loadCachedScores() {
           g_cached_sleep_score = parseInt(data.sleep_score);
           console.log('Loaded cached sleep score:', g_cached_sleep_score);
         }
+
+      // Check if we got show_loading configuration
+      if (settings.show_loading !== undefined && settings.show_loading !== null) {
+        try {
+          var sl = (settings.show_loading === true || settings.show_loading === 1 || settings.show_loading === '1');
+          localStorage.setItem('oura_show_loading', sl ? 'true' : 'false');
+          console.log('💾 show_loading stored:', sl);
+          // Send immediately to watchface
+          Pebble.sendAppMessage({ 'show_loading': sl ? 1 : 0 }, function() {
+            console.log('✅ show_loading sent to watchface');
+          }, function(err) {
+            console.error('❌ Error sending show_loading:', err);
+          });
+        } catch (err) {
+          console.error('Error handling show_loading setting:', err);
+        }
+      }
         if (data.readiness_score) {
           g_cached_readiness_score = parseInt(data.readiness_score);
           console.log('Loaded cached readiness score:', g_cached_readiness_score);
         }
-        if (data.activity_score) {
+        // Only load activity if activity_date matches today
+        if (data.activity_score && data.activity_date === today) {
           g_cached_activity_score = parseInt(data.activity_score);
-          console.log('Loaded cached activity score:', g_cached_activity_score);
+          console.log('Loaded cached activity score for today:', g_cached_activity_score);
+        } else if (data.activity_score) {
+          console.log('Cached activity score date mismatch or missing activity_date, ignoring activity cache');
         }
         g_cache_date = data.cache_date;
       } else {
-        console.log('Cached data is from a different date, ignoring');
+        console.log('Cached data is from a different date, ignoring and clearing in-memory cached scores');
+        // Clear in-memory cached values to avoid reusing stale scores
+        g_cached_sleep_score = 0;
+        g_cached_readiness_score = 0;
+        g_cached_activity_score = 0;
+        g_cache_date = null;
       }
     } else {
       console.log('No cached scores found in localStorage');
@@ -171,19 +256,33 @@ function loadCachedScores() {
 function saveCachedScores() {
   try {
     var today = getLocalDateString();
-    
-    // Only save if we have at least one valid (non-zero) score
-    if (g_cached_sleep_score <= 0 && g_cached_readiness_score <= 0 && g_cached_activity_score <= 0) {
-      console.log('Not saving cache - no valid scores to save');
-      return;
+    // Start with existing cache if present to avoid clobbering unrelated fields
+    var existingRaw = localStorage.getItem('oura_cached_scores');
+    var data = {};
+    if (existingRaw) {
+      try {
+        data = JSON.parse(existingRaw) || {};
+      } catch (e) {
+        console.warn('Failed to parse existing cache, starting fresh');
+        data = {};
+      }
     }
-    
-    var data = {
-      sleep_score: g_cached_sleep_score,
-      readiness_score: g_cached_readiness_score,
-      activity_score: g_cached_activity_score,
-      cache_date: today  // Always use today's date when saving
-    };
+
+    // Always update sleep and readiness from current values
+    data.sleep_score = g_cached_sleep_score;
+    data.readiness_score = g_cached_readiness_score;
+
+    // Only update activity fields when we have an intentional activity update
+    if (g_cached_activity_score > 0 && g_cache_date) {
+      data.activity_score = g_cached_activity_score;
+      data.activity_date = g_cache_date;
+      console.log('Saving activity with date:', g_cache_date, 'score:', g_cached_activity_score);
+    } else {
+      console.log('Preserving existing activity in cache:', data.activity_date, data.activity_score);
+    }
+
+    // Cache-wide date for sleep/readiness; keep most recent cache date
+    data.cache_date = g_cache_date || today;
     
     console.log('Saving cached scores:', data);
     localStorage.setItem('oura_cached_scores', JSON.stringify(data));
@@ -266,8 +365,7 @@ function checkForConfigurationSettings() {
   } else {
     console.log('No valid token found, user needs to configure');
     sendDebugStatus('Please configure in Pebble app');
-    // Show sample data until configured
-    loadSampleData();
+    // Do not send sample data; leave watchface blank until configured
   }
 }
 
@@ -281,8 +379,7 @@ function handleExpiredToken() {
   localStorage.removeItem('oura_access_token');
   localStorage.removeItem('oura_token_expires');
   
-  // Show sample data until re-configured
-  loadSampleData();
+  // Do not send sample data; wait for reconfiguration
 }
 
 // =============================================================================
@@ -387,12 +484,32 @@ function fetchHeartRateData(token, callback) {
     }
     
     if (data && data.data && data.data.length > 0) {
-      var latestData = data.data[data.data.length - 1];
-      console.log('[oura] HR records:', data.data.length, 'latest keys:', Object.keys(latestData || {}));
-      sendDebugStatus('HR data found!');
+      // Use the latest heart rate sample of the day (most recent timestamp)
+      var latestIdx = -1;
+      var latestTs = 0;
+      var latestRmssd = 0;
+      for (var i = 0; i < data.data.length; i++) {
+        var rec = data.data[i];
+        if (!rec || typeof rec.bpm !== 'number') { continue; }
+        var t = 0;
+        if (rec.timestamp) {
+          var parsed = Date.parse(rec.timestamp);
+          if (!isNaN(parsed)) { t = parsed; }
+        }
+        // If timestamp missing/unparseable, prefer later items by index
+        if (t === 0) { t = i; }
+        if (t >= latestTs) {
+          latestTs = t;
+          latestIdx = i;
+          latestRmssd = (typeof rec.rmssd === 'number') ? rec.rmssd : latestRmssd;
+        }
+      }
+      var latestBpm = (latestIdx >= 0) ? Math.round(data.data[latestIdx].bpm) : 0;
+      console.log('[oura] HR records:', data.data.length, 'latest bpm:', latestBpm, 'latest rmssd:', latestRmssd);
+      sendDebugStatus('HR latest: ' + latestBpm + ' bpm');
       callback({
-        resting_heart_rate: latestData.bpm || 0,
-        hrv_score: latestData.rmssd || 0,
+        resting_heart_rate: latestBpm,
+        hrv_score: latestRmssd || 0,
         data_available: true
       });
     } else {
@@ -677,21 +794,29 @@ function fetchActivityData(token, callback) {
       console.error('Failed to fetch activity data:', error);
       sendDebugStatus('Activity API failed');
       
-      // Try cached activity score if available
-      if (g_cached_activity_score > 0) {
-        console.log('[oura] Using cached activity score after API error:', g_cached_activity_score);
-        callback({
-          activity_score: g_cached_activity_score,
-          active_calories: 0,
-          steps: 0,
-          data_available: true
-        });
-        return;
-      }
+      // Try cached activity score only if it's for TODAY
+      try {
+        var cachedRaw = localStorage.getItem('oura_cached_scores');
+        var today = getLocalDateString();
+        if (cachedRaw) {
+          var cached = JSON.parse(cachedRaw);
+          if (cached.activity_score > 0 && cached.activity_date === today) {
+            console.log('[oura] Using cached TODAY activity after API error:', cached.activity_score);
+            callback({
+              activity_score: cached.activity_score,
+              active_calories: 0,
+              steps: 0,
+              data_available: true
+            });
+            return;
+          }
+        }
+      } catch (e) { console.warn('Activity cache parse error:', e); }
       
       // Try yesterday as fallback
       var yesterdayDate = getYesterdayDate();
       var fallbackEndpoint = '/usercollection/daily_activity?start_date=' + yesterdayDate + '&end_date=' + yesterdayDate;
+      console.log('[oura] Activity: Fallback request for yesterday:', fallbackEndpoint);
       
       makeOuraRequest(fallbackEndpoint, token, function(fallbackError, fallbackData) {
         if (fallbackError) {
@@ -700,14 +825,27 @@ function fetchActivityData(token, callback) {
           return;
         }
         
+        console.log('[oura] Activity: Fallback response records:', fallbackData.data.length);
         if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
           var yesterdayActivity = fallbackData.data[fallbackData.data.length - 1];
-          callback({
-            activity_score: yesterdayActivity.score || 85,
-            active_calories: yesterdayActivity.active_calories || 0,
-            steps: yesterdayActivity.steps || 0,
-            data_available: true
-          });
+          console.log('[oura] Activity: Fallback picked record day:', yesterdayActivity.day, 'score:', yesterdayActivity.score);
+          // Only return data if we have a valid score
+          if (yesterdayActivity.score > 0) {
+            // Cache with yesterday date to prevent confusion
+            g_cached_activity_score = yesterdayActivity.score;
+            g_cache_date = yesterdayDate;
+            saveCachedScores();
+            sendDebugStatus('Activity yesterday ' + yesterdayDate + ': ' + yesterdayActivity.score);
+            callback({
+              activity_score: yesterdayActivity.score,
+              active_calories: yesterdayActivity.active_calories || 0,
+              steps: yesterdayActivity.steps || 0,
+              data_available: true
+            });
+          } else {
+            console.log('[oura] Activity: No valid yesterday score, marking as unavailable');
+            callback({ data_available: false });
+          }
         } else {
           callback({ data_available: false });
         }
@@ -716,30 +854,64 @@ function fetchActivityData(token, callback) {
     }
     
     if (data && data.data && data.data.length > 0) {
-      console.log('[oura] Activity: Found', data.data.length, 'activity records');
+      console.log('[oura] Activity: TodayDate', todayDate, 'Found', data.data.length, 'activity records');
       for (var i = 0; i < data.data.length; i++) {
         var record = data.data[i];
         console.log('[oura] Activity record', i + ':', 'day=' + record.day, 'score=' + record.score);
       }
-      
-      var latestActivity = data.data[data.data.length - 1];
-      var currentScore = latestActivity.score || 0;
-      console.log('[oura] Activity: Using latest record, score:', currentScore);
-      sendDebugStatus('Activity found: ' + currentScore);
-      
-      // Cache valid non-zero activity scores
-      if (currentScore > 0) {
-        g_cached_activity_score = currentScore;
+
+      // Prefer today's record explicitly by date match
+      var todayRecord = null;
+      for (var ti = 0; ti < data.data.length; ti++) {
+        if (data.data[ti].day === todayDate) {
+          todayRecord = data.data[ti];
+          break;
+        }
+      }
+
+      if (todayRecord) {
+        // If there's a record for today, use it directly. If score is 0, treat as 0 (no fallback to yesterday).
+        var todayScore = todayRecord.score || 0;
+        console.log('[oura] Activity: Using TODAY record', todayDate, 'score:', todayScore);
+        sendDebugStatus('Activity today ' + todayDate + ': ' + todayScore);
+        g_cached_activity_score = todayScore;
         g_cache_date = todayDate;
         saveCachedScores();
+        callback({
+          activity_score: todayScore,
+          active_calories: todayRecord.active_calories || 0,
+          steps: todayRecord.steps || 0,
+          data_available: true
+        });
+      } else {
+        // If today's record missing entirely, check yesterday within same dataset
+        var yesterdayDate = getYesterdayDate();
+        var yRecord = null;
+        for (var yi = 0; yi < data.data.length; yi++) {
+          if (data.data[yi].day === yesterdayDate) {
+            yRecord = data.data[yi];
+            break;
+          }
+        }
+        if (yRecord && (yRecord.score || 0) > 0) {
+          var yScore = yRecord.score || 0;
+          console.log('[oura] Activity: Using YESTERDAY record', yesterdayDate, 'score:', yScore);
+          sendDebugStatus('Activity yesterday ' + yesterdayDate + ': ' + yScore);
+          // Optionally cache yesterday with its date
+          g_cached_activity_score = yScore;
+          g_cache_date = yesterdayDate;
+          saveCachedScores();
+          callback({
+            activity_score: yScore,
+            active_calories: yRecord.active_calories || 0,
+            steps: yRecord.steps || 0,
+            data_available: true
+          });
+        } else {
+          console.log('[oura] Activity: No valid today/yesterday score in range, marking as unavailable');
+          callback({ data_available: false });
+        }
       }
-      
-      callback({
-        activity_score: currentScore || 85,
-        active_calories: latestActivity.active_calories || 0,
-        steps: latestActivity.steps || 0,
-        data_available: true
-      });
     } else {
       // No data for today, try yesterday
       console.log('[oura] No activity data for today, trying yesterday...');
@@ -758,25 +930,38 @@ function fetchActivityData(token, callback) {
           console.log('[oura] Activity: Updated with yesterday data, score:', yesterdayActivity.score);
           sendDebugStatus('Activity updated (yesterday)');
           
-          callback({
-            activity_score: yesterdayActivity.score || 85,
-            active_calories: yesterdayActivity.active_calories || 0,
-            steps: yesterdayActivity.steps || 0,
-            data_available: true
-          });
-        } else {
-          // No data for yesterday either, try cached activity score
-          if (g_cached_activity_score > 0) {
-            console.log('[oura] Using cached activity score after no data found:', g_cached_activity_score);
+          // Only return data if we have a valid score
+          if (yesterdayActivity.score > 0) {
             callback({
-              activity_score: g_cached_activity_score,
-              active_calories: 0,
-              steps: 0,
+              activity_score: yesterdayActivity.score,
+              active_calories: yesterdayActivity.active_calories || 0,
+              steps: yesterdayActivity.steps || 0,
               data_available: true
             });
           } else {
+            console.log('[oura] Activity: No valid yesterday score, marking as unavailable');
             callback({ data_available: false });
           }
+        } else {
+          // No data for yesterday either, try cached activity for TODAY only
+          try {
+            var cachedRaw2 = localStorage.getItem('oura_cached_scores');
+            var today2 = getLocalDateString();
+            if (cachedRaw2) {
+              var cached2 = JSON.parse(cachedRaw2);
+              if (cached2.activity_score > 0 && cached2.activity_date === today2) {
+                console.log('[oura] Using cached TODAY activity after no data found:', cached2.activity_score);
+                callback({
+                  activity_score: cached2.activity_score,
+                  active_calories: 0,
+                  steps: 0,
+                  data_available: true
+                });
+                return;
+              }
+            }
+          } catch (e2) { console.warn('Activity cache parse error:', e2); }
+          callback({ data_available: false });
         }
       });
     }
@@ -809,11 +994,17 @@ function fetchStressData(token, callback) {
         
         if (fallbackData && fallbackData.data && fallbackData.data.length > 0) {
           var yesterdayStress = fallbackData.data[fallbackData.data.length - 1];
-          callback({
-            stress_duration: yesterdayStress.stress_high || 720, // Default 12 minutes in seconds
-            stress_high_duration: yesterdayStress.stress_high || 720,
-            data_available: true
-          });
+          // Only return data if we have valid stress data
+          if (yesterdayStress.stress_high !== undefined && yesterdayStress.stress_high !== null) {
+            callback({
+              stress_duration: yesterdayStress.stress_high,
+              stress_high_duration: yesterdayStress.stress_high,
+              data_available: true
+            });
+          } else {
+            console.log('[oura] Stress: No valid yesterday data, marking as unavailable');
+            callback({ data_available: false });
+          }
         } else {
           callback({ data_available: false });
         }
@@ -829,20 +1020,25 @@ function fetchStressData(token, callback) {
       console.log('[oura] Stress: stress_high value:', latestStress.stress_high);
       console.log('[oura] Stress: stress_high type:', typeof latestStress.stress_high);
       
-      // stress_high appears to be in seconds already (4500 seconds = 75 minutes = 1h 15m)
-      var stressSeconds = latestStress.stress_high || 720; // Default 12 minutes in seconds
-      var stressMinutes = stressSeconds / 60; // Calculate minutes for display
-      
-      console.log('[oura] Stress: Final stress seconds (raw from API):', stressSeconds);
-      console.log('[oura] Stress: Final stress minutes (calculated):', stressMinutes);
-      console.log('[oura] ===== STRESS DEBUG END =====');
-      sendDebugStatus('Stress updated (today)');
-      
-      callback({
-        stress_duration: stressSeconds, // Send as seconds to match C code expectation
-        stress_high_duration: stressSeconds,
-        data_available: true
-      });
+      // Only return data if we have valid stress data
+      if (latestStress.stress_high !== undefined && latestStress.stress_high !== null) {
+        var stressSeconds = latestStress.stress_high;
+        var stressMinutes = stressSeconds / 60; // Calculate minutes for display
+        
+        console.log('[oura] Stress: Final stress seconds (raw from API):', stressSeconds);
+        console.log('[oura] Stress: Final stress minutes (calculated):', stressMinutes);
+        console.log('[oura] ===== STRESS DEBUG END =====');
+        sendDebugStatus('Stress updated (today)');
+        
+        callback({
+          stress_duration: stressSeconds, // Send as seconds to match C code expectation
+          stress_high_duration: stressSeconds,
+          data_available: true
+        });
+      } else {
+        console.log('[oura] Stress: No valid stress data found, marking as unavailable');
+        callback({ data_available: false });
+      }
     } else {
       // No data for today, try yesterday
       console.log('[oura] No stress data for today, trying yesterday...');
@@ -861,19 +1057,24 @@ function fetchStressData(token, callback) {
           console.log('[oura] Stress: Raw yesterday stress data:', JSON.stringify(yesterdayStress));
           console.log('[oura] Stress: Available yesterday fields:', Object.keys(yesterdayStress));
           
-          // stress_high appears to be in seconds already
-          var stressSeconds = yesterdayStress.stress_high || 720; // Default 12 minutes in seconds
-          var stressMinutes = stressSeconds / 60; // Calculate minutes for display
-          
-          console.log('[oura] Stress: Yesterday stress_high field:', yesterdayStress.stress_high, 'seconds');
-          console.log('[oura] Stress: Yesterday stress minutes calculated:', stressMinutes, 'minutes');
-          sendDebugStatus('Stress updated (yesterday)');
-          
-          callback({
-            stress_duration: stressSeconds, // Send as seconds to match C code expectation
-            stress_high_duration: stressSeconds,
-            data_available: true
-          });
+          // Only return data if we have valid stress data
+          if (yesterdayStress.stress_high !== undefined && yesterdayStress.stress_high !== null) {
+            var stressSeconds = yesterdayStress.stress_high;
+            var stressMinutes = stressSeconds / 60; // Calculate minutes for display
+            
+            console.log('[oura] Stress: Yesterday stress_high field:', yesterdayStress.stress_high, 'seconds');
+            console.log('[oura] Stress: Yesterday stress minutes calculated:', stressMinutes, 'minutes');
+            sendDebugStatus('Stress updated (yesterday)');
+            
+            callback({
+              stress_duration: stressSeconds, // Send as seconds to match C code expectation
+              stress_high_duration: stressSeconds,
+              data_available: true
+            });
+          } else {
+            console.log('[oura] Stress: No valid yesterday stress data, marking as unavailable');
+            callback({ data_available: false });
+          }
         } else {
           callback({ data_available: false });
         }
@@ -891,9 +1092,8 @@ function fetchAllOuraData() {
   
   var token = CONFIG_SETTINGS.access_token;
   if (!token || !CONFIG_SETTINGS.connected) {
-    console.log('❌ No token available in CONFIG_SETTINGS, loading sample data');
-    sendDebugStatus('No token - using sample data');
-    loadSampleData();
+    console.log('❌ No token available in CONFIG_SETTINGS');
+    sendDebugStatus('No token - please configure');
     return;
   }
   
@@ -908,9 +1108,8 @@ function fetchAllOuraData() {
     console.log('🔍 Token expired:', isExpired);
     
     if (isExpired) {
-      console.log('❌ Token is expired, loading sample data');
+      console.log('❌ Token is expired');
       sendDebugStatus('Token expired - need reauth');
-      loadSampleData();
       return;
     }
   }
@@ -958,7 +1157,9 @@ function fetchAllOuraDataLegacy(token) {
       console.log('All Oura data fetched:', ouraData);
       sendDebugStatus('Sending real data!');
       localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, Date.now().toString());
-      sendDataToWatch(ouraData);
+      setTimeout(function() {
+        sendDataToWatch(ouraData);
+      }, ACTIVITY_SEND_DELAY_MS);
     }
   }
   
@@ -1067,30 +1268,43 @@ function sendSampleDataToWatch() {
   sendDataToWatch(sampleData);
 }
 
+var DEBUG_THROTTLE_MS = 1000; // min gap between debug sends
+var g_last_debug_sent_at = 0;
+var g_pending_debug = null;
 function sendDebugStatus(message) {
-  // Only send debug messages if enabled in config
-  if (!CONFIG_SETTINGS.show_debug) {
+  // Respect user setting: when disabled, suppress debug messages entirely
+  if (typeof CONFIG_SETTINGS !== 'undefined' && CONFIG_SETTINGS && CONFIG_SETTINGS.show_debug === false) {
     return;
   }
-  
-  Pebble.sendAppMessage({
-    'debug_status': message
-  }, function() {
-    console.log('Debug status sent:', message);
-  }, function(error) {
-    console.error('Failed to send debug status:', error);
-  });
-  
+  function doSend(msg) {
+    enqueueMessage({ 'debug_status': msg }, function(){
+      console.log('Debug status sent:', msg);
+    }, function(err){
+      console.error('Failed to send debug status:', err);
+    });
+    g_last_debug_sent_at = Date.now();
+  }
+  var now = Date.now();
+  if (now - g_last_debug_sent_at >= DEBUG_THROTTLE_MS) {
+    doSend(message);
+  } else {
+    // coalesce into a single pending debug update
+    g_pending_debug = message;
+    setTimeout(function(){
+      if (g_pending_debug) {
+        var m = g_pending_debug; g_pending_debug = null;
+        doSend(m);
+      }
+    }, DEBUG_THROTTLE_MS);
+  }
   // Auto-clear debug message after 5 minutes
   setTimeout(function() {
-    Pebble.sendAppMessage({
-      'debug_status': ''
-    }, function() {
+    enqueueMessage({ 'debug_status': '' }, function(){
       console.log('Debug status cleared after 5 minutes');
-    }, function(error) {
-      console.error('Failed to clear debug status:', error);
+    }, function(err){
+      console.error('Failed to clear debug status:', err);
     });
-  }, 5 * 60 * 1000); // 5 minutes
+  }, 5 * 60 * 1000);
 }
 
 function sendDataToWatch(data) {
@@ -1133,12 +1347,40 @@ function sendDataToWatch(data) {
   var formatName = (flatData.date_format === 1) ? 'DD-MM-YYYY' : 'MM-DD-YYYY';
   console.log('[oura] Sending date format:', formatName, '-> value:', flatData.date_format);
   
-  // Add theme mode configuration - DISABLED FOR COLORFUL TEST BUILD
-  // Don't override theme mode when colorful mode (2) is set in C code
-  // var themeMode = localStorage.getItem('oura_theme_mode') || '0'; // Use same key as config page
-  // flatData.theme_mode = parseInt(themeMode); // 0 = Dark Mode, 1 = Light Mode
-  // var themeName = (flatData.theme_mode === 1) ? '☀️ Light Mode' : '🌙 Dark Mode';
-  console.log('[oura] Theme mode override DISABLED for colorful test build');
+  // Add theme mode configuration - re-enabled
+  var themeMode = localStorage.getItem('oura_theme_mode'); // '0'=Dark, '1'=Light, '2'=Custom
+  if (themeMode === null || themeMode === undefined || themeMode === '') {
+    themeMode = '0';
+  }
+  flatData.theme_mode = parseInt(themeMode);
+  var themeName = (flatData.theme_mode === 1) ? '☀️ Light Mode' : (flatData.theme_mode === 2 ? '🎨 Custom' : '🌙 Dark Mode');
+  console.log('[oura] Sending theme mode:', themeName, '-> value:', flatData.theme_mode);
+
+  // If using Custom Color, include the selected custom_color_index
+  if (flatData.theme_mode === 2) {
+    try {
+      var savedColorJson = localStorage.getItem('oura_custom_color');
+      if (savedColorJson) {
+        var savedColor = JSON.parse(savedColorJson);
+        if (savedColor && typeof savedColor.index === 'number') {
+          flatData.custom_color_index = savedColor.index;
+          console.log('[oura] Sending custom_color_index:', flatData.custom_color_index);
+        }
+      }
+    } catch (e) {
+      console.log('Error reading custom color selection:', e);
+    }
+  }
+
+  // Include show_loading preference so watchface can control overlay per refresh
+  try {
+    var showLoadingPref = localStorage.getItem('oura_show_loading');
+    var showLoading = (showLoadingPref === null || showLoadingPref === undefined) ? true : (showLoadingPref === 'true' || showLoadingPref === 1 || showLoadingPref === '1');
+    flatData.show_loading = showLoading ? 1 : 0;
+    console.log('[oura] Sending show_loading:', flatData.show_loading);
+  } catch (e) {
+    flatData.show_loading = 1;
+  }
   
   // Heart rate data
   if (data.heart_rate) {
@@ -1168,33 +1410,46 @@ function sendDataToWatch(data) {
   
   // Activity data
   if (data.activity) {
-    flatData.activity_score = data.activity.activity_score || 85;
-    flatData.active_calories = data.activity.active_calories || 0;
-    flatData.steps = data.activity.steps || 0;
-    console.log('[oura] Activity data included:', data.activity);
+    if (data.activity.data_available) {
+      flatData.activity_score = data.activity.activity_score || 0;
+      flatData.active_calories = data.activity.active_calories || 0;
+      flatData.steps = data.activity.steps || 0;
+      console.log('[oura] Activity data included:', data.activity);
+    } else {
+      // Mark as unavailable by sending zeros so C shows "--"
+      flatData.activity_score = 0;
+      flatData.active_calories = 0;
+      flatData.steps = 0;
+      console.log('[oura] Activity unavailable - sending zeros');
+    }
   } else {
+    // No activity block present; ensure zeros
+    flatData.activity_score = 0;
+    flatData.active_calories = 0;
+    flatData.steps = 0;
     console.log('[oura] No activity data to send');
   }
   
-  // Stress data - send seconds directly (already correct from API)
-  if (data.stress) {
-    flatData.stress_duration = data.stress.stress_duration || 720; // Default 12 minutes in seconds
-    flatData.stress_high_duration = data.stress.stress_high_duration || 720;
+  // Stress data - only include when available; allow 0 seconds as valid measurement
+  if (data.stress && data.stress.data_available) {
+    flatData.stress_duration = data.stress.stress_duration || 0; // seconds
+    flatData.stress_high_duration = data.stress.stress_high_duration || 0;
     console.log('[oura] Stress data included:', data.stress);
     console.log('[oura] Stress duration being sent:', flatData.stress_duration, 'seconds');
   } else {
-    console.log('[oura] No stress data to send');
+    console.log('[oura] Stress unavailable - not sending stress fields');
   }
+  
+  // Signal that this is a complete aggregated payload
+  flatData.payload_complete = 1;
   
   console.log('[oura] Sending flattened data to watch (with layout):', flatData);
   
-  Pebble.sendAppMessage(flatData, 
+  enqueueMessage(flatData,
     function() {
       console.log('[oura] Data sent to watch successfully');
-    },
-    function(error) {
+    }, function(error) {
       console.error('[oura] Failed to send data to watch:', error);
-      try { console.log('[oura] ↪︎ Payload keys:', Object.keys(flatData)); } catch (e) {}
     }
   );
 }
@@ -1208,7 +1463,7 @@ var CONFIG_SETTINGS = {
   access_token: null,
   refresh_token: null,
   token_expires: null,
-  refresh_frequency: 60, // minutes
+  refresh_frequency: 30, // minutes
   show_debug: true
 };
 
@@ -1231,7 +1486,7 @@ function loadConfigSettings() {
   
   if (clayToken) {
     CONFIG_SETTINGS.access_token = clayToken;
-    CONFIG_SETTINGS.refresh_frequency = parseInt(clayRefresh) || 60;
+    CONFIG_SETTINGS.refresh_frequency = parseInt(clayRefresh) || 30;
     CONFIG_SETTINGS.show_debug = clayDebug === 'true';
     CONFIG_SETTINGS.token_expires = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
     CONFIG_SETTINGS.connected = true;
@@ -1254,8 +1509,11 @@ function loadConfigSettings() {
       CONFIG_SETTINGS.access_token = manualToken;
       CONFIG_SETTINGS.token_expires = parseInt(manualExpires) || 0;
       CONFIG_SETTINGS.connected = manualConnected === 'true';
-      CONFIG_SETTINGS.show_debug = false;
-      CONFIG_SETTINGS.refresh_frequency = 60;
+      // Default to showing debug unless explicitly disabled by user setting
+      var storedShowDebug = localStorage.getItem('oura_show_debug');
+      // If key missing, default true. If key present, honor 'true'/'false'
+      CONFIG_SETTINGS.show_debug = (storedShowDebug === null || storedShowDebug === undefined) ? true : (storedShowDebug === 'true');
+      CONFIG_SETTINGS.refresh_frequency = 30;
       
       console.log('✅ Manual setup detected - using manual token');
     } else {
@@ -1275,6 +1533,7 @@ function loadConfigSettings() {
     connected: CONFIG_SETTINGS.connected,
     expiresAt: new Date(CONFIG_SETTINGS.token_expires).toISOString(),
     showDebug: CONFIG_SETTINGS.show_debug,
+    showLoading: CONFIG_SETTINGS.show_loading,
     refreshFreq: CONFIG_SETTINGS.refresh_frequency
   });
 }
@@ -1286,20 +1545,43 @@ Pebble.addEventListener('ready', function() {
   
   // Load configuration settings
   loadConfigSettings();
+  // Load show_loading preference (defaults to true)
+  try {
+    var storedShowLoading = localStorage.getItem('oura_show_loading');
+    if (typeof CONFIG_SETTINGS !== 'undefined') {
+      CONFIG_SETTINGS.show_loading = (storedShowLoading === null || storedShowLoading === undefined) ? true : (storedShowLoading === 'true' || storedShowLoading === 1 || storedShowLoading === '1');
+    }
+  } catch (e) {
+    console.log('Error loading show_loading, defaulting true', e);
+    if (typeof CONFIG_SETTINGS !== 'undefined') CONFIG_SETTINGS.show_loading = true;
+  }
   
   if (CONFIG_SETTINGS.show_debug) {
     sendDebugStatus('JS Ready');
   }
   
+  // Immediately send show_loading preference to the watchface
+  try {
+    var slPref = localStorage.getItem('oura_show_loading');
+    var slVal = (slPref === null || slPref === undefined) ? true : (slPref === 'true' || slPref === 1 || slPref === '1');
+    CONFIG_SETTINGS.show_loading = slVal;
+    Pebble.sendAppMessage({ 'show_loading': slVal ? 1 : 0 }, function() {
+      console.log('✅ Initial show_loading sent:', slVal ? 1 : 0);
+    }, function(err) {
+      console.error('❌ Error sending initial show_loading:', err);
+    });
+  } catch (e) {
+    console.log('Error determining show_loading on ready:', e);
+  }
+
   // Check if we have a valid token and fetch data
   if (CONFIG_SETTINGS.connected && CONFIG_SETTINGS.access_token) {
     console.log('Valid token found in CONFIG_SETTINGS, fetching Oura data');
     sendDebugStatus('Token found, loading data...');
     fetchAllOuraData();
   } else {
-    console.log('No valid token found in CONFIG_SETTINGS, showing sample data');
+    console.log('No valid token found in CONFIG_SETTINGS');
     sendDebugStatus('Please configure in Pebble app');
-    loadSampleData();
   }
 });
 
@@ -1307,6 +1589,16 @@ Pebble.addEventListener('appmessage', function(e) {
   console.log('Received message from watch:', e.payload);
   
   if (e.payload.request_data) {
+    // Ensure show_loading is sent right before data fetch cycle
+    try {
+      var slPrefNow = localStorage.getItem('oura_show_loading');
+      var slNow = (slPrefNow === null || slPrefNow === undefined) ? true : (slPrefNow === 'true' || slPrefNow === 1 || slPrefNow === '1');
+      Pebble.sendAppMessage({ 'show_loading': slNow ? 1 : 0 }, function() {
+        console.log('✅ show_loading re-sent on request_data:', slNow ? 1 : 0);
+      }, function(err) {
+        console.error('❌ Error re-sending show_loading on request_data:', err);
+      });
+    } catch (e2) { console.log('Error re-sending show_loading:', e2); }
     fetchAllOuraData();
   }
   
@@ -1428,6 +1720,30 @@ Pebble.addEventListener('webviewclosed', function(e) {
           console.error('❌ Error sending theme mode message:', error);
         }
       }
+
+      // Handle custom color when present
+      if (settings.custom_color_index !== undefined && settings.custom_color_index !== null) {
+        try {
+          // Persist full object when available
+          var colorObj = {
+            index: parseInt(settings.custom_color_index)
+          };
+          if (settings.custom_color_name) colorObj.name = settings.custom_color_name;
+          if (settings.custom_color_hex) colorObj.hex = settings.custom_color_hex;
+          if (settings.custom_color_pebble) colorObj.pebble = settings.custom_color_pebble;
+          localStorage.setItem('oura_custom_color', JSON.stringify(colorObj));
+          console.log('💾 Stored custom color selection:', JSON.stringify(colorObj));
+
+          // Send to watch immediately
+          Pebble.sendAppMessage({ 'custom_color_index': colorObj.index }, function() {
+            console.log('✅ custom_color_index sent to watchface');
+          }, function(err) {
+            console.error('❌ Error sending custom_color_index:', err);
+          });
+        } catch (e2) {
+          console.error('❌ Error handling custom color settings:', e2);
+        }
+      }
       
       // Process layout changes if received
       if (settings.layout_left !== undefined && settings.layout_left !== null && 
@@ -1520,7 +1836,7 @@ function updateRefreshInterval() {
   }
   
   // Set new interval based on config
-  var refreshMinutes = CONFIG_SETTINGS.refresh_frequency || 60;
+  var refreshMinutes = CONFIG_SETTINGS.refresh_frequency || 30;
   var refreshMs = refreshMinutes * 60 * 1000;
   
   console.log('Setting refresh interval to', refreshMinutes, 'minutes');

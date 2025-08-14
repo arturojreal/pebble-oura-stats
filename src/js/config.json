@@ -45,7 +45,7 @@
         "messageKey": "refresh_frequency",
         "label": "Refresh Frequency (minutes)",
         "description": "How often to fetch new data from Oura",
-        "defaultValue": 60,
+        "defaultValue": 30,
         "min": 15,
         "max": 240,
         "step": 15

@@ -211,8 +211,8 @@
         
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-button active" onclick="switchTab('setup')">⚙️ Setup</button>
-            <button class="tab-button" onclick="switchTab('customization')">🎨 Customization</button>
+            <button class="tab-button active" onclick="switchTab('setup', this)">⚙️ Setup</button>
+            <button class="tab-button" onclick="switchTab('customization', this)">🎨 Customization</button>
         </div>
         
         <!-- Setup Tab -->
@@ -300,6 +300,21 @@
             
             <h1>🎛️ Customization</h1>
             
+            <!-- Layout Configuration -->
+            <div class="section-box" style="margin: 20px 0;">
+                <div class="section-title">📐 Layout Configuration</div>
+                <p style="font-size: 14px; color: #666; margin: 10px 0;">Choose how many rows of measurements to display on your watchface.<br>1 row shows larger emojis, 2 rows allows more measurements</p>
+                
+                <div style="margin: 15px 0;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Number of Rows:</label>
+                    <select id="layout-rows" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="1" selected>1 Row (3 measurements, larger emojis)</option>
+                        <option value="2">2 Rows (up to 5 measurements, smaller emojis)</option>
+                    </select>
+                    <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">1 row provides larger, more visible emojis. 2 rows allow more data but with smaller display.</p>
+                </div>
+            </div>
+            
             <!-- Measurement Organization -->
             <div class="section-box" style="margin: 20px 0;">
                 <div class="section-title">📊 Measurement Organization</div>
@@ -326,39 +341,70 @@
                     </div>
                 </div>
                 
-                <!-- Position Selectors -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
-                        <select id="left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
-                            <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🔥 Activity</option>
-                            <option value="4">😰 Stress</option>
-                        </select>
+                <!-- Row 1 Position Selectors -->
+                <div style="margin: 20px 0;">
+                    <h4 style="margin: 10px 0; color: #333;">Row 1 (Top Row)</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
+                            <select id="left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
+                            <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1" selected>😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
+                            <select id="right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2" selected>❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
-                        <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1" selected>😴 Sleep</option>
-                            <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🔥 Activity</option>
-                            <option value="4">😰 Stress</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
-                        <select id="right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
-                            <option value="2" selected>❤️ Heart Rate</option>
-                            <option value="3">🔥 Activity</option>
-                            <option value="4">😰 Stress</option>
-                        </select>
+                </div>
+                
+                <!-- Row 2 Position Selectors (Hidden by default) -->
+                <div id="row2-selectors" style="margin: 20px 0; display: none;">
+                    <h4 style="margin: 10px 0; color: #333;">Row 2 (Bottom Row)</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
+                            <select id="row2-left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3" selected>🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
+                            <select id="row2-right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4" selected>😰 Stress</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
@@ -370,8 +416,8 @@
                         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Data Refresh Frequency:</label>
                         <select id="refresh-frequency" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                             <option value="15">15 minutes</option>
-                            <option value="30">30 minutes</option>
-                            <option value="60" selected>1 hour</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="60">1 hour</option>
                             <option value="120">2 hours</option>
                             <option value="240">4 hours</option>
                         </select>
@@ -391,13 +437,32 @@
                         <select id="theme-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                             <option value="0" selected>🌙 Dark Mode (Default)</option>
                             <option value="1">☀️ Light Mode</option>
+                            <option value="2">🎨 Custom Color</option>
                         </select>
                         <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose between dark mode (white text on black) or light mode (black text on white)</p>
                     </div>
                     
+                    <!-- Color Picker Section -->
+                    <div id="color-picker-section" style="margin: 15px 0; display: none;">
+                        <div class="section-title">🎨 Custom Color Selection</div>
+                        <p style="font-size: 12px; color: #666; margin: 10px 0;">Choose a background color for your watchface. Text color will automatically adjust for readability.</p>
+                        
+                        <!-- Color Preview -->
+                        <div style="margin: 15px 0; text-align: center;">
+                            <div id="color-preview" style="display: inline-block; padding: 20px 40px; border-radius: 8px; background: #000000; color: #ffffff; font-weight: bold; border: 2px solid #ddd;">
+                                Selected: <span id="color-name">Black</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Color Palette Grid -->
+                        <div id="color-palette" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 6px; max-width: 100%; margin: 0 auto; padding: 0 10px;">
+                            <!-- Colors will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
                     <div style="margin: 15px 0;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="show-debug" checked style="margin-right: 10px;">
+                            <input type="checkbox" id="show-debug-watchface" checked style="margin-right: 10px;">
                             <span>Show debug messages on watchface</span>
                         </label>
                     </div>
@@ -413,7 +478,6 @@
                     <ul style="text-align: left; margin: 10px 0; padding-left: 20px; font-size: 14px;">
                         <li>Font size options</li>
                         <li>Custom emoji selection</li>
-                        <li>Refresh interval customization</li>
                     </ul>
                 </div>
             </div>
@@ -423,7 +487,7 @@
 
     <script>
         // Tab switching functionality
-        function switchTab(tabName) {
+        function switchTab(tabName, el) {
             // Hide all tab contents
             var tabContents = document.querySelectorAll('.tab-content');
             tabContents.forEach(function(tab) {
@@ -440,7 +504,7 @@
             document.getElementById(tabName + '-tab').classList.add('active');
             
             // Add active class to clicked tab button
-            event.target.classList.add('active');
+            if (el) { el.classList.add('active'); }
         }
         
         // Toggle debug information visibility
@@ -594,36 +658,59 @@
         }
         
         function applyMeasurementLayout() {
-            var leftValue = document.getElementById('left-position').value;
-            var middleValue = document.getElementById('middle-position').value;
-            var rightValue = document.getElementById('right-position').value;
+            // Get flexible layout configuration
+            var layoutRows = document.getElementById('layout-rows').value;
+            var row1Left = document.getElementById('left-position').value;
+            var row1Middle = document.getElementById('middle-position').value;
+            var row1Right = document.getElementById('right-position').value;
+            var row2Left = document.getElementById('row2-left-position').value;
+            var row2Right = document.getElementById('row2-right-position').value;
             
-            // Check for duplicates
-            var positions = [leftValue, middleValue, rightValue];
-            if (positions.length !== new Set(positions).size) {
+            // Check for duplicates in active positions
+            var activePositions = [row1Left, row1Middle, row1Right];
+            if (layoutRows === '2') {
+                activePositions.push(row2Left, row2Right);
+            }
+            
+            if (activePositions.length !== new Set(activePositions).size) {
                 alert('Please ensure each measurement appears in only one position.');
                 return;
             }
             
-            // Store the layout configuration
-            var layoutConfig = {
-                left: leftValue,
-                middle: middleValue,
-                right: rightValue
+            // Store the flexible layout configuration
+            var flexibleLayoutConfig = {
+                rows: parseInt(layoutRows),
+                row1: {
+                    left: parseInt(row1Left),
+                    middle: parseInt(row1Middle),
+                    right: parseInt(row1Right)
+                },
+                row2: {
+                    left: parseInt(row2Left),
+                    right: parseInt(row2Right)
+                }
             };
             
             // Store in localStorage for persistence
-            localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
+            localStorage.setItem('oura_flexible_layout', JSON.stringify(flexibleLayoutConfig));
+            
+            // Also store legacy format for backward compatibility
+            var legacyLayoutConfig = {
+                left: row1Left,
+                middle: row1Middle,
+                right: row1Right
+            };
+            localStorage.setItem('oura_measurement_layout', JSON.stringify(legacyLayoutConfig));
             
             // Send layout update to Pebble immediately
-            debugLog('📊 Applying measurement layout: ' + JSON.stringify(layoutConfig));
+            debugLog('📊 Applying flexible layout: ' + JSON.stringify(flexibleLayoutConfig));
             
             // Send layout data to watchface via webview close
             var currentToken = localStorage.getItem('oura_access_token');
             debugLog('🔍 Current token status: ' + (currentToken ? 'Found' : 'Not found'));
             
             if (currentToken) {
-                debugLog('🔄 Sending layout update with token...');
+                debugLog('🔄 Sending flexible layout update with token...');
                 
                 // Get date format setting
                 var dateFormat = localStorage.getItem('oura_date_format') || '0';
@@ -631,19 +718,49 @@
                 // Get theme mode setting
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
                 
-                // Include layout configuration, date format, and theme mode in the settings
+                // Get custom color data if theme mode is custom color
+                var customColorData = null;
+                if (themeMode === '2') {
+                    var savedColor = localStorage.getItem('oura_custom_color');
+                    if (savedColor) {
+                        try {
+                            customColorData = JSON.parse(savedColor);
+                        } catch (e) {
+                            console.log('Error parsing custom color data:', e);
+                        }
+                    }
+                }
+                
+                // Include flexible layout configuration, date format, theme mode, and custom color in the settings
                 var settings = {
                     oura_access_token: currentToken,
-                    layout_left: parseInt(leftValue),
-                    layout_middle: parseInt(middleValue),
-                    layout_right: parseInt(rightValue),
+                    // Legacy layout fields for backward compatibility
+                    layout_left: parseInt(row1Left),
+                    layout_middle: parseInt(row1Middle),
+                    layout_right: parseInt(row1Right),
+                    // New flexible layout fields
+                    layout_rows: parseInt(layoutRows),
+                    row1_left: parseInt(row1Left),
+                    row1_middle: parseInt(row1Middle),
+                    row1_right: parseInt(row1Right),
+                    row2_left: parseInt(row2Left),
+                    row2_right: parseInt(row2Right),
                     date_format: parseInt(dateFormat),
                     theme_mode: parseInt(themeMode),
-                    config_action: 'layout_update'
+                    config_action: 'flexible_layout_update'
                 };
                 
-                debugLog('📊 Layout values: L=' + leftValue + ' M=' + middleValue + ' R=' + rightValue);
-                debugLog('📊 Parsed layout: L=' + settings.layout_left + ' M=' + settings.layout_middle + ' R=' + settings.layout_right);
+                // Add custom color data if available
+                if (customColorData) {
+                    settings.custom_color_index = customColorData.index;
+                    settings.custom_color_name = customColorData.name;
+                    settings.custom_color_hex = customColorData.hex;
+                    settings.custom_color_pebble = customColorData.pebble;
+                }
+                
+                debugLog('📊 Flexible layout: ' + layoutRows + ' rows');
+                debugLog('📊 Row 1: L=' + row1Left + ' M=' + row1Middle + ' R=' + row1Right);
+                debugLog('📊 Row 2: L=' + row2Left + ' R=' + row2Right);
                 
                 var settingsJson = JSON.stringify(settings);
                 var encodedSettings = encodeURIComponent(settingsJson);
@@ -807,6 +924,19 @@
                 // Get theme mode setting
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
                 
+                // Get custom color data if theme mode is custom color
+                var customColorData = null;
+                if (themeMode === '2') {
+                    var savedColor = localStorage.getItem('oura_custom_color');
+                    if (savedColor) {
+                        try {
+                            customColorData = JSON.parse(savedColor);
+                        } catch (e) {
+                            console.log('Error parsing custom color data:', e);
+                        }
+                    }
+                }
+                
                 var settings = { 
                     oura_access_token: token,
                     layout_left: parseInt(layoutConfig.left),
@@ -815,6 +945,14 @@
                     date_format: parseInt(dateFormat),
                     theme_mode: parseInt(themeMode)
                 };
+
+                // Add custom color fields if available
+                if (customColorData) {
+                    settings.custom_color_index = customColorData.index;
+                    settings.custom_color_name = customColorData.name;
+                    settings.custom_color_hex = customColorData.hex;
+                    settings.custom_color_pebble = customColorData.pebble;
+                }
                 var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
                 
                 debugLog('📱 Sending settings to Pebble:');
@@ -1192,6 +1330,11 @@
                 var themeModeSelect = document.getElementById('theme-mode');
                 if (themeModeSelect) {
                     themeModeSelect.value = savedThemeMode;
+                    // Also reflect visibility immediately
+                    var colorPickerSection = document.getElementById('color-picker-section');
+                    if (colorPickerSection) {
+                        colorPickerSection.style.display = (savedThemeMode === '2') ? 'block' : 'none';
+                    }
                 }
             }
         }
@@ -1201,7 +1344,12 @@
             var themeModeSelect = document.getElementById('theme-mode');
             if (themeModeSelect) {
                 localStorage.setItem('oura_theme_mode', themeModeSelect.value);
-                debugLog('🎨 Theme mode saved: ' + (themeModeSelect.value === '0' ? '🌙 Dark Mode' : '☀️ Light Mode'));
+                // Robustly toggle color picker visibility here as well
+                var colorPickerSection = document.getElementById('color-picker-section');
+                if (colorPickerSection) {
+                    colorPickerSection.style.display = (themeModeSelect.value === '2') ? 'block' : 'none';
+                }
+                debugLog('🎨 Theme mode saved: ' + (themeModeSelect.value === '0' ? '🌙 Dark Mode' : (themeModeSelect.value === '1' ? '☀️ Light Mode' : '🎨 Custom Color')));
             }
         }
         
@@ -1256,6 +1404,17 @@
             clearApiResults();
             setUseProxyDefault();
             
+            // Always initialize UI subsystems regardless of auth state
+            // Ensures color picker visibility/behavior, theme mode handling,
+            // and flexible layout controls work even when a token is present
+            initializeColorPicker();
+            setupThemeModeHandler();
+            setupFlexibleLayout();
+            // Ensure Row 2 selectors visibility matches dropdown immediately
+            if (typeof updateRowSelectorsVisibility === 'function') {
+                updateRowSelectorsVisibility();
+            }
+            
             // Check for OAuth redirect
             debugLog('🔍 Checking for OAuth redirect token...');
             if (checkForToken()) {
@@ -1290,6 +1449,321 @@
             renderTokenDetails();
             clearApiResults();
         });
+        
+        // ===== COLOR PICKER FUNCTIONALITY =====
+        
+        // Complete Pebble Color Palette (64 colors)
+        var pebbleColors = [
+            { name: 'Black', hex: '#000000', pebble: 'GColorBlack' },
+            { name: 'Oxford Blue', hex: '#0F2E4C', pebble: 'GColorOxfordBlue' },
+            { name: 'Duke Blue', hex: '#003D82', pebble: 'GColorDukeBlue' },
+            { name: 'Blue', hex: '#0055FF', pebble: 'GColorBlue' },
+            { name: 'Dark Green', hex: '#005500', pebble: 'GColorDarkGreen' },
+            { name: 'Midnight Green', hex: '#004C5C', pebble: 'GColorMidnightGreen' },
+            { name: 'Cobalt Blue', hex: '#0066FF', pebble: 'GColorCobaltBlue' },
+            { name: 'Blue Moon', hex: '#68A3FF', pebble: 'GColorBlueMoon' },
+            { name: 'Islamic Green', hex: '#00AA00', pebble: 'GColorIslamicGreen' },
+            { name: 'Jaeger Green', hex: '#00AA55', pebble: 'GColorJaegerGreen' },
+            { name: 'Tiffany Blue', hex: '#00AAAA', pebble: 'GColorTiffanyBlue' },
+            { name: 'Vivid Cerulean', hex: '#00AAFF', pebble: 'GColorVividCerulean' },
+            { name: 'Green', hex: '#00FF00', pebble: 'GColorGreen' },
+            { name: 'Malachite', hex: '#00FF55', pebble: 'GColorMalachite' },
+            { name: 'Medium Spring Green', hex: '#00FFAA', pebble: 'GColorMediumSpringGreen' },
+            { name: 'Cyan', hex: '#00FFFF', pebble: 'GColorCyan' },
+            { name: 'Bulgarian Rose', hex: '#550000', pebble: 'GColorBulgarianRose' },
+            { name: 'Imperial Purple', hex: '#550055', pebble: 'GColorImperialPurple' },
+            { name: 'Indigo', hex: '#5500AA', pebble: 'GColorIndigo' },
+            { name: 'Electric Ultramarine', hex: '#5500FF', pebble: 'GColorElectricUltramarine' },
+            { name: 'Army Green', hex: '#555500', pebble: 'GColorArmyGreen' },
+            { name: 'Dark Gray', hex: '#555555', pebble: 'GColorDarkGray' },
+            { name: 'Liberty', hex: '#5555AA', pebble: 'GColorLiberty' },
+            { name: 'Very Light Blue', hex: '#5555FF', pebble: 'GColorVeryLightBlue' },
+            { name: 'Kelly Green', hex: '#55AA00', pebble: 'GColorKellyGreen' },
+            { name: 'May Green', hex: '#55AA55', pebble: 'GColorMayGreen' },
+            { name: 'Cadet Blue', hex: '#55AAAA', pebble: 'GColorCadetBlue' },
+            { name: 'Picton Blue', hex: '#55AAFF', pebble: 'GColorPictonBlue' },
+            { name: 'Bright Green', hex: '#55FF00', pebble: 'GColorBrightGreen' },
+            { name: 'Screamin Green', hex: '#55FF55', pebble: 'GColorScreaminGreen' },
+            { name: 'Medium Aquamarine', hex: '#55FFAA', pebble: 'GColorMediumAquamarine' },
+            { name: 'Electric Blue', hex: '#55FFFF', pebble: 'GColorElectricBlue' },
+            { name: 'Dark Candyapple Red', hex: '#AA0000', pebble: 'GColorDarkCandyappleRed' },
+            { name: 'Jazzberry Jam', hex: '#AA0055', pebble: 'GColorJazzberryJam' },
+            { name: 'Purple', hex: '#AA00AA', pebble: 'GColorPurple' },
+            { name: 'Vivid Violet', hex: '#AA00FF', pebble: 'GColorVividViolet' },
+            { name: 'Windsor Tan', hex: '#AA5500', pebble: 'GColorWindsorTan' },
+            { name: 'Rose Vale', hex: '#AA5555', pebble: 'GColorRoseVale' },
+            { name: 'Purpureus', hex: '#AA55AA', pebble: 'GColorPurpureus' },
+            { name: 'Lavender Indigo', hex: '#AA55FF', pebble: 'GColorLavenderIndigo' },
+            { name: 'Limerick', hex: '#AAAA00', pebble: 'GColorLimerick' },
+            { name: 'Brass', hex: '#AAAA55', pebble: 'GColorBrass' },
+            { name: 'Light Gray', hex: '#AAAAAA', pebble: 'GColorLightGray' },
+            { name: 'Baby Blue Eyes', hex: '#AAAAFF', pebble: 'GColorBabyBlueEyes' },
+            { name: 'Spring Bud', hex: '#AAFF00', pebble: 'GColorSpringBud' },
+            { name: 'Inchworm', hex: '#AAFF55', pebble: 'GColorInchworm' },
+            { name: 'Mint Green', hex: '#AAFFAA', pebble: 'GColorMintGreen' },
+            { name: 'Celeste', hex: '#AAFFFF', pebble: 'GColorCeleste' },
+            { name: 'Red', hex: '#FF0000', pebble: 'GColorRed' },
+            { name: 'Folly', hex: '#FF0055', pebble: 'GColorFolly' },
+            { name: 'Fashion Magenta', hex: '#FF00AA', pebble: 'GColorFashionMagenta' },
+            { name: 'Magenta', hex: '#FF00FF', pebble: 'GColorMagenta' },
+            { name: 'Orange', hex: '#FF5500', pebble: 'GColorOrange' },
+            { name: 'Sunset Orange', hex: '#FF5555', pebble: 'GColorSunsetOrange' },
+            { name: 'Brilliant Rose', hex: '#FF55AA', pebble: 'GColorBrilliantRose' },
+            { name: 'Shocking Pink', hex: '#FF55FF', pebble: 'GColorShockingPink' },
+            { name: 'Chromecast Yellow', hex: '#FFAA00', pebble: 'GColorChromeYellow' },
+            { name: 'Rajah', hex: '#FFAA55', pebble: 'GColorRajah' },
+            { name: 'Melon', hex: '#FFAAAA', pebble: 'GColorMelon' },
+            { name: 'Rich Brilliant Lavender', hex: '#FFAAFF', pebble: 'GColorRichBrilliantLavender' },
+            { name: 'Yellow', hex: '#FFFF00', pebble: 'GColorYellow' },
+            { name: 'Icterine', hex: '#FFFF55', pebble: 'GColorIcterine' },
+            { name: 'Pastel Yellow', hex: '#FFFFAA', pebble: 'GColorPastelYellow' },
+            { name: 'White', hex: '#FFFFFF', pebble: 'GColorWhite' }
+        ];
+        
+        // Initialize color picker
+        function initializeColorPicker() {
+            var colorPalette = document.getElementById('color-palette');
+            if (!colorPalette) return;
+            
+            // Create color swatches
+            pebbleColors.forEach(function(color, index) {
+                var swatch = document.createElement('div');
+                swatch.style.cssText = 
+                    'width: 45px; height: 45px; background: ' + color.hex + '; ' +
+                    'border: 2px solid #ddd; border-radius: 6px; cursor: pointer; ' +
+                    'transition: all 0.2s ease; position: relative; ' +
+                    'touch-action: manipulation; min-height: 44px; min-width: 44px;';
+                
+                swatch.title = color.name;
+                swatch.onclick = function() { selectColor(index); };
+                
+                // Hover effects
+                swatch.onmouseenter = function() {
+                    this.style.transform = 'scale(1.1)';
+                    this.style.borderColor = '#007bff';
+                    this.style.zIndex = '10';
+                };
+                swatch.onmouseleave = function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.borderColor = '#ddd';
+                    this.style.zIndex = '1';
+                };
+                
+                colorPalette.appendChild(swatch);
+            });
+            
+            // Load saved color selection
+            loadSavedColor();
+        }
+        
+        // Select a color from the palette
+        function selectColor(colorIndex) {
+            var color = pebbleColors[colorIndex];
+            if (!color) return;
+            
+            // Update preview
+            var preview = document.getElementById('color-preview');
+            var colorName = document.getElementById('color-name');
+            
+            preview.style.background = color.hex;
+            preview.style.color = getContrastColor(color.hex);
+            colorName.textContent = color.name;
+            
+            // Save selection
+            localStorage.setItem('oura_custom_color', JSON.stringify({
+                index: colorIndex,
+                name: color.name,
+                hex: color.hex,
+                pebble: color.pebble
+            }));
+            
+            // Update theme mode to custom color
+            document.getElementById('theme-mode').value = '2';
+            localStorage.setItem('oura_theme_mode', '2');
+            
+            debugLog('🎨 Selected color: ' + color.name + ' (' + color.hex + ')');
+        }
+        
+        // Load saved color selection
+        function loadSavedColor() {
+            var saved = localStorage.getItem('oura_custom_color');
+            if (saved) {
+                try {
+                    var colorData = JSON.parse(saved);
+                    selectColor(colorData.index);
+                } catch (e) {
+                    console.log('Error loading saved color:', e);
+                    selectColor(0); // Default to black
+                }
+            } else {
+                selectColor(0); // Default to black
+            }
+        }
+        
+        // Calculate contrast color for text readability
+        function getContrastColor(hexColor) {
+            // Convert hex to RGB
+            var r = parseInt(hexColor.substr(1, 2), 16);
+            var g = parseInt(hexColor.substr(3, 2), 16);
+            var b = parseInt(hexColor.substr(5, 2), 16);
+            
+            // Calculate luminance
+            var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            
+            // Return black or white based on luminance
+            return luminance > 0.5 ? '#000000' : '#FFFFFF';
+        }
+        
+        // Setup theme mode change handler
+        function setupThemeModeHandler() {
+            var themeModeSelect = document.getElementById('theme-mode');
+            var colorPickerSection = document.getElementById('color-picker-section');
+            
+            if (!themeModeSelect || !colorPickerSection) {
+                debugLog('❌ Theme mode elements not found - themeModeSelect: ' + !!themeModeSelect + ', colorPickerSection: ' + !!colorPickerSection);
+                return;
+            }
+            
+            debugLog('✅ Theme mode handler initialized');
+            
+            // Function to update color picker visibility
+            function updateColorPickerVisibility(selectedMode) {
+                debugLog('🎨 Updating color picker visibility for mode: ' + selectedMode);
+                if (selectedMode === '2') { // Custom Color
+                    colorPickerSection.style.display = 'block';
+                    debugLog('🎨 Color picker shown');
+                } else {
+                    colorPickerSection.style.display = 'none';
+                    debugLog('🎨 Color picker hidden');
+                }
+            }
+            
+            // Add change event listener
+            themeModeSelect.addEventListener('change', function() {
+                var selectedMode = this.value;
+                updateColorPickerVisibility(selectedMode);
+                
+                // Save theme mode
+                localStorage.setItem('oura_theme_mode', selectedMode);
+                debugLog('🎨 Theme mode changed to: ' + selectedMode);
+            });
+            
+            // Load saved theme mode and update visibility
+            var savedThemeMode = localStorage.getItem('oura_theme_mode') || '0';
+            themeModeSelect.value = savedThemeMode;
+            updateColorPickerVisibility(savedThemeMode);
+            
+            debugLog('🎨 Theme mode loaded: ' + savedThemeMode);
+        }
+        
+        // ===== FLEXIBLE LAYOUT SYSTEM =====
+        
+        // Setup flexible layout system
+        function setupFlexibleLayout() {
+            var layoutRowsSelect = document.getElementById('layout-rows');
+            if (!layoutRowsSelect) return;
+            
+            // Add event listener for layout rows change
+            layoutRowsSelect.addEventListener('change', function() {
+                updateRowSelectorsVisibility();
+                saveLayoutConfiguration();
+            });
+            
+            // Load saved layout configuration
+            loadSavedLayoutConfiguration();
+            
+            // Update visibility based on current selection
+            updateRowSelectorsVisibility();
+        }
+        
+        // Update visibility of Row 2 selectors based on layout selection
+        function updateRowSelectorsVisibility() {
+            var layoutRows = document.getElementById('layout-rows').value;
+            var row2Selectors = document.getElementById('row2-selectors');
+            
+            if (layoutRows === '2') {
+                row2Selectors.style.display = 'block';
+                debugLog('📐 Showing Row 2 selectors for 2-row layout');
+            } else {
+                row2Selectors.style.display = 'none';
+                debugLog('📐 Hiding Row 2 selectors for 1-row layout');
+            }
+        }
+        
+        // Save layout configuration to localStorage
+        function saveLayoutConfiguration() {
+            var layoutRows = document.getElementById('layout-rows').value;
+            var row1Left = document.getElementById('left-position').value;
+            var row1Middle = document.getElementById('middle-position').value;
+            var row1Right = document.getElementById('right-position').value;
+            var row2Left = document.getElementById('row2-left-position').value;
+            var row2Right = document.getElementById('row2-right-position').value;
+            
+            var layoutConfig = {
+                rows: parseInt(layoutRows),
+                row1: {
+                    left: parseInt(row1Left),
+                    middle: parseInt(row1Middle),
+                    right: parseInt(row1Right)
+                },
+                row2: {
+                    left: parseInt(row2Left),
+                    right: parseInt(row2Right)
+                }
+            };
+            
+            localStorage.setItem('oura_flexible_layout', JSON.stringify(layoutConfig));
+            debugLog('📐 Saved flexible layout configuration: ' + JSON.stringify(layoutConfig));
+        }
+        
+        // Load saved layout configuration
+        function loadSavedLayoutConfiguration() {
+            var saved = localStorage.getItem('oura_flexible_layout');
+            if (saved) {
+                try {
+                    var config = JSON.parse(saved);
+                    
+                    // Set layout rows
+                    document.getElementById('layout-rows').value = config.rows.toString();
+                    // Ensure row2 selectors visibility matches saved rows
+                    if (typeof updateRowSelectorsVisibility === 'function') {
+                        updateRowSelectorsVisibility();
+                    }
+                    
+                    // Set Row 1 positions
+                    document.getElementById('left-position').value = config.row1.left.toString();
+                    document.getElementById('middle-position').value = config.row1.middle.toString();
+                    document.getElementById('right-position').value = config.row1.right.toString();
+                    
+                    // Set Row 2 positions
+                    document.getElementById('row2-left-position').value = config.row2.left.toString();
+                    document.getElementById('row2-right-position').value = config.row2.right.toString();
+                    
+                    debugLog('📐 Loaded flexible layout configuration: ' + JSON.stringify(config));
+                } catch (e) {
+                    console.log('Error loading flexible layout configuration:', e);
+                    setDefaultFlexibleLayout();
+                }
+            } else {
+                setDefaultFlexibleLayout();
+            }
+        }
+        
+        // Set default flexible layout configuration
+        function setDefaultFlexibleLayout() {
+            // Default: 1 row with Readiness, Sleep, Heart Rate
+            document.getElementById('layout-rows').value = '1';
+            document.getElementById('left-position').value = '0';  // Readiness
+            document.getElementById('middle-position').value = '1';  // Sleep
+            document.getElementById('right-position').value = '2';  // Heart Rate
+            
+            // Default Row 2: Activity, Stress
+            document.getElementById('row2-left-position').value = '3';  // Activity
+            document.getElementById('row2-right-position').value = '4';  // Stress
+            
+            saveLayoutConfiguration();
+            debugLog('📐 Set default flexible layout configuration');
+        }
     </script>
 </body>
 </html>

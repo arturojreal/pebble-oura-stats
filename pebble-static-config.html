@@ -397,6 +397,14 @@
                     
                     <div style="margin: 15px 0;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="show-loading" checked style="margin-right: 10px;">
+                            <span>Show loading screen</span>
+                        </label>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">When enabled, a loading screen with logs is shown on every refresh until data is received.</p>
+                    </div>
+
+                    <div style="margin: 15px 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
                             <input type="checkbox" id="show-debug" checked style="margin-right: 10px;">
                             <span>Show debug messages on watchface</span>
                         </label>
@@ -631,7 +639,9 @@
                 // Get theme mode setting
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
                 
-                // Include layout configuration, date format, and theme mode in the settings
+                // Include layout configuration, date format, theme mode, and show_loading in the settings
+                var showLoading = document.getElementById('show-loading') ? document.getElementById('show-loading').checked : true;
+                localStorage.setItem('oura_show_loading', showLoading ? 'true' : 'false');
                 var settings = {
                     oura_access_token: currentToken,
                     layout_left: parseInt(leftValue),
@@ -639,6 +649,7 @@
                     layout_right: parseInt(rightValue),
                     date_format: parseInt(dateFormat),
                     theme_mode: parseInt(themeMode),
+                    show_loading: showLoading ? 1 : 0,
                     config_action: 'layout_update'
                 };
                 
@@ -807,13 +818,25 @@
                 // Get theme mode setting
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
                 
+                // Get show loading setting
+                var showLoadingEl = document.getElementById('show-loading');
+                var showLoadingVal;
+                if (showLoadingEl) {
+                    showLoadingVal = !!showLoadingEl.checked;
+                    localStorage.setItem('oura_show_loading', showLoadingVal ? 'true' : 'false');
+                } else {
+                    var slSaved = localStorage.getItem('oura_show_loading');
+                    showLoadingVal = (slSaved === null || slSaved === undefined) ? true : (slSaved === 'true' || slSaved === 1 || slSaved === '1');
+                }
+                
                 var settings = { 
                     oura_access_token: token,
                     layout_left: parseInt(layoutConfig.left),
                     layout_middle: parseInt(layoutConfig.middle),
                     layout_right: parseInt(layoutConfig.right),
                     date_format: parseInt(dateFormat),
-                    theme_mode: parseInt(themeMode)
+                    theme_mode: parseInt(themeMode),
+                    show_loading: showLoadingVal ? 1 : 0
                 };
                 var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
                 
@@ -1221,6 +1244,7 @@
             
             // Load saved theme mode
             loadSavedThemeMode();
+            loadSavedShowLoading();
             
             // Add date format change listener
             var dateFormatSelect = document.getElementById('date-format');

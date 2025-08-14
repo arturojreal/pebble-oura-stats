@@ -24,6 +24,9 @@ static TextLayer *s_activity_layer;
 static TextLayer *s_activity_label_layer;
 static TextLayer *s_stress_layer;
 static TextLayer *s_stress_label_layer;
+static Layer *s_loading_layer;
+static TextLayer *s_loading_text_layer; // Big bold header at top
+static TextLayer *s_loading_logs_layer; // Multi-line logs underneath
 
 // Data buffers
 static char s_time_buffer[16];
@@ -39,6 +42,11 @@ static char s_stress_buffer[16];
 // Timer for debug message timeout
 static AppTimer *s_debug_timer = NULL;
 static bool s_real_data_received = false;
+static bool s_loading = true;
+static AppTimer *s_loading_hide_timer = NULL;
+static bool s_show_loading = true; // Controls whether to show the loading overlay on refresh (configurable from JS)
+// becomes true when any real data or payload_complete received
+static bool s_fetch_completed = false;
 
 // Measurement layout configuration
 // 0=readiness, 1=sleep, 2=heart_rate, 3=activity, 4=stress
@@ -54,9 +62,8 @@ static int s_date_format = 0;    // Default: MM-DD-YYYY
 // 0=Dark Mode (white text on black), 1=Light Mode (black text on white), 2=Custom Color Mode (fixed color from config)
 static int s_theme_mode = 2;     // Default: Custom Color Mode for test build
 
-// Custom color and cycling system
+// Custom color system
 static int s_custom_color_index = 0;  // Selected color index from config page
-static int s_color_cycle_index = 0;   // For cycling mode (if enabled)
 static const int s_color_palette_size = 64;
 
 // Forward declarations
@@ -64,6 +71,9 @@ static void update_debug_display(const char* message);
 static void apply_theme_colors(void);
 static bool is_light_color(GColor color);
 static GColor get_palette_color(int index);
+static void loading_layer_update_proc(Layer *layer, GContext *ctx);
+static void hide_loading_overlay(void);
+static void show_loading_overlay(void);
 
 // Get color from palette by index
 static GColor get_palette_color(int index) {
@@ -221,7 +231,7 @@ static OuraReadinessData s_readiness_data = {0};
 static OuraSleepData s_sleep_data = {0};
 static OuraActivityData s_activity_data = {0};
 static OuraStressData s_stress_data = {0};
-static bool s_using_sample_data = true;
+static bool s_using_sample_data = false;
 
 // =============================================================================
 // TIME MODULE
@@ -272,7 +282,7 @@ static void update_measurement_at_position(int measurement_type, int position) {
   TextLayer *layer = NULL;
   TextLayer *label_layer = NULL;
   char *buffer = NULL;
-  char *value_text = "--";
+  char *value_text = ""; // blank until fetch completes
   char *emoji_text = "";
   char value_buffer[16];
   
@@ -304,21 +314,21 @@ static void update_measurement_at_position(int measurement_type, int position) {
       if (s_readiness_data.data_available) {
         snprintf(value_buffer, sizeof(value_buffer), "%d", s_readiness_data.readiness_score);
         value_text = value_buffer;
-      }
+      } else if (s_fetch_completed) { value_text = "--"; }
       break;
     case 1: // Sleep
       emoji_text = "😴";
       if (s_sleep_data.data_available) {
         snprintf(value_buffer, sizeof(value_buffer), "%d", s_sleep_data.sleep_score);
         value_text = value_buffer;
-      }
+      } else if (s_fetch_completed) { value_text = "--"; }
       break;
     case 2: // Heart Rate
       emoji_text = "❤";
       if (s_heart_rate_data.data_available) {
         snprintf(value_buffer, sizeof(value_buffer), "%d", s_heart_rate_data.resting_heart_rate);
         value_text = value_buffer;
-      }
+      } else if (s_fetch_completed) { value_text = "--"; }
       break;
   }
   
@@ -368,8 +378,8 @@ static void update_activity_display() {
 }
 
 static void update_stress_display() {
-  if (s_stress_data.data_available && s_stress_data.stress_duration > 0) {
-    int total_minutes = s_stress_data.stress_duration / 60;
+  if (s_stress_data.data_available) {
+    int total_minutes = s_stress_data.stress_duration / 60; // allow 0m
     int hours = total_minutes / 60;
     int minutes = total_minutes % 60;
     
@@ -393,6 +403,10 @@ static void update_stress_display() {
 
 static void request_oura_data() {
   // Request fresh data from JavaScript component
+  // If enabled, show loading overlay for this refresh
+  if (s_show_loading) {
+    show_loading_overlay();
+  }
   DictionaryIterator *iter;
   app_message_outbox_begin(&iter);
   dict_write_uint8(iter, MESSAGE_KEY_request_data, 1);
@@ -412,28 +426,41 @@ static void debug_timer_callback(void *data) {
 }
 
 static void update_debug_display(const char* message) {
-  if (message) {
-    snprintf(s_debug_buffer, sizeof(s_debug_buffer), "%.30s", message);
-    
-    // Cancel existing timer
-    if (s_debug_timer) {
-      app_timer_cancel(s_debug_timer);
-      s_debug_timer = NULL;
-    }
-    
-    // Set timeout based on message type
-    if (strstr(message, "Requesting")) {
-      // 1 minute timeout for "Requesting real data"
-      s_debug_timer = app_timer_register(60000, debug_timer_callback, NULL);
-    }
-  } else {
-    s_debug_buffer[0] = '\0';  // Clear the buffer
-    if (s_debug_timer) {
-      app_timer_cancel(s_debug_timer);
-      s_debug_timer = NULL;
-    }
+  // Route debug logs to loading overlay only. Do not show on watchface.
+  if (!s_loading) {
+    return; // Suppress debug logs once watchface is visible
   }
-  text_layer_set_text(s_debug_layer, s_debug_buffer);
+ 
+  if (message && s_loading_logs_layer) {
+    // Append message to multi-line buffer (with newline if needed)
+    static char s_loading_logs_buffer[512];
+    static bool initialized = false;
+    if (!initialized) { s_loading_logs_buffer[0] = '\0'; initialized = true; }
+ 
+    size_t cur_len = strlen(s_loading_logs_buffer);
+    size_t msg_len = strlen(message);
+    size_t need = (cur_len ? 1 : 0) + msg_len + 1; // newline + message + NUL
+    if (cur_len + need < sizeof(s_loading_logs_buffer)) {
+      if (cur_len) { s_loading_logs_buffer[cur_len++] = '\n'; s_loading_logs_buffer[cur_len] = '\0'; }
+      strncat(s_loading_logs_buffer, message, sizeof(s_loading_logs_buffer) - cur_len - 1);
+    } else {
+      // If full, drop oldest by finding first '\n'
+      char *first_nl = strchr(s_loading_logs_buffer, '\n');
+      if (first_nl) {
+        size_t remain = strlen(first_nl + 1);
+        memmove(s_loading_logs_buffer, first_nl + 1, remain + 1);
+      } else {
+        // Too long without newline; reset buffer
+        s_loading_logs_buffer[0] = '\0';
+      }
+      // Retry append after trimming
+      cur_len = strlen(s_loading_logs_buffer);
+      if (cur_len) { s_loading_logs_buffer[cur_len++] = '\n'; s_loading_logs_buffer[cur_len] = '\0'; }
+      strncat(s_loading_logs_buffer, message, sizeof(s_loading_logs_buffer) - cur_len - 1);
+    }
+ 
+    text_layer_set_text(s_loading_logs_layer, s_loading_logs_buffer);
+  }
 }
 
 // =============================================================================
@@ -450,42 +477,12 @@ static void update_sample_indicator() {
 }
 
 static void fetch_oura_data() {
-  // Set sample data for initial display (will be replaced by real data)
-  update_debug_display("Loading sample data...");
-  
-  s_heart_rate_data.resting_heart_rate = 65;
-  s_heart_rate_data.hrv_score = 45;
-  s_heart_rate_data.data_available = true;
-  
-  s_readiness_data.readiness_score = 85;
-  s_readiness_data.temperature_deviation = 0;
-  s_readiness_data.recovery_index = 82;
-  s_readiness_data.data_available = true;
-  
-  s_sleep_data.sleep_score = 78;
-  s_sleep_data.total_sleep_time = 450; // 7.5 hours
-  s_sleep_data.deep_sleep_time = 90;
-  s_sleep_data.data_available = true;
-  
-  s_activity_data.activity_score = 82;
-  s_activity_data.steps = 8500;
-  s_activity_data.active_calories = 420;
-  s_activity_data.data_available = true;
-  
-  s_stress_data.stress_duration = 720; // 12 minutes in seconds (720 seconds)
-  s_stress_data.stress_high_duration = 300; // 5 minutes in seconds
-  s_stress_data.data_available = true;
-  
-  // Mark as using sample data
-  s_using_sample_data = true;
-  
-  // Initialize displays
+  // Do NOT set any sample data. Leave fields blank until fetched.
+  s_using_sample_data = false;
   update_time_display();
   update_date_display();
   update_all_measurements();
   update_sample_indicator();
-  
-  APP_LOG(APP_LOG_LEVEL_INFO, "Sample Oura data loaded");
   
   // Request real data from phone
   update_debug_display("Requesting real data...");
@@ -635,6 +632,67 @@ static void window_load(Window *window) {
   text_layer_set_text_alignment(s_stress_label_layer, GTextAlignmentCenter);
   text_layer_set_text(s_stress_label_layer, "😰");
   layer_add_child(window_layer, text_layer_get_layer(s_stress_label_layer));
+
+  // Loading overlay (top-most): deep green background with "Loading..." header and logs below
+  s_loading_layer = layer_create(bounds);
+  layer_set_update_proc(s_loading_layer, loading_layer_update_proc);
+  layer_add_child(window_layer, s_loading_layer);
+  
+  // Big bold title at top
+  s_loading_text_layer = text_layer_create(GRect(0, 4, bounds.size.w, 28));
+  text_layer_set_background_color(s_loading_text_layer, GColorClear);
+  text_layer_set_text_color(s_loading_text_layer, GColorWhite);
+  text_layer_set_font(s_loading_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_alignment(s_loading_text_layer, GTextAlignmentCenter);
+  text_layer_set_text(s_loading_text_layer, "Loading...");
+  layer_add_child(window_layer, text_layer_get_layer(s_loading_text_layer));
+
+  // Multi-line debug logs under the title
+  int logs_y = 4 + 28 + 4;
+  s_loading_logs_layer = text_layer_create(GRect(4, logs_y, bounds.size.w - 8, bounds.size.h - logs_y - 4));
+  text_layer_set_background_color(s_loading_logs_layer, GColorClear);
+  text_layer_set_text_color(s_loading_logs_layer, GColorWhite);
+  text_layer_set_font(s_loading_logs_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+  text_layer_set_text_alignment(s_loading_logs_layer, GTextAlignmentLeft);
+  text_layer_set_overflow_mode(s_loading_logs_layer, GTextOverflowModeWordWrap);
+  text_layer_set_text(s_loading_logs_layer, "");
+  layer_add_child(window_layer, text_layer_get_layer(s_loading_logs_layer));
+  
+  // Ensure overlay visibility according to state
+  layer_set_hidden(s_loading_layer, !s_loading);
+  layer_set_hidden(text_layer_get_layer(s_loading_text_layer), !s_loading);
+  layer_set_hidden(text_layer_get_layer(s_loading_logs_layer), !s_loading);
+
+  // We no longer want debug text on the main watchface; hide it permanently
+  if (s_debug_layer) {
+    layer_set_hidden(text_layer_get_layer(s_debug_layer), true);
+  }
+}
+
+static void loading_layer_update_proc(Layer *layer, GContext *ctx) {
+  // Oxford Blue background for loading overlay (high contrast with white text)
+  graphics_context_set_fill_color(ctx, GColorOxfordBlue);
+  graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
+}
+
+static void show_loading_overlay(void) {
+  // Make loading UI visible and clear logs area
+  s_loading = true;
+  if (s_loading_layer) layer_set_hidden(s_loading_layer, false);
+  if (s_loading_text_layer) layer_set_hidden(text_layer_get_layer(s_loading_text_layer), false);
+  if (s_loading_logs_layer) {
+    text_layer_set_text(s_loading_logs_layer, "");
+    layer_set_hidden(text_layer_get_layer(s_loading_logs_layer), false);
+  }
+}
+
+static void hide_loading_overlay(void) {
+  if (s_loading) {
+    s_loading = false;
+    if (s_loading_layer) layer_set_hidden(s_loading_layer, true);
+    if (s_loading_text_layer) layer_set_hidden(text_layer_get_layer(s_loading_text_layer), true);
+    if (s_loading_logs_layer) layer_set_hidden(text_layer_get_layer(s_loading_logs_layer), true);
+  }
 }
 
 static void window_unload(Window *window) {
@@ -652,6 +710,9 @@ static void window_unload(Window *window) {
   text_layer_destroy(s_activity_label_layer);
   text_layer_destroy(s_stress_layer);
   text_layer_destroy(s_stress_label_layer);
+  if (s_loading_text_layer) text_layer_destroy(s_loading_text_layer);
+  if (s_loading_layer) layer_destroy(s_loading_layer);
+  if (s_loading_hide_timer) { app_timer_cancel(s_loading_hide_timer); s_loading_hide_timer = NULL; }
 }
 
 // =============================================================================
@@ -721,40 +782,41 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     }
   }
   
-  // Process activity data
+  // Process activity data (use struct + display helper for "--" when unavailable)
   Tuple *activity_score_tuple = dict_find(iterator, MESSAGE_KEY_activity_score);
   if (activity_score_tuple) {
     int activity_score = activity_score_tuple->value->int32;
-    snprintf(s_activity_buffer, sizeof(s_activity_buffer), "%d", activity_score);
-    text_layer_set_text(s_activity_layer, s_activity_buffer);
-    APP_LOG(APP_LOG_LEVEL_INFO, "Activity updated: %d score", activity_score);
+    s_activity_data.activity_score = activity_score;
+    // Optional extras if present
+    Tuple *active_calories_tuple = dict_find(iterator, MESSAGE_KEY_active_calories);
+    if (active_calories_tuple) {
+      s_activity_data.active_calories = active_calories_tuple->value->int32;
+    }
+    Tuple *steps_tuple = dict_find(iterator, MESSAGE_KEY_steps);
+    if (steps_tuple) {
+      s_activity_data.steps = steps_tuple->value->int32;
+    }
+    // Infer availability: any positive field indicates availability
+    s_activity_data.data_available = (s_activity_data.activity_score > 0) ||
+                                     (s_activity_data.active_calories > 0) ||
+                                     (s_activity_data.steps > 0);
+    update_activity_display();
+    APP_LOG(APP_LOG_LEVEL_INFO, "Activity updated: %d score (available=%d)", activity_score, s_activity_data.data_available);
   }
   
-  // Process stress data - convert seconds to minutes and format as "Xh Ym" or "Xm"
+  // Process stress data (use struct + display helper for "--" when 0/unavailable)
   Tuple *stress_duration_tuple = dict_find(iterator, MESSAGE_KEY_stress_duration);
   if (stress_duration_tuple) {
     int stress_seconds = stress_duration_tuple->value->int32;
-    int stress_minutes = stress_seconds / 60; // Convert seconds to minutes
-    
-    APP_LOG(APP_LOG_LEVEL_INFO, "===== STRESS DEBUG C CODE =====");
-    APP_LOG(APP_LOG_LEVEL_INFO, "Received stress_seconds: %d", stress_seconds);
-    APP_LOG(APP_LOG_LEVEL_INFO, "Calculated stress_minutes: %d", stress_minutes);
-    
-    if (stress_minutes >= 60) {
-      int hours = stress_minutes / 60;
-      int remaining_minutes = stress_minutes % 60;
-      if (remaining_minutes > 0) {
-        snprintf(s_stress_buffer, sizeof(s_stress_buffer), "%dh %dm", hours, remaining_minutes);
-      } else {
-        snprintf(s_stress_buffer, sizeof(s_stress_buffer), "%dh", hours);
-      }
-    } else {
-      snprintf(s_stress_buffer, sizeof(s_stress_buffer), "%dm", stress_minutes);
+    s_stress_data.stress_duration = stress_seconds;
+    Tuple *stress_high_tuple = dict_find(iterator, MESSAGE_KEY_stress_high_duration);
+    if (stress_high_tuple) {
+      s_stress_data.stress_high_duration = stress_high_tuple->value->int32;
     }
-    
-    text_layer_set_text(s_stress_layer, s_stress_buffer);
-    APP_LOG(APP_LOG_LEVEL_INFO, "Final stress display: %s", s_stress_buffer);
-    APP_LOG(APP_LOG_LEVEL_INFO, "===== STRESS DEBUG C CODE END =====");
+    // Consider stress available if we received the tuple, even if 0 seconds
+    s_stress_data.data_available = true;
+    update_stress_display();
+    APP_LOG(APP_LOG_LEVEL_INFO, "Stress updated: %ds (available=%d)", stress_seconds, s_stress_data.data_available);
   }
   
   // Process layout configuration
@@ -790,9 +852,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     s_theme_mode = theme_mode_tuple->value->int32;
     APP_LOG(APP_LOG_LEVEL_INFO, "Theme mode updated: %d", s_theme_mode);
     apply_theme_colors();
-    const char* mode_name = s_theme_mode == 1 ? "Light Mode" : 
-                           s_theme_mode == 2 ? "Custom Color Mode" : "Dark Mode";
-    APP_LOG(APP_LOG_LEVEL_INFO, "Theme colors applied: %s", mode_name);
   }
   
   // Process custom color index (for theme mode 2)
@@ -805,6 +864,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       APP_LOG(APP_LOG_LEVEL_INFO, "Custom color applied to watchface");
     }
   }
+
+  // Process show loading screen configuration
+  Tuple *show_loading_tuple = dict_find(iterator, MESSAGE_KEY_show_loading);
+  if (show_loading_tuple) {
+    s_show_loading = show_loading_tuple->value->int32 ? true : false;
+    APP_LOG(APP_LOG_LEVEL_INFO, "Show loading overlay setting: %d", s_show_loading);
+  }
   
   // Process flexible layout configuration
   Tuple *layout_rows_tuple = dict_find(iterator, MESSAGE_KEY_layout_rows);
@@ -814,6 +880,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   Tuple *row2_left_tuple = dict_find(iterator, MESSAGE_KEY_row2_left);
   Tuple *row2_middle_tuple = dict_find(iterator, MESSAGE_KEY_row2_middle);
   Tuple *row2_right_tuple = dict_find(iterator, MESSAGE_KEY_row2_right);
+  // Silence potential unused variable warnings until row2 support is wired to UI
+  (void)row2_left_tuple; (void)row2_middle_tuple; (void)row2_right_tuple;
   
   if (layout_rows_tuple && row1_left_tuple && row1_middle_tuple && row1_right_tuple) {
     int layout_rows = layout_rows_tuple->value->int32;
@@ -846,16 +914,15 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   s_using_sample_data = false;
   update_sample_indicator();
   
-  // Colorful mode: cycle background color on data refresh
-  if (s_theme_mode == 2) {
-    s_color_cycle_index = (s_color_cycle_index + 1) % s_color_palette_size;
-    APP_LOG(APP_LOG_LEVEL_INFO, "🎨 Color cycling: index %d/%d", 
-            s_color_cycle_index, s_color_palette_size);
-    apply_theme_colors();
-  }
-  
   // Mark that real data was received and clear debug message after 10 seconds
   s_real_data_received = true;
+  Tuple *payload_complete_tuple = dict_find(iterator, MESSAGE_KEY_payload_complete);
+  if (payload_complete_tuple) {
+    s_fetch_completed = true;
+    // Hold loading screen for 3 seconds to allow reading logs
+    if (s_loading_hide_timer) { app_timer_cancel(s_loading_hide_timer); }
+    s_loading_hide_timer = app_timer_register(3000, (AppTimerCallback) hide_loading_overlay, NULL);
+  }
   if (s_debug_timer) {
     app_timer_cancel(s_debug_timer);
   }
@@ -941,9 +1008,6 @@ static void apply_theme_colors(void) {
   if (s_stress_label_layer) {
     text_layer_set_text_color(s_stress_label_layer, text_color);
   }
-  
-  APP_LOG(APP_LOG_LEVEL_INFO, "Theme colors applied: %s", 
-          s_theme_mode == 1 ? "Light Mode" : "Dark Mode");
 }
 
 // =============================================================================
@@ -981,7 +1045,6 @@ static void init(void) {
   
   // Initialize custom color mode
   if (s_theme_mode == 2) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "🎨 Custom color mode enabled! Using color index %d", s_custom_color_index);
     apply_theme_colors();
   }
   

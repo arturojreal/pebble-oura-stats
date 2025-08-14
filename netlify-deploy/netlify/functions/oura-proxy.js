@@ -61,8 +61,19 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Build Oura API URL
-    let ouraUrl = `https://api.ouraring.com/v2/usercollection/${endpoint}`;
+    // Build Oura API URL based on endpoint type
+    let ouraUrl;
+    
+    // Map endpoints to correct Oura API v2 paths
+    const endpointMap = {
+      'heartrate': 'https://api.ouraring.com/v2/usercollection/heartrate',
+      'daily_readiness': 'https://api.ouraring.com/v2/usercollection/daily_readiness',
+      'daily_sleep': 'https://api.ouraring.com/v2/usercollection/daily_sleep',
+      'daily_activity': 'https://api.ouraring.com/v2/usercollection/daily_activity',
+      'daily_stress': 'https://api.ouraring.com/v2/usercollection/daily_stress'
+    };
+    
+    ouraUrl = endpointMap[endpoint];
     
     // Add date parameters if provided
     const params = new URLSearchParams();
