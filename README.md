@@ -2,7 +2,7 @@
 
 A modern, feature-rich Pebble watchface that displays real-time health data from your Oura Ring, including sleep score, readiness score, and heart rate metrics with beautiful light/dark themes.
 
-**✨ Now featuring Light/Dark Mode toggle, configurable date formats, and enhanced readability!**
+**✨ Now featuring time controls (Show Seconds, Compact Time), configurable date formats, Light/Dark Mode, and enhanced readability!**
 
 To participate in beta testing, join [The Rebble Alliance Discord](https://discord.com/channels/221364737269694464/1403471447481122897)
 
@@ -16,7 +16,8 @@ To help support development, please consider [buying me a coffee!](https://ko-fi
 - **Light/Dark Mode Toggle**: Switch between 🌙 dark and ☀️ light themes with complete UI color inversion
 - **Enhanced Readability**: Large, bold date display with GOTHIC_24_BOLD font
 - **Optimized Layout**: Perfectly positioned time and date elements for maximum visibility
-- **Configurable Date Format**: Choose between MM-DD-YYYY and DD-MM-YYYY formats
+- **Time Controls**: Enable **Show Seconds** and **Compact Time** (removes leading zero in 12h)
+- **Configurable Date Format**: Choose from multiple international formats (Traditional, Full/Short Month, With Weekday)
 
 ### 📊 **Real-time Health Data**
 - **Live Oura Ring Data**: Sleep score, readiness score, and heart rate from Oura API v2
@@ -62,18 +63,20 @@ pebble install --phone 192.168.1.XXX
 3. Tap "Connect to Oura Ring"
 4. Complete OAuth2 authentication
 5. Configure your preferences:
-   - Choose your preferred date format (MM-DD-YYYY or DD-MM-YYYY)
-   - Select theme mode (🌙 Dark or ☀️ Light)
-   - Adjust layout positioning if desired
+   - Time controls: **Show Seconds**, **Compact Time**
+   - Choose your preferred **date format** (Traditional, Month styles, Weekday options)
+   - Select **theme mode** (🌙 Dark or ☀️ Light)
+   - Adjust **layout** positioning if desired
 6. Verify real data appears on your watch
 
 ## 🆕 What's New in Latest Version
 
 ### ✨ **Major Feature Updates**
+- **⏱️ Time Controls**: New settings for **Show Seconds** (updates tick rate) and **Compact Time** (trim leading zero in 12h)
 - **🎨 Light/Dark Mode Toggle**: Complete theme system with emoji indicators
 - **📅 Enhanced Date Display**: Larger, bolder font (GOTHIC_24_BOLD) for better readability
 - **🔧 Improved UI Layout**: Time moved up 10px for optimal positioning
-- **⚙️ Configurable Date Format**: International date format support
+- **⚙️ Configurable Date Format**: Expanded international date format support (Traditional, Full/Short Month, With Weekday)
 - **🔄 Real-time Theme Switching**: Instant color inversion without app restart
 
 ### 🐛 **Critical Bug Fixes**
@@ -119,7 +122,8 @@ pebble install --phone 192.168.1.XXX
 Access via Pebble app → Your Watchface → Settings:
 
 - **🔗 Connect to Oura Ring**: OAuth2 authentication setup
-- **📅 Date Format**: Choose MM-DD-YYYY or DD-MM-YYYY
+- **⏱️ Time Controls**: Show Seconds, Compact Time (12h leading zero trim)
+- **📅 Date Format**: Traditional, Full/Short Month, With Weekday
 - **🎨 Theme Mode**: Toggle between 🌙 Dark Mode and ☀️ Light Mode
 - **🔧 Layout Options**: Customize data positioning (left/middle/right)
 - **🐛 Debug Toggle**: Enable/disable diagnostic information

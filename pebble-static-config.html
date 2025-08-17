@@ -10,8 +10,49 @@
             padding: 20px;
             max-width: 400px;
             margin: 0 auto;
-            background: #f5f5f5;
-            line-height: 1.4;
+            background-color: #f5f5f5;
+            color: #333;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .container {
+            background-color: #2a2a2a;
+        }
+        
+        body.dark-mode .section-box {
+            background-color: #333;
+            border-color: #555;
+        }
+        
+        body.dark-mode .tab-button {
+            background-color: #444;
+            color: #e0e0e0;
+            border-color: #666;
+        }
+        
+        body.dark-mode .tab-button.active {
+            background-color: #0066cc;
+        }
+        
+        body.dark-mode select, body.dark-mode input[type="checkbox"] {
+            background-color: #444;
+            color: #e0e0e0;
+            border-color: #666;
+        }
+        
+        body.dark-mode .connect-btn {
+            background-color: #0066cc;
+        }
+        
+        body.dark-mode .debug-log {
+            background-color: #222;
+            color: #ccc;
+            border-color: #555;
         }
         .container {
             background: white;
@@ -211,8 +252,8 @@
         
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-button active" onclick="switchTab('setup')">⚙️ Setup</button>
-            <button class="tab-button" onclick="switchTab('customization')">🎨 Customization</button>
+            <button class="tab-button active" onclick="switchTab('setup', this)">⚙️ Setup</button>
+            <button class="tab-button" onclick="switchTab('customization', this)">🎨 Customization</button>
         </div>
         
         <!-- Setup Tab -->
@@ -300,6 +341,21 @@
             
             <h1>🎛️ Customization</h1>
             
+            <!-- Layout Configuration -->
+            <div class="section-box" style="margin: 20px 0;">
+                <div class="section-title">📐 Layout Configuration</div>
+                <p style="font-size: 14px; color: #666; margin: 10px 0;">Choose how many rows of measurements to display on your watchface.<br>1 row shows larger emojis, 2 rows allows more measurements</p>
+                
+                <div style="margin: 15px 0;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Number of Rows:</label>
+                    <select id="layout-rows" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="1" selected>1 Row (3 measurements, larger emojis)</option>
+                        <option value="2">2 Rows (up to 5 measurements, smaller emojis)</option>
+                    </select>
+                    <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">1 row provides larger, more visible emojis. 2 rows allow more data but with smaller display.</p>
+                </div>
+            </div>
+            
             <!-- Measurement Organization -->
             <div class="section-box" style="margin: 20px 0;">
                 <div class="section-title">📊 Measurement Organization</div>
@@ -326,39 +382,70 @@
                     </div>
                 </div>
                 
-                <!-- Position Selectors -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 20px 0;">
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
-                        <select id="left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
-                            <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🔥 Activity</option>
-                            <option value="4">😰 Stress</option>
-                        </select>
+                <!-- Row 1 Position Selectors -->
+                <div style="margin: 20px 0;">
+                    <h4 style="margin: 10px 0; color: #333;">Row 1 (Top Row)</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
+                            <select id="left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
+                            <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1" selected>😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
+                            <select id="right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2" selected>❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
                     </div>
-                    
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
-                        <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1" selected>😴 Sleep</option>
-                            <option value="2">❤️ Heart Rate</option>
-                            <option value="3">🔥 Activity</option>
-                            <option value="4">😰 Stress</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
-                        <select id="right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <option value="0">🎉 Readiness</option>
-                            <option value="1">😴 Sleep</option>
-                            <option value="2" selected>❤️ Heart Rate</option>
-                            <option value="3">🔥 Activity</option>
-                            <option value="4">😰 Stress</option>
-                        </select>
+                </div>
+                
+                <!-- Row 2 Position Selectors (Hidden by default) -->
+                <div id="row2-selectors" style="margin: 20px 0; display: none;">
+                    <h4 style="margin: 10px 0; color: #333;">Row 2 (Bottom Row)</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
+                            <select id="row2-left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3" selected>🔥 Activity</option>
+                                <option value="4">😰 Stress</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
+                            <select id="row2-right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                <option value="0">🎉 Readiness</option>
+                                <option value="1">😴 Sleep</option>
+                                <option value="2">❤️ Heart Rate</option>
+                                <option value="3">🔥 Activity</option>
+                                <option value="4" selected>😰 Stress</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
@@ -370,20 +457,61 @@
                         <label style="display: block; margin-bottom: 5px; font-weight: 500;">Data Refresh Frequency:</label>
                         <select id="refresh-frequency" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                             <option value="15">15 minutes</option>
-                            <option value="30">30 minutes</option>
-                            <option value="60" selected>1 hour</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="60">1 hour</option>
                             <option value="120">2 hours</option>
                             <option value="240">4 hours</option>
                         </select>
                     </div>
                     
+                    <!-- Time controls placed before Date Format per UX preference -->
+                    <div style="margin: 15px 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="show-seconds" style="margin-right: 10px;">
+                            <span>Show Seconds</span>
+                        </label>
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="compact-time" style="margin-right: 10px;">
+                            <span>Compact Time</span>
+                        </label>
+                    </div>
+                    
                     <div style="margin: 15px 0;">
                         <label style="display: block; margin-bottom: 5px; font-weight: 500;">📅 Date Format:</label>
                         <select id="date-format" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="0" selected>MM-DD-YYYY (US Format)</option>
-                            <option value="1">DD-MM-YYYY (International Format)</option>
+                            <optgroup label="Traditional">
+                                <option value="0" selected>MM-DD-YYYY (US Format)</option>
+                                <option value="1">DD-MM-YYYY (International Format)</option>
+                            </optgroup>
+                            <optgroup label="Full Month">
+                                <option value="2">June 6, 2025</option>
+                                <option value="3">6 June 2025</option>
+                                <option value="4">June 6</option>
+                                <option value="5">6 June</option>
+                            </optgroup>
+                            <optgroup label="Short Month">
+                                <option value="6">Jun 6, 2025</option>
+                                <option value="7">6 Jun 2025</option>
+                                <option value="8">Jun 6</option>
+                                <option value="9">6 Jun</option>
+                            </optgroup>
+                            <optgroup label="With Weekday">
+                                <option value="10">Friday, June 6</option>
+                                <option value="11">Fri, Jun 6</option>
+                            </optgroup>
                         </select>
                         <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose how the date appears below the time on your watchface</p>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">🌙 Config Page Theme:</label>
+                        <select id="config-theme" onchange="toggleConfigTheme()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="light">☀️ Light Mode</option>
+                            <option value="dark">🌙 Dark Mode</option>
+                        </select>
+                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose the appearance of this configuration page</p>
                     </div>
                     
                     <div style="margin: 15px 0;">
@@ -391,22 +519,33 @@
                         <select id="theme-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                             <option value="0" selected>🌙 Dark Mode (Default)</option>
                             <option value="1">☀️ Light Mode</option>
+                            <option value="2">🎨 Custom Color</option>
                         </select>
                         <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose between dark mode (white text on black) or light mode (black text on white)</p>
                     </div>
                     
-                    <div style="margin: 15px 0;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="show-loading" checked style="margin-right: 10px;">
-                            <span>Show loading screen</span>
-                        </label>
-                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">When enabled, a loading screen with logs is shown on every refresh until data is received.</p>
+                    <!-- Color Picker Section -->
+                    <div id="color-picker-section" style="margin: 15px 0; display: none;">
+                        <div class="section-title">🎨 Custom Color Selection</div>
+                        <p style="font-size: 12px; color: #666; margin: 10px 0;">Choose a background color for your watchface. Text color will automatically adjust for readability.</p>
+                        
+                        <!-- Color Preview -->
+                        <div style="margin: 15px 0; text-align: center;">
+                            <div id="color-preview" style="display: inline-block; padding: 20px 40px; border-radius: 8px; background: #000000; color: #ffffff; font-weight: bold; border: 2px solid #ddd;">
+                                Selected: <span id="color-name">Black</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Color Palette Grid -->
+                        <div id="color-palette" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 6px; max-width: 100%; margin: 0 auto; padding: 0 10px;">
+                            <!-- Colors will be populated by JavaScript -->
+                        </div>
                     </div>
-
+                    
                     <div style="margin: 15px 0;">
                         <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="show-debug" checked style="margin-right: 10px;">
-                            <span>Show debug messages on watchface</span>
+                            <input type="checkbox" id="show-loading-screen" style="margin-right: 10px;">
+                            <span>Show loading screen</span>
                         </label>
                     </div>
                 </div>
@@ -415,14 +554,15 @@
                     <button onclick="applyMeasurementLayout()" class="connect-btn" style="width: auto; padding: 10px 20px;">Apply Layout</button>
                 </div>
                 
-                <!-- Future Customization Options -->
-                <div style="padding: 20px; background: #f8f9fa; border-radius: 6px; color: #6c757d; margin-top: 20px;">
-                    <strong>Coming Soon:</strong>
-                    <ul style="text-align: left; margin: 10px 0; padding-left: 20px; font-size: 14px;">
-                        <li>Font size options</li>
-                        <li>Custom emoji selection</li>
-                        <li>Refresh interval customization</li>
-                    </ul>
+                <!-- Coming Soon section commented out
+        <div>
+            <strong>Coming Soon:</strong>
+            <ul>
+                <li>Font size options</li>
+                <li>Custom emoji selection</li>
+            </ul>
+        </div>
+        -->
                 </div>
             </div>
         </div>
@@ -431,7 +571,7 @@
 
     <script>
         // Tab switching functionality
-        function switchTab(tabName) {
+        function switchTab(tabName, el) {
             // Hide all tab contents
             var tabContents = document.querySelectorAll('.tab-content');
             tabContents.forEach(function(tab) {
@@ -448,19 +588,63 @@
             document.getElementById(tabName + '-tab').classList.add('active');
             
             // Add active class to clicked tab button
-            event.target.classList.add('active');
+            if (el) { el.classList.add('active'); }
         }
         
         // Toggle debug information visibility
+        function initializeDebugVisibility() {
+            var debugSection = document.querySelector('.debug-section');
+            var debugCheckbox = document.getElementById('show-debug');
+            if (!debugSection || !debugCheckbox) return;
+            
+            // Load saved preference if present
+            var stored = localStorage.getItem('oura_show_debug');
+            if (stored !== null && stored !== undefined) {
+                debugCheckbox.checked = (stored === 'true' || stored === '1');
+            }
+            
+            debugSection.style.display = debugCheckbox.checked ? 'block' : 'none';
+        }
+
         function toggleDebugVisibility() {
             var debugSection = document.querySelector('.debug-section');
-            var showDebug = document.getElementById('show-debug').checked;
+            var debugCheckbox = document.getElementById('show-debug');
+            if (!debugSection || !debugCheckbox) return;
             
-            if (showDebug) {
-                debugSection.style.display = 'block';
-            } else {
-                debugSection.style.display = 'none';
-            }
+            var show = !!debugCheckbox.checked;
+            debugSection.style.display = show ? 'block' : 'none';
+            localStorage.setItem('oura_show_debug', show ? 'true' : 'false');
+            debugLog('🪵 show_debug set to ' + (show ? 'true' : 'false'));
+        }
+        
+        // ===== TIME DISPLAY SETTINGS (Show Seconds, Compact Time) =====
+        function loadTimeDisplaySettings() {
+            var ssEl = document.getElementById('show-seconds');
+            var ctEl = document.getElementById('compact-time');
+            if (!ssEl || !ctEl) return;
+            
+            var ss = localStorage.getItem('oura_show_seconds');
+            var ct = localStorage.getItem('oura_compact_time');
+            ssEl.checked = (ss === '1');
+            ctEl.checked = (ct === '1');
+            debugLog('⏱️ Time settings loaded: show_seconds=' + (ssEl.checked ? '1' : '0') + ', compact_time=' + (ctEl.checked ? '1' : '0'));
+        }
+        
+        function setupTimeDisplayHandlers() {
+            var ssEl = document.getElementById('show-seconds');
+            var ctEl = document.getElementById('compact-time');
+            if (!ssEl || !ctEl) return;
+            
+            ssEl.addEventListener('change', function() {
+                var val = ssEl.checked ? '1' : '0';
+                localStorage.setItem('oura_show_seconds', val);
+                debugLog('🔧 show_seconds set to ' + val);
+            });
+            ctEl.addEventListener('change', function() {
+                var val = ctEl.checked ? '1' : '0';
+                localStorage.setItem('oura_compact_time', val);
+                debugLog('🔧 compact_time set to ' + val);
+            });
         }
         
         // Measurement layout customization - using numeric keys to match select values
@@ -602,71 +786,57 @@
         }
         
         function applyMeasurementLayout() {
-            var leftValue = document.getElementById('left-position').value;
-            var middleValue = document.getElementById('middle-position').value;
-            var rightValue = document.getElementById('right-position').value;
+            // Get flexible layout configuration
+            var layoutRows = document.getElementById('layout-rows').value;
+            var row1Left = document.getElementById('left-position').value;
+            var row1Middle = document.getElementById('middle-position').value;
+            var row1Right = document.getElementById('right-position').value;
+            var row2Left = document.getElementById('row2-left-position').value;
+            var row2Right = document.getElementById('row2-right-position').value;
             
-            // Check for duplicates
-            var positions = [leftValue, middleValue, rightValue];
-            if (positions.length !== new Set(positions).size) {
+            // Check for duplicates in active positions
+            var activePositions = [row1Left, row1Middle, row1Right];
+            if (layoutRows === '2') {
+                activePositions.push(row2Left, row2Right);
+            }
+            
+            if (activePositions.length !== new Set(activePositions).size) {
                 alert('Please ensure each measurement appears in only one position.');
                 return;
             }
             
-            // Store the layout configuration
-            var layoutConfig = {
-                left: leftValue,
-                middle: middleValue,
-                right: rightValue
+            // Store the flexible layout configuration
+            var flexibleLayoutConfig = {
+                rows: parseInt(layoutRows),
+                row1: {
+                    left: parseInt(row1Left),
+                    middle: parseInt(row1Middle),
+                    right: parseInt(row1Right)
+                },
+                row2: {
+                    left: parseInt(row2Left),
+                    right: parseInt(row2Right)
+                }
             };
             
             // Store in localStorage for persistence
-            localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
+            localStorage.setItem('oura_flexible_layout', JSON.stringify(flexibleLayoutConfig));
             
-            // Send layout update to Pebble immediately
-            debugLog('📊 Applying measurement layout: ' + JSON.stringify(layoutConfig));
+            // Also store legacy format for backward compatibility
+            var legacyLayoutConfig = {
+                left: row1Left,
+                middle: row1Middle,
+                right: row1Right
+            };
+            localStorage.setItem('oura_measurement_layout', JSON.stringify(legacyLayoutConfig));
             
-            // Send layout data to watchface via webview close
+            // Unify behavior with Send to Pebble: delegate sending to sendToPebble()
+            debugLog('📊 Applying flexible layout: ' + JSON.stringify(flexibleLayoutConfig));
             var currentToken = localStorage.getItem('oura_access_token');
             debugLog('🔍 Current token status: ' + (currentToken ? 'Found' : 'Not found'));
-            
             if (currentToken) {
-                debugLog('🔄 Sending layout update with token...');
-                
-                // Get date format setting
-                var dateFormat = localStorage.getItem('oura_date_format') || '0';
-                
-                // Get theme mode setting
-                var themeMode = localStorage.getItem('oura_theme_mode') || '0';
-                
-                // Include layout configuration, date format, theme mode, and show_loading in the settings
-                var showLoading = document.getElementById('show-loading') ? document.getElementById('show-loading').checked : true;
-                localStorage.setItem('oura_show_loading', showLoading ? 'true' : 'false');
-                var settings = {
-                    oura_access_token: currentToken,
-                    layout_left: parseInt(leftValue),
-                    layout_middle: parseInt(middleValue),
-                    layout_right: parseInt(rightValue),
-                    date_format: parseInt(dateFormat),
-                    theme_mode: parseInt(themeMode),
-                    show_loading: showLoading ? 1 : 0,
-                    config_action: 'layout_update'
-                };
-                
-                debugLog('📊 Layout values: L=' + leftValue + ' M=' + middleValue + ' R=' + rightValue);
-                debugLog('📊 Parsed layout: L=' + settings.layout_left + ' M=' + settings.layout_middle + ' R=' + settings.layout_right);
-                
-                var settingsJson = JSON.stringify(settings);
-                var encodedSettings = encodeURIComponent(settingsJson);
-                var returnUrl = 'pebblejs://close#' + encodedSettings;
-                
-                debugLog('📤 Settings JSON: ' + settingsJson);
-                debugLog('📤 Encoded settings length: ' + encodedSettings.length);
-                debugLog('📤 Return URL: ' + returnUrl.substring(0, 100) + '...');
-                
-                // Close the webview with the layout data
-                debugLog('🚀 Closing webview with layout data...');
-                window.location = returnUrl;
+                debugLog('🔄 Delegating send to sendToPebble()');
+                sendToPebble(currentToken);
             } else {
                 debugLog('⚠️ No token found - cannot send layout update');
                 debugLog('💡 Layout saved to localStorage - will apply on next data refresh');
@@ -801,14 +971,43 @@
         // Send settings to Pebble
         function sendToPebble(token) {
             try {
-                // Get current layout configuration
-                var savedLayout = localStorage.getItem('oura_measurement_layout');
-                var layoutConfig = { left: '0', middle: '1', right: '2' }; // defaults
-                if (savedLayout) {
+                // Load layout from storage (prefer flexible layout if available)
+                var layoutConfig = { left: '0', middle: '1', right: '2' }; // legacy defaults
+                var layoutRows = 1;
+                var row2Left = undefined;
+                var row2Right = undefined;
+
+                var savedFlexible = localStorage.getItem('oura_flexible_layout');
+                if (savedFlexible) {
                     try {
-                        layoutConfig = JSON.parse(savedLayout);
+                        var flex = JSON.parse(savedFlexible);
+                        if (flex && flex.row1) {
+                            layoutConfig.left = String(flex.row1.left);
+                            layoutConfig.middle = String(flex.row1.middle);
+                            layoutConfig.right = String(flex.row1.right);
+                        }
+                        if (typeof flex.rows !== 'undefined') layoutRows = parseInt(flex.rows);
+                        if (flex.row2) {
+                            row2Left = flex.row2.left;
+                            row2Right = flex.row2.right;
+                        }
                     } catch (e) {
-                        debugLog('⚠️ Error parsing saved layout, using defaults');
+                        debugLog('⚠️ Error parsing flexible layout, will try legacy layout');
+                    }
+                }
+
+                if (!savedFlexible) {
+                    // Fallback to legacy layout
+                    var savedLayout = localStorage.getItem('oura_measurement_layout');
+                    if (savedLayout) {
+                        try {
+                            var legacy = JSON.parse(savedLayout);
+                            layoutConfig.left = legacy.left;
+                            layoutConfig.middle = legacy.middle;
+                            layoutConfig.right = legacy.right;
+                        } catch (e2) {
+                            debugLog('⚠️ Error parsing legacy layout, using defaults');
+                        }
                     }
                 }
                 
@@ -819,30 +1018,73 @@
                 var themeMode = localStorage.getItem('oura_theme_mode') || '0';
                 
                 // Get show loading setting
-                var showLoadingEl = document.getElementById('show-loading');
-                var showLoadingVal;
-                if (showLoadingEl) {
-                    showLoadingVal = !!showLoadingEl.checked;
-                    localStorage.setItem('oura_show_loading', showLoadingVal ? 'true' : 'false');
-                } else {
-                    var slSaved = localStorage.getItem('oura_show_loading');
-                    showLoadingVal = (slSaved === null || slSaved === undefined) ? true : (slSaved === 'true' || slSaved === 1 || slSaved === '1');
+                var showLoading = localStorage.getItem('oura_show_loading') || '0';
+
+                // Get Show Seconds & Compact Time settings
+                var showSeconds = localStorage.getItem('oura_show_seconds') === '1';
+                var compactTime = localStorage.getItem('oura_compact_time') === '1';
+                
+                // Get Show Debug setting
+                var showDebugStored = localStorage.getItem('oura_show_debug');
+                var showDebug = (showDebugStored === null || showDebugStored === undefined) ? true : (showDebugStored === 'true');
+                
+                // Get Refresh Frequency setting
+                var refreshFreqStored = localStorage.getItem('oura_refresh_frequency');
+                var refreshFrequency = refreshFreqStored ? parseInt(refreshFreqStored) : 30;
+                if (refreshFrequency !== 15 && refreshFrequency !== 30 && refreshFrequency !== 60) refreshFrequency = 30;
+                
+                // Get custom color data if theme mode is custom color
+                var customColorData = null;
+                if (themeMode === '2') {
+                    var savedColor = localStorage.getItem('oura_custom_color');
+                    if (savedColor) {
+                        try {
+                            customColorData = JSON.parse(savedColor);
+                        } catch (e) {
+                            console.log('Error parsing custom color data:', e);
+                        }
+                    }
                 }
                 
-                var settings = { 
-                    oura_access_token: token,
+                var settings = {
+                    oura_token: token,
+                    // legacy layout fields for compatibility
                     layout_left: parseInt(layoutConfig.left),
                     layout_middle: parseInt(layoutConfig.middle),
                     layout_right: parseInt(layoutConfig.right),
+                    // flexible layout fields (preferred by watchface)
+                    layout_rows: parseInt(layoutRows),
+                    row1_left: parseInt(layoutConfig.left),
+                    row1_middle: parseInt(layoutConfig.middle),
+                    row1_right: parseInt(layoutConfig.right),
+                    row2_left: (typeof row2Left === 'number') ? row2Left : undefined,
+                    row2_right: (typeof row2Right === 'number') ? row2Right : undefined,
                     date_format: parseInt(dateFormat),
                     theme_mode: parseInt(themeMode),
-                    show_loading: showLoadingVal ? 1 : 0
+                    // New config wiring
+                    show_debug: showDebug,
+                    refresh_frequency: refreshFrequency,
+                    // include show_loading so PKJS can apply immediately
+                    show_loading: (showLoading === '1') ? 1 : 0,
+                    // new time display options
+                    show_seconds: showSeconds ? 1 : 0,
+                    compact_time: compactTime ? 1 : 0
                 };
+
+                // Add custom color fields if available
+                if (customColorData) {
+                    settings.custom_color_index = customColorData.index;
+                    settings.custom_color_name = customColorData.name;
+                    settings.custom_color_hex = customColorData.hex;
+                    settings.custom_color_pebble = customColorData.pebble;
+                }
                 var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
                 
                 debugLog('📱 Sending settings to Pebble:');
                 debugLog('Token: ' + token.substring(0, 10) + '...' + token.substring(token.length - 6));
-                debugLog('Layout: L=' + layoutConfig.left + ' M=' + layoutConfig.middle + ' R=' + layoutConfig.right);
+                debugLog('Layout Rows: ' + layoutConfig.rows);
+                debugLog('Row 1: L=' + layoutConfig.left + ' M=' + layoutConfig.middle + ' R=' + layoutConfig.right);
+                debugLog('Row 2: L=' + layoutConfig.row2_left + ' R=' + layoutConfig.row2_right);
                 debugLog('Settings: ' + JSON.stringify(settings));
                 debugLog('Return URL: ' + returnUrl);
                 
@@ -1166,11 +1408,11 @@
         // Initialize debug section as hidden by default
         function initializeDebugVisibility() {
             var debugSection = document.querySelector('.debug-section');
-            var showDebug = document.getElementById('show-debug').checked;
+            var showLoading = document.getElementById('show-loading-screen').checked;
             
             // Hide debug section by default
             if (debugSection) {
-                debugSection.style.display = showDebug ? 'block' : 'none';
+                debugSection.style.display = showLoading ? 'block' : 'none';
             }
         }
         
@@ -1204,7 +1446,8 @@
             var dateFormatSelect = document.getElementById('date-format');
             if (dateFormatSelect) {
                 localStorage.setItem('oura_date_format', dateFormatSelect.value);
-                debugLog('📅 Date format saved: ' + (dateFormatSelect.value === '0' ? 'MM-DD-YYYY' : 'DD-MM-YYYY'));
+                var label = dateFormatSelect.options[dateFormatSelect.selectedIndex].text;
+                debugLog('📅 Date format saved: #' + dateFormatSelect.value + ' - ' + label);
             }
         }
         
@@ -1215,6 +1458,11 @@
                 var themeModeSelect = document.getElementById('theme-mode');
                 if (themeModeSelect) {
                     themeModeSelect.value = savedThemeMode;
+                    // Also reflect visibility immediately
+                    var colorPickerSection = document.getElementById('color-picker-section');
+                    if (colorPickerSection) {
+                        colorPickerSection.style.display = (savedThemeMode === '2') ? 'block' : 'none';
+                    }
                 }
             }
         }
@@ -1224,7 +1472,115 @@
             var themeModeSelect = document.getElementById('theme-mode');
             if (themeModeSelect) {
                 localStorage.setItem('oura_theme_mode', themeModeSelect.value);
-                debugLog('🎨 Theme mode saved: ' + (themeModeSelect.value === '0' ? '🌙 Dark Mode' : '☀️ Light Mode'));
+                // Robustly toggle color picker visibility here as well
+                var colorPickerSection = document.getElementById('color-picker-section');
+                if (colorPickerSection) {
+                    colorPickerSection.style.display = (themeModeSelect.value === '2') ? 'block' : 'none';
+                }
+                debugLog('🎨 Theme mode saved: ' + (themeModeSelect.value === '0' ? '🌙 Dark Mode' : (themeModeSelect.value === '1' ? '☀️ Light Mode' : '🎨 Custom Color')));
+            }
+        }
+        
+        // Save show loading screen setting
+        function saveShowLoadingSetting() {
+            var showLoadingCheckbox = document.getElementById('show-loading-screen');
+            if (showLoadingCheckbox) {
+                localStorage.setItem('oura_show_loading', showLoadingCheckbox.checked ? '1' : '0');
+                debugLog('🔄 Show loading screen saved: ' + (showLoadingCheckbox.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+        
+        // Load saved show loading screen setting
+        function loadSavedShowLoadingSetting() {
+            var saved = localStorage.getItem('oura_show_loading');
+            var showLoadingCheckbox = document.getElementById('show-loading-screen');
+            if (showLoadingCheckbox) {
+                // Default to false (unchecked) if no setting saved
+                showLoadingCheckbox.checked = (saved === '1');
+                debugLog('🔄 Show loading screen loaded: ' + (showLoadingCheckbox.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+
+        // Save Show Seconds setting
+        function saveShowSecondsSetting() {
+            var el = document.getElementById('show-seconds');
+            if (el) {
+                localStorage.setItem('oura_show_seconds', el.checked ? '1' : '0');
+                debugLog('⏱️ Show Seconds saved: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+
+        // Load Show Seconds setting
+        function loadSavedShowSecondsSetting() {
+            var saved = localStorage.getItem('oura_show_seconds');
+            var el = document.getElementById('show-seconds');
+            if (el) {
+                el.checked = (saved === '1');
+                debugLog('⏱️ Show Seconds loaded: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+
+        // Save Compact Time setting
+        function saveCompactTimeSetting() {
+            var el = document.getElementById('compact-time');
+            if (el) {
+                localStorage.setItem('oura_compact_time', el.checked ? '1' : '0');
+                debugLog('🕘 Compact Time saved: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+
+        // Load Compact Time setting
+        function loadSavedCompactTimeSetting() {
+            var saved = localStorage.getItem('oura_compact_time');
+            var el = document.getElementById('compact-time');
+            if (el) {
+                el.checked = (saved === '1');
+                debugLog('🕘 Compact Time loaded: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+        
+        // Save Show Debug setting
+        function saveShowDebugSetting() {
+            var showDebugEl = document.getElementById('show-debug');
+            if (showDebugEl) {
+                var val = showDebugEl.checked ? 'true' : 'false';
+                localStorage.setItem('oura_show_debug', val);
+                debugLog('🪲 Show debug saved: ' + val);
+            }
+        }
+        
+        // Load Show Debug setting
+        function loadSavedShowDebugSetting() {
+            var saved = localStorage.getItem('oura_show_debug');
+            var showDebugEl = document.getElementById('show-debug');
+            if (showDebugEl) {
+                // Default to true if not present
+                var checked = (saved === null || saved === undefined) ? true : (saved === 'true');
+                showDebugEl.checked = checked;
+                debugLog('🪲 Show debug loaded: ' + (checked ? 'true' : 'false'));
+            }
+        }
+        
+        // Save Refresh Frequency setting
+        function saveRefreshFrequencySetting() {
+            var freqEl = document.getElementById('refresh-frequency');
+            if (freqEl) {
+                var minutes = parseInt(freqEl.value) || 30;
+                localStorage.setItem('oura_refresh_frequency', String(minutes));
+                debugLog('⏱️ Refresh frequency saved: ' + minutes + ' minutes');
+            }
+        }
+        
+        // Load Refresh Frequency setting
+        function loadSavedRefreshFrequencySetting() {
+            var saved = localStorage.getItem('oura_refresh_frequency');
+            var freqEl = document.getElementById('refresh-frequency');
+            if (freqEl) {
+                var minutes = saved ? parseInt(saved) : 30;
+                // Ensure option exists; fallback to 30
+                if (minutes !== 15 && minutes !== 30 && minutes !== 60) minutes = 30;
+                freqEl.value = String(minutes);
+                debugLog('⏱️ Refresh frequency loaded: ' + minutes + ' minutes');
             }
         }
         
@@ -1236,6 +1592,10 @@
             // Initialize debug visibility
             initializeDebugVisibility();
             
+            // Initialize time display settings (Show Seconds, Compact Time)
+            loadTimeDisplaySettings();
+            setupTimeDisplayHandlers();
+            
             // Initialize measurement layout
             loadSavedMeasurementLayout();
             
@@ -1244,7 +1604,21 @@
             
             // Load saved theme mode
             loadSavedThemeMode();
-            loadSavedShowLoading();
+            
+            // Load saved show loading setting
+            loadSavedShowLoadingSetting();
+
+            // Load saved Show Seconds
+            loadSavedShowSecondsSetting();
+
+            // Load saved Compact Time
+            loadSavedCompactTimeSetting();
+            
+            // Load saved Show Debug setting
+            loadSavedShowDebugSetting();
+            
+            // Load saved Refresh Frequency setting
+            loadSavedRefreshFrequencySetting();
             
             // Add date format change listener
             var dateFormatSelect = document.getElementById('date-format');
@@ -1256,6 +1630,36 @@
             var themeModeSelect = document.getElementById('theme-mode');
             if (themeModeSelect) {
                 themeModeSelect.addEventListener('change', saveThemeMode);
+            }
+            
+            // Add show loading screen change listener
+            var showLoadingCheckbox = document.getElementById('show-loading-screen');
+            if (showLoadingCheckbox) {
+                showLoadingCheckbox.addEventListener('change', saveShowLoadingSetting);
+            }
+
+            // Add Show Seconds change listener
+            var showSecondsEl = document.getElementById('show-seconds');
+            if (showSecondsEl) {
+                showSecondsEl.addEventListener('change', saveShowSecondsSetting);
+            }
+
+            // Add Compact Time change listener
+            var compactTimeEl = document.getElementById('compact-time');
+            if (compactTimeEl) {
+                compactTimeEl.addEventListener('change', saveCompactTimeSetting);
+            }
+            
+            // Add Show Debug change listener
+            var showDebugEl = document.getElementById('show-debug');
+            if (showDebugEl) {
+                showDebugEl.addEventListener('change', saveShowDebugSetting);
+            }
+            
+            // Add Refresh Frequency change listener
+            var freqEl = document.getElementById('refresh-frequency');
+            if (freqEl) {
+                freqEl.addEventListener('change', saveRefreshFrequencySetting);
             }
             
             // Add smart duplicate prevention event listeners
@@ -1279,6 +1683,18 @@
             renderTokenDetails();
             clearApiResults();
             setUseProxyDefault();
+            
+            // Always initialize UI subsystems regardless of auth state
+            // Ensures color picker visibility/behavior, theme mode handling,
+            // and flexible layout controls work
+            loadConfigTheme();
+            initializeColorPicker();
+            setupThemeModeHandler();
+            setupFlexibleLayout();
+            // Ensure Row 2 selectors visibility matches dropdown immediately
+            if (typeof updateRowSelectorsVisibility === 'function') {
+                updateRowSelectorsVisibility();
+            }
             
             // Check for OAuth redirect
             debugLog('🔍 Checking for OAuth redirect token...');
@@ -1314,6 +1730,350 @@
             renderTokenDetails();
             clearApiResults();
         });
+        
+        // ===== CONFIG PAGE DARK MODE =====
+        
+        function toggleConfigTheme() {
+            var theme = document.getElementById('config-theme').value;
+            var body = document.body;
+            
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+            } else {
+                body.classList.remove('dark-mode');
+            }
+            
+            // Save preference
+            localStorage.setItem('config_page_theme', theme);
+            debugLog('🌙 Config page theme changed to: ' + theme);
+        }
+        
+        function loadConfigTheme() {
+            var savedTheme = localStorage.getItem('config_page_theme') || 'light';
+            document.getElementById('config-theme').value = savedTheme;
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+            }
+        }
+        
+        // ===== COLOR PICKER FUNCTIONALITY =====
+        
+        // Complete Pebble Color Palette (64 colors)
+        var pebbleColors = [
+            { name: 'Black', hex: '#000000', pebble: 'GColorBlack' },
+            { name: 'Oxford Blue', hex: '#0F2E4C', pebble: 'GColorOxfordBlue' },
+            { name: 'Duke Blue', hex: '#003D82', pebble: 'GColorDukeBlue' },
+            { name: 'Blue', hex: '#0055FF', pebble: 'GColorBlue' },
+            { name: 'Dark Green', hex: '#005500', pebble: 'GColorDarkGreen' },
+            { name: 'Midnight Green', hex: '#004C5C', pebble: 'GColorMidnightGreen' },
+            { name: 'Cobalt Blue', hex: '#0066FF', pebble: 'GColorCobaltBlue' },
+            { name: 'Blue Moon', hex: '#68A3FF', pebble: 'GColorBlueMoon' },
+            { name: 'Islamic Green', hex: '#00AA00', pebble: 'GColorIslamicGreen' },
+            { name: 'Jaeger Green', hex: '#00AA55', pebble: 'GColorJaegerGreen' },
+            { name: 'Tiffany Blue', hex: '#00AAAA', pebble: 'GColorTiffanyBlue' },
+            { name: 'Vivid Cerulean', hex: '#00AAFF', pebble: 'GColorVividCerulean' },
+            { name: 'Green', hex: '#00FF00', pebble: 'GColorGreen' },
+            { name: 'Malachite', hex: '#00FF55', pebble: 'GColorMalachite' },
+            { name: 'Medium Spring Green', hex: '#00FFAA', pebble: 'GColorMediumSpringGreen' },
+            { name: 'Cyan', hex: '#00FFFF', pebble: 'GColorCyan' },
+            { name: 'Bulgarian Rose', hex: '#550000', pebble: 'GColorBulgarianRose' },
+            { name: 'Imperial Purple', hex: '#550055', pebble: 'GColorImperialPurple' },
+            { name: 'Indigo', hex: '#5500AA', pebble: 'GColorIndigo' },
+            { name: 'Electric Ultramarine', hex: '#5500FF', pebble: 'GColorElectricUltramarine' },
+            { name: 'Army Green', hex: '#555500', pebble: 'GColorArmyGreen' },
+            { name: 'Dark Gray', hex: '#555555', pebble: 'GColorDarkGray' },
+            { name: 'Liberty', hex: '#5555AA', pebble: 'GColorLiberty' },
+            { name: 'Very Light Blue', hex: '#5555FF', pebble: 'GColorVeryLightBlue' },
+            { name: 'Kelly Green', hex: '#55AA00', pebble: 'GColorKellyGreen' },
+            { name: 'May Green', hex: '#55AA55', pebble: 'GColorMayGreen' },
+            { name: 'Cadet Blue', hex: '#55AAAA', pebble: 'GColorCadetBlue' },
+            { name: 'Picton Blue', hex: '#55AAFF', pebble: 'GColorPictonBlue' },
+            { name: 'Bright Green', hex: '#55FF00', pebble: 'GColorBrightGreen' },
+            { name: 'Screamin Green', hex: '#55FF55', pebble: 'GColorScreaminGreen' },
+            { name: 'Medium Aquamarine', hex: '#55FFAA', pebble: 'GColorMediumAquamarine' },
+            { name: 'Electric Blue', hex: '#55FFFF', pebble: 'GColorElectricBlue' },
+            { name: 'Dark Candyapple Red', hex: '#AA0000', pebble: 'GColorDarkCandyappleRed' },
+            { name: 'Jazzberry Jam', hex: '#AA0055', pebble: 'GColorJazzberryJam' },
+            { name: 'Purple', hex: '#AA00AA', pebble: 'GColorPurple' },
+            { name: 'Vivid Violet', hex: '#AA00FF', pebble: 'GColorVividViolet' },
+            { name: 'Windsor Tan', hex: '#AA5500', pebble: 'GColorWindsorTan' },
+            { name: 'Rose Vale', hex: '#AA5555', pebble: 'GColorRoseVale' },
+            { name: 'Purpureus', hex: '#AA55AA', pebble: 'GColorPurpureus' },
+            { name: 'Lavender Indigo', hex: '#AA55FF', pebble: 'GColorLavenderIndigo' },
+            { name: 'Limerick', hex: '#AAAA00', pebble: 'GColorLimerick' },
+            { name: 'Brass', hex: '#AAAA55', pebble: 'GColorBrass' },
+            { name: 'Light Gray', hex: '#AAAAAA', pebble: 'GColorLightGray' },
+            { name: 'Baby Blue Eyes', hex: '#AAAAFF', pebble: 'GColorBabyBlueEyes' },
+            { name: 'Spring Bud', hex: '#AAFF00', pebble: 'GColorSpringBud' },
+            { name: 'Inchworm', hex: '#AAFF55', pebble: 'GColorInchworm' },
+            { name: 'Mint Green', hex: '#AAFFAA', pebble: 'GColorMintGreen' },
+            { name: 'Celeste', hex: '#AAFFFF', pebble: 'GColorCeleste' },
+            { name: 'Red', hex: '#FF0000', pebble: 'GColorRed' },
+            { name: 'Folly', hex: '#FF0055', pebble: 'GColorFolly' },
+            { name: 'Fashion Magenta', hex: '#FF00AA', pebble: 'GColorFashionMagenta' },
+            { name: 'Magenta', hex: '#FF00FF', pebble: 'GColorMagenta' },
+            { name: 'Orange', hex: '#FF5500', pebble: 'GColorOrange' },
+            { name: 'Sunset Orange', hex: '#FF5555', pebble: 'GColorSunsetOrange' },
+            { name: 'Brilliant Rose', hex: '#FF55AA', pebble: 'GColorBrilliantRose' },
+            { name: 'Shocking Pink', hex: '#FF55FF', pebble: 'GColorShockingPink' },
+            { name: 'Chromecast Yellow', hex: '#FFAA00', pebble: 'GColorChromeYellow' },
+            { name: 'Rajah', hex: '#FFAA55', pebble: 'GColorRajah' },
+            { name: 'Melon', hex: '#FFAAAA', pebble: 'GColorMelon' },
+            { name: 'Rich Brilliant Lavender', hex: '#FFAAFF', pebble: 'GColorRichBrilliantLavender' },
+            { name: 'Yellow', hex: '#FFFF00', pebble: 'GColorYellow' },
+            { name: 'Icterine', hex: '#FFFF55', pebble: 'GColorIcterine' },
+            { name: 'Pastel Yellow', hex: '#FFFFAA', pebble: 'GColorPastelYellow' },
+            { name: 'White', hex: '#FFFFFF', pebble: 'GColorWhite' }
+        ];
+        
+        // Initialize color picker
+        function initializeColorPicker() {
+            var colorPalette = document.getElementById('color-palette');
+            if (!colorPalette) return;
+            
+            // Create color swatches
+            pebbleColors.forEach(function(color, index) {
+                var swatch = document.createElement('div');
+                swatch.style.cssText = 
+                    'width: 45px; height: 45px; background: ' + color.hex + '; ' +
+                    'border: 2px solid #ddd; border-radius: 6px; cursor: pointer; ' +
+                    'transition: all 0.2s ease; position: relative; ' +
+                    'touch-action: manipulation; min-height: 44px; min-width: 44px;';
+                
+                swatch.title = color.name;
+                swatch.onclick = function() { selectColor(index); };
+                
+                // Hover effects
+                swatch.onmouseenter = function() {
+                    this.style.transform = 'scale(1.1)';
+                    this.style.borderColor = '#007bff';
+                    this.style.zIndex = '10';
+                };
+                swatch.onmouseleave = function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.borderColor = '#ddd';
+                    this.style.zIndex = '1';
+                };
+                
+                colorPalette.appendChild(swatch);
+            });
+            
+            // Load saved color selection
+            loadSavedColor();
+        }
+        
+        // Select a color from the palette
+        function selectColor(colorIndex) {
+            var color = pebbleColors[colorIndex];
+            if (!color) return;
+            
+            // Update preview
+            var preview = document.getElementById('color-preview');
+            var colorName = document.getElementById('color-name');
+            
+            preview.style.background = color.hex;
+            preview.style.color = getContrastColor(color.hex);
+            colorName.textContent = color.name;
+            
+            // Save selection
+            localStorage.setItem('oura_custom_color', JSON.stringify({
+                index: colorIndex,
+                name: color.name,
+                hex: color.hex,
+                pebble: color.pebble
+            }));
+            
+            // Update theme mode to custom color
+            document.getElementById('theme-mode').value = '2';
+            localStorage.setItem('oura_theme_mode', '2');
+            
+            debugLog('🎨 Selected color: ' + color.name + ' (' + color.hex + ')');
+        }
+        
+        // Load saved color selection
+        function loadSavedColor() {
+            var saved = localStorage.getItem('oura_custom_color');
+            if (saved) {
+                try {
+                    var colorData = JSON.parse(saved);
+                    selectColor(colorData.index);
+                } catch (e) {
+                    console.log('Error loading saved color:', e);
+                    selectColor(0); // Default to black
+                }
+            } else {
+                selectColor(0); // Default to black
+            }
+        }
+        
+        // Calculate contrast color for text readability
+        function getContrastColor(hexColor) {
+            // Convert hex to RGB
+            var r = parseInt(hexColor.substr(1, 2), 16);
+            var g = parseInt(hexColor.substr(3, 2), 16);
+            var b = parseInt(hexColor.substr(5, 2), 16);
+            
+            // Calculate luminance
+            var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            
+            // Return black or white based on luminance
+            return luminance > 0.5 ? '#000000' : '#FFFFFF';
+        }
+        
+        // Setup theme mode change handler
+        function setupThemeModeHandler() {
+            var themeModeSelect = document.getElementById('theme-mode');
+            var colorPickerSection = document.getElementById('color-picker-section');
+            
+            if (!themeModeSelect || !colorPickerSection) {
+                debugLog('❌ Theme mode elements not found - themeModeSelect: ' + !!themeModeSelect + ', colorPickerSection: ' + !!colorPickerSection);
+                return;
+            }
+            
+            debugLog('✅ Theme mode handler initialized');
+            
+            // Function to update color picker visibility
+            function updateColorPickerVisibility(selectedMode) {
+                debugLog('🎨 Updating color picker visibility for mode: ' + selectedMode);
+                if (selectedMode === '2') { // Custom Color
+                    colorPickerSection.style.display = 'block';
+                    debugLog('🎨 Color picker shown');
+                } else {
+                    colorPickerSection.style.display = 'none';
+                    debugLog('🎨 Color picker hidden');
+                }
+            }
+            
+            // Add change event listener
+            themeModeSelect.addEventListener('change', function() {
+                var selectedMode = this.value;
+                updateColorPickerVisibility(selectedMode);
+                
+                // Save theme mode
+                localStorage.setItem('oura_theme_mode', selectedMode);
+                debugLog('🎨 Theme mode changed to: ' + selectedMode);
+            });
+            
+            // Load saved theme mode and update visibility
+            var savedThemeMode = localStorage.getItem('oura_theme_mode') || '0';
+            themeModeSelect.value = savedThemeMode;
+            updateColorPickerVisibility(savedThemeMode);
+            
+            debugLog('🎨 Theme mode loaded: ' + savedThemeMode);
+        }
+        
+        // ===== FLEXIBLE LAYOUT SYSTEM =====
+        
+        // Setup flexible layout system
+        function setupFlexibleLayout() {
+            var layoutRowsSelect = document.getElementById('layout-rows');
+            if (!layoutRowsSelect) return;
+            
+            // Add event listener for layout rows change
+            layoutRowsSelect.addEventListener('change', function() {
+                updateRowSelectorsVisibility();
+                saveLayoutConfiguration();
+            });
+            
+            // Load saved layout configuration
+            loadSavedLayoutConfiguration();
+            
+            // Update visibility based on current selection
+            updateRowSelectorsVisibility();
+        }
+        
+        // Update visibility of Row 2 selectors based on layout selection
+        function updateRowSelectorsVisibility() {
+            var layoutRows = document.getElementById('layout-rows').value;
+            var row2Selectors = document.getElementById('row2-selectors');
+            
+            if (layoutRows === '2') {
+                row2Selectors.style.display = 'block';
+                debugLog('📐 Showing Row 2 selectors for 2-row layout');
+            } else {
+                row2Selectors.style.display = 'none';
+                debugLog('📐 Hiding Row 2 selectors for 1-row layout');
+            }
+        }
+        
+        // Save layout configuration to localStorage
+        function saveLayoutConfiguration() {
+            var layoutRows = document.getElementById('layout-rows').value;
+            var row1Left = document.getElementById('left-position').value;
+            var row1Middle = document.getElementById('middle-position').value;
+            var row1Right = document.getElementById('right-position').value;
+            var row2Left = document.getElementById('row2-left-position').value;
+            var row2Right = document.getElementById('row2-right-position').value;
+            
+            var layoutConfig = {
+                rows: parseInt(layoutRows),
+                row1: {
+                    left: parseInt(row1Left),
+                    middle: parseInt(row1Middle),
+                    right: parseInt(row1Right)
+                },
+                row2: {
+                    left: parseInt(row2Left),
+                    right: parseInt(row2Right)
+                }
+            };
+            
+            localStorage.setItem('oura_flexible_layout', JSON.stringify(layoutConfig));
+            debugLog('📐 Saved flexible layout configuration: ' + JSON.stringify(layoutConfig));
+        }
+        
+        // Load saved layout configuration
+        function loadSavedLayoutConfiguration() {
+            var saved = localStorage.getItem('oura_flexible_layout');
+            if (saved) {
+                try {
+                    var config = JSON.parse(saved);
+                    
+                    // Set layout rows
+                    document.getElementById('layout-rows').value = config.rows.toString();
+                    // Ensure row2 selectors visibility matches saved rows
+                    if (typeof updateRowSelectorsVisibility === 'function') {
+                        updateRowSelectorsVisibility();
+                    }
+                    
+                    // Set Row 1 positions
+                    document.getElementById('left-position').value = config.row1.left.toString();
+                    document.getElementById('middle-position').value = config.row1.middle.toString();
+                    document.getElementById('right-position').value = config.row1.right.toString();
+                    
+                    // Set Row 2 positions
+                    document.getElementById('row2-left-position').value = config.row2.left.toString();
+                    document.getElementById('row2-right-position').value = config.row2.right.toString();
+                    
+                    debugLog('📐 Loaded flexible layout configuration: ' + JSON.stringify(config));
+                } catch (e) {
+                    console.log('Error loading flexible layout configuration:', e);
+                    setDefaultFlexibleLayout();
+                }
+            } else {
+                setDefaultFlexibleLayout();
+            }
+        }
+        
+        // Set default flexible layout configuration
+        function setDefaultFlexibleLayout() {
+            // Default: 1 row with Readiness, Sleep, Heart Rate (matches watchface C code defaults)
+            document.getElementById('layout-rows').value = '1';
+            document.getElementById('left-position').value = '0';  // Readiness
+            document.getElementById('middle-position').value = '1';  // Sleep
+            document.getElementById('right-position').value = '2';  // Heart Rate
+            
+            // Default Row 2: Activity, Stress (only used when 2-row is selected)
+            document.getElementById('row2-left-position').value = '3';  // Activity
+            document.getElementById('row2-right-position').value = '4';  // Stress
+            
+            // Hide row 2 selectors since default is 1 row
+            updateRowSelectorsVisibility();
+            
+            saveLayoutConfiguration();
+            debugLog('📐 Set default flexible layout configuration (1 row, 3 complications)');
+        }
     </script>
 </body>
 </html>

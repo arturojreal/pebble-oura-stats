@@ -464,11 +464,43 @@
                         </select>
                     </div>
                     
+                    <!-- Time controls placed before Date Format per UX preference -->
+                    <div style="margin: 15px 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="show-seconds" style="margin-right: 10px;">
+                            <span>Show Seconds</span>
+                        </label>
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="compact-time" style="margin-right: 10px;">
+                            <span>Compact Time</span>
+                        </label>
+                    </div>
+                    
                     <div style="margin: 15px 0;">
                         <label style="display: block; margin-bottom: 5px; font-weight: 500;">📅 Date Format:</label>
                         <select id="date-format" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="0" selected>MM-DD-YYYY (US Format)</option>
-                            <option value="1">DD-MM-YYYY (International Format)</option>
+                            <optgroup label="Traditional">
+                                <option value="0" selected>MM-DD-YYYY (US Format)</option>
+                                <option value="1">DD-MM-YYYY (International Format)</option>
+                            </optgroup>
+                            <optgroup label="Full Month">
+                                <option value="2">June 6, 2025</option>
+                                <option value="3">6 June 2025</option>
+                                <option value="4">June 6</option>
+                                <option value="5">6 June</option>
+                            </optgroup>
+                            <optgroup label="Short Month">
+                                <option value="6">Jun 6, 2025</option>
+                                <option value="7">6 Jun 2025</option>
+                                <option value="8">Jun 6</option>
+                                <option value="9">6 Jun</option>
+                            </optgroup>
+                            <optgroup label="With Weekday">
+                                <option value="10">Friday, June 6</option>
+                                <option value="11">Fri, Jun 6</option>
+                            </optgroup>
                         </select>
                         <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose how the date appears below the time on your watchface</p>
                     </div>
@@ -560,15 +592,59 @@
         }
         
         // Toggle debug information visibility
+        function initializeDebugVisibility() {
+            var debugSection = document.querySelector('.debug-section');
+            var debugCheckbox = document.getElementById('show-debug');
+            if (!debugSection || !debugCheckbox) return;
+            
+            // Load saved preference if present
+            var stored = localStorage.getItem('oura_show_debug');
+            if (stored !== null && stored !== undefined) {
+                debugCheckbox.checked = (stored === 'true' || stored === '1');
+            }
+            
+            debugSection.style.display = debugCheckbox.checked ? 'block' : 'none';
+        }
+
         function toggleDebugVisibility() {
             var debugSection = document.querySelector('.debug-section');
-            var showLoading = document.getElementById('show-loading-screen').checked;
+            var debugCheckbox = document.getElementById('show-debug');
+            if (!debugSection || !debugCheckbox) return;
             
-            if (showLoading) {
-                debugSection.style.display = 'block';
-            } else {
-                debugSection.style.display = 'none';
-            }
+            var show = !!debugCheckbox.checked;
+            debugSection.style.display = show ? 'block' : 'none';
+            localStorage.setItem('oura_show_debug', show ? 'true' : 'false');
+            debugLog('🪵 show_debug set to ' + (show ? 'true' : 'false'));
+        }
+        
+        // ===== TIME DISPLAY SETTINGS (Show Seconds, Compact Time) =====
+        function loadTimeDisplaySettings() {
+            var ssEl = document.getElementById('show-seconds');
+            var ctEl = document.getElementById('compact-time');
+            if (!ssEl || !ctEl) return;
+            
+            var ss = localStorage.getItem('oura_show_seconds');
+            var ct = localStorage.getItem('oura_compact_time');
+            ssEl.checked = (ss === '1');
+            ctEl.checked = (ct === '1');
+            debugLog('⏱️ Time settings loaded: show_seconds=' + (ssEl.checked ? '1' : '0') + ', compact_time=' + (ctEl.checked ? '1' : '0'));
+        }
+        
+        function setupTimeDisplayHandlers() {
+            var ssEl = document.getElementById('show-seconds');
+            var ctEl = document.getElementById('compact-time');
+            if (!ssEl || !ctEl) return;
+            
+            ssEl.addEventListener('change', function() {
+                var val = ssEl.checked ? '1' : '0';
+                localStorage.setItem('oura_show_seconds', val);
+                debugLog('🔧 show_seconds set to ' + val);
+            });
+            ctEl.addEventListener('change', function() {
+                var val = ctEl.checked ? '1' : '0';
+                localStorage.setItem('oura_compact_time', val);
+                debugLog('🔧 compact_time set to ' + val);
+            });
         }
         
         // Measurement layout customization - using numeric keys to match select values
@@ -754,81 +830,13 @@
             };
             localStorage.setItem('oura_measurement_layout', JSON.stringify(legacyLayoutConfig));
             
-            // Send layout update to Pebble immediately
+            // Unify behavior with Send to Pebble: delegate sending to sendToPebble()
             debugLog('📊 Applying flexible layout: ' + JSON.stringify(flexibleLayoutConfig));
-            
-            // Send layout data to watchface via webview close
             var currentToken = localStorage.getItem('oura_access_token');
             debugLog('🔍 Current token status: ' + (currentToken ? 'Found' : 'Not found'));
-            
             if (currentToken) {
-                debugLog('🔄 Sending flexible layout update with token...');
-                
-                // Get date format setting
-                var dateFormat = localStorage.getItem('oura_date_format') || '0';
-                
-                // Get theme mode setting
-                var themeMode = localStorage.getItem('oura_theme_mode') || '0';
-                                
-                // Get show loading setting
-                var showLoading = localStorage.getItem('oura_show_loading') || '0';
-                
-                // Get custom color data if theme mode is custom color
-                var customColorData = null;
-                if (themeMode === '2') {
-                    var savedColor = localStorage.getItem('oura_custom_color');
-                    if (savedColor) {
-                        try {
-                            customColorData = JSON.parse(savedColor);
-                        } catch (e) {
-                            console.log('Error parsing custom color data:', e);
-                        }
-                    }
-                }
-                
-                // Include flexible layout configuration, date format, theme mode, and custom color in the settings
-                var settings = {
-                    oura_access_token: currentToken,
-                    // Legacy layout fields for backward compatibility
-                    layout_left: parseInt(row1Left),
-                    layout_middle: parseInt(row1Middle),
-                    layout_right: parseInt(row1Right),
-                    // New flexible layout fields
-                    layout_rows: parseInt(layoutRows),
-                    row1_left: parseInt(row1Left),
-                    row1_middle: parseInt(row1Middle),
-                    row1_right: parseInt(row1Right),
-                    row2_left: parseInt(row2Left),
-                    row2_right: parseInt(row2Right),
-                    date_format: parseInt(dateFormat),
-                    theme_mode: parseInt(themeMode),
-                    show_loading: parseInt(showLoading),
-                    config_action: 'flexible_layout_update'
-                };
-                
-                // Add custom color data if available
-                if (customColorData) {
-                    settings.custom_color_index = customColorData.index;
-                    settings.custom_color_name = customColorData.name;
-                    settings.custom_color_hex = customColorData.hex;
-                    settings.custom_color_pebble = customColorData.pebble;
-                }
-                
-                debugLog('📊 Flexible layout: ' + layoutRows + ' rows');
-                debugLog('📊 Row 1: L=' + row1Left + ' M=' + row1Middle + ' R=' + row1Right);
-                debugLog('📊 Row 2: L=' + row2Left + ' R=' + row2Right);
-                
-                var settingsJson = JSON.stringify(settings);
-                var encodedSettings = encodeURIComponent(settingsJson);
-                var returnUrl = 'pebblejs://close#' + encodedSettings;
-                
-                debugLog('📤 Settings JSON: ' + settingsJson);
-                debugLog('📤 Encoded settings length: ' + encodedSettings.length);
-                debugLog('📤 Return URL: ' + returnUrl.substring(0, 100) + '...');
-                
-                // Close the webview with the layout data
-                debugLog('🚀 Closing webview with layout data...');
-                window.location = returnUrl;
+                debugLog('🔄 Delegating send to sendToPebble()');
+                sendToPebble(currentToken);
             } else {
                 debugLog('⚠️ No token found - cannot send layout update');
                 debugLog('💡 Layout saved to localStorage - will apply on next data refresh');
@@ -963,14 +971,43 @@
         // Send settings to Pebble
         function sendToPebble(token) {
             try {
-                // Get current layout configuration
-                var savedLayout = localStorage.getItem('oura_measurement_layout');
-                var layoutConfig = { left: '0', middle: '1', right: '2' }; // defaults
-                if (savedLayout) {
+                // Load layout from storage (prefer flexible layout if available)
+                var layoutConfig = { left: '0', middle: '1', right: '2' }; // legacy defaults
+                var layoutRows = 1;
+                var row2Left = undefined;
+                var row2Right = undefined;
+
+                var savedFlexible = localStorage.getItem('oura_flexible_layout');
+                if (savedFlexible) {
                     try {
-                        layoutConfig = JSON.parse(savedLayout);
+                        var flex = JSON.parse(savedFlexible);
+                        if (flex && flex.row1) {
+                            layoutConfig.left = String(flex.row1.left);
+                            layoutConfig.middle = String(flex.row1.middle);
+                            layoutConfig.right = String(flex.row1.right);
+                        }
+                        if (typeof flex.rows !== 'undefined') layoutRows = parseInt(flex.rows);
+                        if (flex.row2) {
+                            row2Left = flex.row2.left;
+                            row2Right = flex.row2.right;
+                        }
                     } catch (e) {
-                        debugLog('⚠️ Error parsing saved layout, using defaults');
+                        debugLog('⚠️ Error parsing flexible layout, will try legacy layout');
+                    }
+                }
+
+                if (!savedFlexible) {
+                    // Fallback to legacy layout
+                    var savedLayout = localStorage.getItem('oura_measurement_layout');
+                    if (savedLayout) {
+                        try {
+                            var legacy = JSON.parse(savedLayout);
+                            layoutConfig.left = legacy.left;
+                            layoutConfig.middle = legacy.middle;
+                            layoutConfig.right = legacy.right;
+                        } catch (e2) {
+                            debugLog('⚠️ Error parsing legacy layout, using defaults');
+                        }
                     }
                 }
                 
@@ -982,6 +1019,19 @@
                 
                 // Get show loading setting
                 var showLoading = localStorage.getItem('oura_show_loading') || '0';
+
+                // Get Show Seconds & Compact Time settings
+                var showSeconds = localStorage.getItem('oura_show_seconds') === '1';
+                var compactTime = localStorage.getItem('oura_compact_time') === '1';
+                
+                // Get Show Debug setting
+                var showDebugStored = localStorage.getItem('oura_show_debug');
+                var showDebug = (showDebugStored === null || showDebugStored === undefined) ? true : (showDebugStored === 'true');
+                
+                // Get Refresh Frequency setting
+                var refreshFreqStored = localStorage.getItem('oura_refresh_frequency');
+                var refreshFrequency = refreshFreqStored ? parseInt(refreshFreqStored) : 30;
+                if (refreshFrequency !== 15 && refreshFrequency !== 30 && refreshFrequency !== 60) refreshFrequency = 30;
                 
                 // Get custom color data if theme mode is custom color
                 var customColorData = null;
@@ -998,17 +1048,27 @@
                 
                 var settings = {
                     oura_token: token,
+                    // legacy layout fields for compatibility
                     layout_left: parseInt(layoutConfig.left),
                     layout_middle: parseInt(layoutConfig.middle),
                     layout_right: parseInt(layoutConfig.right),
-                    layout_rows: parseInt(layoutConfig.rows),
+                    // flexible layout fields (preferred by watchface)
+                    layout_rows: parseInt(layoutRows),
                     row1_left: parseInt(layoutConfig.left),
                     row1_middle: parseInt(layoutConfig.middle),
                     row1_right: parseInt(layoutConfig.right),
-                    row2_left: parseInt(layoutConfig.row2_left),
-                    row2_right: parseInt(layoutConfig.row2_right),
+                    row2_left: (typeof row2Left === 'number') ? row2Left : undefined,
+                    row2_right: (typeof row2Right === 'number') ? row2Right : undefined,
                     date_format: parseInt(dateFormat),
-                    theme_mode: parseInt(themeMode)
+                    theme_mode: parseInt(themeMode),
+                    // New config wiring
+                    show_debug: showDebug,
+                    refresh_frequency: refreshFrequency,
+                    // include show_loading so PKJS can apply immediately
+                    show_loading: (showLoading === '1') ? 1 : 0,
+                    // new time display options
+                    show_seconds: showSeconds ? 1 : 0,
+                    compact_time: compactTime ? 1 : 0
                 };
 
                 // Add custom color fields if available
@@ -1386,7 +1446,8 @@
             var dateFormatSelect = document.getElementById('date-format');
             if (dateFormatSelect) {
                 localStorage.setItem('oura_date_format', dateFormatSelect.value);
-                debugLog('📅 Date format saved: ' + (dateFormatSelect.value === '0' ? 'MM-DD-YYYY' : 'DD-MM-YYYY'));
+                var label = dateFormatSelect.options[dateFormatSelect.selectedIndex].text;
+                debugLog('📅 Date format saved: #' + dateFormatSelect.value + ' - ' + label);
             }
         }
         
@@ -1439,6 +1500,89 @@
                 debugLog('🔄 Show loading screen loaded: ' + (showLoadingCheckbox.checked ? 'Enabled' : 'Disabled'));
             }
         }
+
+        // Save Show Seconds setting
+        function saveShowSecondsSetting() {
+            var el = document.getElementById('show-seconds');
+            if (el) {
+                localStorage.setItem('oura_show_seconds', el.checked ? '1' : '0');
+                debugLog('⏱️ Show Seconds saved: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+
+        // Load Show Seconds setting
+        function loadSavedShowSecondsSetting() {
+            var saved = localStorage.getItem('oura_show_seconds');
+            var el = document.getElementById('show-seconds');
+            if (el) {
+                el.checked = (saved === '1');
+                debugLog('⏱️ Show Seconds loaded: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+
+        // Save Compact Time setting
+        function saveCompactTimeSetting() {
+            var el = document.getElementById('compact-time');
+            if (el) {
+                localStorage.setItem('oura_compact_time', el.checked ? '1' : '0');
+                debugLog('🕘 Compact Time saved: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+
+        // Load Compact Time setting
+        function loadSavedCompactTimeSetting() {
+            var saved = localStorage.getItem('oura_compact_time');
+            var el = document.getElementById('compact-time');
+            if (el) {
+                el.checked = (saved === '1');
+                debugLog('🕘 Compact Time loaded: ' + (el.checked ? 'Enabled' : 'Disabled'));
+            }
+        }
+        
+        // Save Show Debug setting
+        function saveShowDebugSetting() {
+            var showDebugEl = document.getElementById('show-debug');
+            if (showDebugEl) {
+                var val = showDebugEl.checked ? 'true' : 'false';
+                localStorage.setItem('oura_show_debug', val);
+                debugLog('🪲 Show debug saved: ' + val);
+            }
+        }
+        
+        // Load Show Debug setting
+        function loadSavedShowDebugSetting() {
+            var saved = localStorage.getItem('oura_show_debug');
+            var showDebugEl = document.getElementById('show-debug');
+            if (showDebugEl) {
+                // Default to true if not present
+                var checked = (saved === null || saved === undefined) ? true : (saved === 'true');
+                showDebugEl.checked = checked;
+                debugLog('🪲 Show debug loaded: ' + (checked ? 'true' : 'false'));
+            }
+        }
+        
+        // Save Refresh Frequency setting
+        function saveRefreshFrequencySetting() {
+            var freqEl = document.getElementById('refresh-frequency');
+            if (freqEl) {
+                var minutes = parseInt(freqEl.value) || 30;
+                localStorage.setItem('oura_refresh_frequency', String(minutes));
+                debugLog('⏱️ Refresh frequency saved: ' + minutes + ' minutes');
+            }
+        }
+        
+        // Load Refresh Frequency setting
+        function loadSavedRefreshFrequencySetting() {
+            var saved = localStorage.getItem('oura_refresh_frequency');
+            var freqEl = document.getElementById('refresh-frequency');
+            if (freqEl) {
+                var minutes = saved ? parseInt(saved) : 30;
+                // Ensure option exists; fallback to 30
+                if (minutes !== 15 && minutes !== 30 && minutes !== 60) minutes = 30;
+                freqEl.value = String(minutes);
+                debugLog('⏱️ Refresh frequency loaded: ' + minutes + ' minutes');
+            }
+        }
         
         // Initialize - PURE STATIC, NO DYNAMIC LOADING
         document.addEventListener('DOMContentLoaded', function() {
@@ -1447,6 +1591,10 @@
             
             // Initialize debug visibility
             initializeDebugVisibility();
+            
+            // Initialize time display settings (Show Seconds, Compact Time)
+            loadTimeDisplaySettings();
+            setupTimeDisplayHandlers();
             
             // Initialize measurement layout
             loadSavedMeasurementLayout();
@@ -1459,6 +1607,18 @@
             
             // Load saved show loading setting
             loadSavedShowLoadingSetting();
+
+            // Load saved Show Seconds
+            loadSavedShowSecondsSetting();
+
+            // Load saved Compact Time
+            loadSavedCompactTimeSetting();
+            
+            // Load saved Show Debug setting
+            loadSavedShowDebugSetting();
+            
+            // Load saved Refresh Frequency setting
+            loadSavedRefreshFrequencySetting();
             
             // Add date format change listener
             var dateFormatSelect = document.getElementById('date-format');
@@ -1476,6 +1636,30 @@
             var showLoadingCheckbox = document.getElementById('show-loading-screen');
             if (showLoadingCheckbox) {
                 showLoadingCheckbox.addEventListener('change', saveShowLoadingSetting);
+            }
+
+            // Add Show Seconds change listener
+            var showSecondsEl = document.getElementById('show-seconds');
+            if (showSecondsEl) {
+                showSecondsEl.addEventListener('change', saveShowSecondsSetting);
+            }
+
+            // Add Compact Time change listener
+            var compactTimeEl = document.getElementById('compact-time');
+            if (compactTimeEl) {
+                compactTimeEl.addEventListener('change', saveCompactTimeSetting);
+            }
+            
+            // Add Show Debug change listener
+            var showDebugEl = document.getElementById('show-debug');
+            if (showDebugEl) {
+                showDebugEl.addEventListener('change', saveShowDebugSetting);
+            }
+            
+            // Add Refresh Frequency change listener
+            var freqEl = document.getElementById('refresh-frequency');
+            if (freqEl) {
+                freqEl.addEventListener('change', saveRefreshFrequencySetting);
             }
             
             // Add smart duplicate prevention event listeners
