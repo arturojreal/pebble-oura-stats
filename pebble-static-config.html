@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oura Stats - Pebble Configuration</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            padding: 20px;
-            max-width: 400px;
-            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+            margin: 0;
+            padding: 0;
             background-color: #f5f5f5;
             color: #333;
             transition: background-color 0.3s ease, color 0.3s ease;
+            padding-bottom: 80px; /* Space for sticky navbar */
         }
         
         body.dark-mode {
@@ -20,2060 +24,2107 @@
             color: #e0e0e0;
         }
         
-        body.dark-mode .container {
-            background-color: #2a2a2a;
+        /* Sticky Navbar */
+        .sticky-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
-        body.dark-mode .section-box {
-            background-color: #333;
-            border-color: #555;
+        body.dark-mode .sticky-navbar {
+            background: #2a2a2a;
+            border-bottom-color: #555;
         }
         
-        body.dark-mode .tab-button {
-            background-color: #444;
-            color: #e0e0e0;
-            border-color: #666;
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
         }
         
-        body.dark-mode .tab-button.active {
-            background-color: #0066cc;
+        .theme-toggle-slider {
+            width: 50px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 20px;
+            position: relative;
+            transition: background-color 0.3s ease;
         }
         
-        body.dark-mode select, body.dark-mode input[type="checkbox"] {
-            background-color: #444;
-            color: #e0e0e0;
-            border-color: #666;
-        }
-        
-        body.dark-mode .connect-btn {
-            background-color: #0066cc;
-        }
-        
-        body.dark-mode .debug-log {
-            background-color: #222;
-            color: #ccc;
-            border-color: #555;
-        }
-        .container {
+        .theme-toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
             background: white;
-            padding: 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            overflow: hidden;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+        
+        body.dark-mode .theme-toggle-slider {
+            background: #0066cc;
+        }
+        
+        body.dark-mode .theme-toggle-slider::before {
+            transform: translateX(26px);
+        }
+        
+        .navbar-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .save-btn, .close-btn, .reset-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        
+        .save-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .save-btn:hover:not(:disabled) {
+            background: #218838;
+        }
+        
+        .save-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .save-btn.has-changes {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .save-btn.has-changes:hover {
+            background: #e0a800;
+        }
+        
+        .close-btn {
+            background: #007bff;
+            color: white;
+        }
+        
+        .close-btn:hover {
+            background: #0056b3;
+        }
+
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background: #c82333;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-top: 60px;
+            padding: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         /* Tab Navigation */
         .tab-nav {
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        body.dark-mode .tab-nav {
+            background: #2a2a2a;
         }
         
         .tab-button {
             flex: 1;
-            padding: 15px 20px;
-            background: none;
+            padding: 12px 16px;
+            background: transparent;
             border: none;
             cursor: pointer;
-            font-size: 16px;
             font-weight: 500;
-            color: #6c757d;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+        
+        body.dark-mode .tab-button {
+            color: #aaa;
         }
         
         .tab-button.active {
-            color: #007bff;
-            background: white;
-            border-bottom: 2px solid #007bff;
+            background: #007bff;
+            color: white;
         }
         
-        .tab-button:hover {
-            background: #e9ecef;
+        .tab-button:hover:not(.active) {
+            background: #f8f9fa;
         }
         
-        .tab-button.active:hover {
-            background: white;
+        body.dark-mode .tab-button:hover:not(.active) {
+            background: #333;
         }
         
         /* Tab Content */
         .tab-content {
             display: none;
-            padding: 25px;
         }
         
         .tab-content.active {
             display: block;
         }
-        h1 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 22px;
+        
+        /* Collapsible Sections */
+        .collapsible-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+            overflow: hidden;
         }
-        .status {
-            padding: 12px;
-            border-radius: 6px;
-            margin: 15px 0;
+        
+        body.dark-mode .collapsible-section {
+            background: #2a2a2a;
+        }
+        
+        .section-header {
+            padding: 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+        
+        body.dark-mode .section-header {
+            border-bottom-color: #444;
+        }
+        
+        .section-header:hover {
+            background: #f8f9fa;
+        }
+        
+        body.dark-mode .section-header:hover {
+            background: #333;
+        }
+        
+        .section-header .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .section-header.expanded .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .section-content {
+            padding: 0 16px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        
+        .section-content.expanded {
+            padding: 16px;
+            max-height: 1000px;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
             font-weight: 500;
         }
-        .status.connected {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status.disconnected {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .connect-btn {
-            display: block;
+        
+        select, input[type="number"] {
             width: 100%;
-            padding: 15px;
-            background: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            margin: 15px 0;
-            border: none;
-            cursor: pointer;
-        }
-        .connect-btn:hover {
-            background: #0056b3;
-        }
-        .btn-secondary {
-            background: #6c757d;
-        }
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-        .btn-danger {
-            background: #dc3545;
-        }
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        .info {
-            background: #e7f3ff;
-            padding: 12px;
-            border-radius: 6px;
-            margin: 15px 0;
-            font-size: 14px;
-            color: #0c5460;
-        }
-        .token-info {
-            background: #f8f9fa;
-            padding: 8px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            font-family: monospace;
-            font-size: 12px;
-            word-break: break-all;
-            margin: 10px 0;
-        }
-        .debug-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            font-size: 12px;
-            border-left: 4px solid #007bff;
-        }
-        .section-box {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 12px 0;
-        }
-        .section-title {
-            font-weight: 600;
+            background: white;
             color: #333;
-            margin: 0 0 8px 0;
-            font-size: 13px;
         }
-        .kv {
-            display: grid;
-            grid-template-columns: 120px 1fr;
-            gap: 6px 10px;
-            font-size: 12px;
-            margin-top: 10px;
+        
+        body.dark-mode select, body.dark-mode input[type="number"] {
+            background: #444;
+            color: #e0e0e0;
+            border-color: #666;
         }
-        .kv div:nth-child(odd) { color: #555; }
-        .kv div:nth-child(even) {
-            word-break: break-word;
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        .debug-log {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 10px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 11px;
-            max-height: 160px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-word;
-            margin: 10px 0;
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
         }
-        .test-button {
+        
+        .connect-btn {
+            width: 100%;
+            padding: 12px;
             background: #28a745;
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin: 5px;
+            border-radius: 6px;
             cursor: pointer;
+            font-weight: 500;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
         }
-        .test-button:hover {
+        
+        .connect-btn:hover {
             background: #218838;
         }
-        .warn { color: #b45400; }
-        .ok { color: #1f7a1f; }
+        
+        /* Color Picker */
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-swatch.selected {
+            border-color: #007bff;
+            transform: scale(1.1);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Watchface Preview Styles */
+        .preview-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+        
+        body.dark-mode .preview-container {
+            background: #2a2a2a;
+        }
+        
+        .watchface-preview {
+            width: 180px;
+            height: 220px;
+            border-radius: 16px;
+            background-color: #000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+            border: 2px solid #ddd;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+        }
+        
+        body.dark-mode .watchface-preview {
+            border-color: #555;
+        }
+        
+        .preview-time {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        
+        .preview-date {
+            position: absolute;
+            top: 42px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .preview-complications {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+        }
+        
+        .preview-row {
+            display: flex;
+        }
+        
+        .preview-row.single-row {
+            height: 42px;
+        }
+        
+        .preview-row.dual-row {
+            height: 32px;
+        }
+        
+        .preview-complication {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        /* Single row sizing (larger) */
+        .preview-row.single-row .preview-value {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+        
+        .preview-row.single-row .preview-label {
+            font-size: 14px;
+        }
+        
+        /* Dual row sizing (smaller) */
+        .preview-row.dual-row .preview-value {
+            font-size: 14px;
+            margin-bottom: 1px;
+        }
+        
+        .preview-row.dual-row .preview-label {
+            font-size: 12px;
+        }
+        
+        /* Emoji sizing optimization */
+        .preview-label.emoji {
+            font-size: 16px !important;
+            line-height: 1;
+        }
+        
+        .preview-row.dual-row .preview-label.emoji {
+            font-size: 14px !important;
+        }
+
+        /* Color Picker Styles */
+        .color-picker-container {
+            display: none;
+            margin-top: 12px;
+        }
+        
+        .color-picker-container.visible {
+            display: block;
+        }
+        
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+            margin-top: 8px;
+        }
+        
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.1);
+            border-color: #007bff;
+        }
+        
+        .color-swatch.selected {
+            border-color: #007bff;
+            border-width: 3px;
+        }
+        
+        .color-swatch::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .color-swatch.selected::after {
+            opacity: 1;
+        }
+        
+        .component-color-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .color-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .color-input-group label {
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+        
+        /* Support Development Card */
+        .support-card {
+            background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .support-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .support-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .support-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-2px);
+        }
+        
+        /* Under Construction Card */
+        .construction-card {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .construction-card h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .construction-card p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Connection Button Styles */
+        .connect-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+        }
+        
+        .connect-btn.disconnected {
+            background: #007bff;
+            color: white;
+        }
+        
+        .connect-btn.disconnected:hover {
+            background: #0056b3;
+        }
+        
+        .connect-btn.connected {
+            background: #28a745;
+            color: white;
+        }
+        
+        .connect-btn.connected:hover {
+            background: #1e7e34;
+        }
+        
+        .connect-btn.error {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .connect-btn.error:hover {
+            background: #c82333;
+        }
+        
+        .connection-status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .connection-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .connection-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        body.dark-mode .connection-status.connected {
+            background: #1e4d2b;
+            color: #d4edda;
+            border-color: #2d5a35;
+        }
+        
+        body.dark-mode .connection-status.error {
+            background: #4d1e24;
+            color: #f8d7da;
+            border-color: #5a2d35;
+        }
+
+        /* Presets */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        @media (min-width: 430px) {
+            .preset-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (min-width: 760px) {
+            .preset-grid { grid-template-columns: 1fr 1fr 1fr; }
+        }
+        .preset-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #fff;
+        }
+        body.dark-mode .preset-card {
+            border-color: #444;
+            background: #2a2a2a;
+        }
+        .preset-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .preset-title {
+            font-weight: 600;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .preset-thumb {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 160px;
+        }
+        .preset-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .preset-actions button {
+            flex: 1;
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+        body.dark-mode .preset-actions button {
+            border-color: #555;
+            background: #333;
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Ko-fi Support CTA -->
-        <div style="background: linear-gradient(135deg, #29abe0, #00d4aa); color: white; padding: 15px; text-align: center; font-weight: bold; border-radius: 8px 8px 0 0;">
-            <div style="font-size: 16px; margin-bottom: 8px;">☕ Want to support this development?</div>
-            <a href="https://ko-fi.com/arturojreal" target="_blank" style="text-decoration: none; color: inherit; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; display: inline-block; font-size: 14px; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                💝 Buy me a coffee!
-            </a>
+    <!-- Sticky Navbar -->
+    <div class="sticky-navbar">
+        <div class="theme-toggle" onclick="toggleTheme()">
+            <span>☀️</span>
+            <div class="theme-toggle-slider"></div>
+            <span>🌙</span>
         </div>
-        
-        <!-- Construction Banner (Modularized - can be easily commented out) -->
-        <!-- CONSTRUCTION_BANNER_START -->
-        <div style="background: linear-gradient(135deg, #ff6b6b, #ffa726); color: white; padding: 15px; text-align: center; font-weight: bold;">
-            <div style="font-size: 18px; margin-bottom: 5px;">🚧 Configuration Pages Under Construction</div>
-            <div style="font-size: 14px; opacity: 0.9;" id="construction-date">Loading date... - Some features may experience issues, delays, or unexpected behavior</div>
+        <div class="navbar-buttons">
+            <button class="reset-btn" id="reset-btn" onclick="resetToDefaults()">Reset</button>
+            <button class="save-btn" id="save-btn" onclick="saveChanges()" disabled>Save</button>
+            <button class="close-btn" onclick="closeConfig()">Save & Close</button>
         </div>
-        <!-- CONSTRUCTION_BANNER_END -->
-        
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-button active" onclick="switchTab('setup', this)">⚙️ Setup</button>
-            <button class="tab-button" onclick="switchTab('customization', this)">🎨 Customization</button>
-        </div>
-        
-        <!-- Setup Tab -->
-        <div id="setup-tab" class="tab-content active">
-            <h1>🏃‍♂️ Oura Stats Setup</h1>
-            
-            <!-- Debug Toggle (moved to top for better UX) -->
-            <div id="debug-toggle-section" style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 6px;">
-                <label style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-size: 14px;">
-                    <input type="checkbox" id="show-debug" onchange="toggleDebugVisibility()" style="transform: scale(1.2);">
-                    <span>Show debug information</span>
-                </label>
-            </div>
-            
-            <div id="status" class="status disconnected">
-            Checking connection...
+            <button class="tab-button active" onclick="switchTab('customize')">Customize</button>
+            <button class="tab-button" onclick="switchTab('setup')">Setup</button>
+            <button class="tab-button" onclick="switchTab('debug')">Debug</button>
         </div>
 
-        <div id="connect-section">
-            <button id="connect-btn" class="connect-btn">
-                Connect to Oura Ring
-            </button>
-            
-            <div class="info">
-                <strong>How it works:</strong><br>
-                Tap "Connect" → Login to Oura → Return here automatically
-            </div>
+        <!-- Support Development Card -->
+        <div class="support-card">
+            <h3>☕ Want to support this development?</h3>
+            <a href="https://ko-fi.com/arturojreal" target="_blank" class="support-btn">
+                ❤️ Buy me a coffee!
+            </a>
         </div>
 
-        <div id="connected-section" style="display: none;">
-            <div class="info">
-                ✅ Token stored. Review diagnostics below, then tap "Send to Pebble" when ready.
-            </div>
-            
-            <div class="token-info" id="token-display"></div>
-            
-            <button onclick="sendAndClose()" class="connect-btn">Send to Pebble (Close)</button>
-            <button onclick="closeWebview()" class="connect-btn btn-secondary">Close (Don’t Send)</button>
-            <button onclick="clearSettings()" class="connect-btn btn-danger">Clear Settings</button>
-        </div>
-
-        <div class="debug-section" style="display: none;">
-            <h3>🔍 Debug Information</h3>
-
-            <div class="section-box">
-                <div class="section-title">Developer Status</div>
-                <div class="kv" id="dev-kv"></div>
-            </div>
-
-            <div class="section-box">
-                <div class="section-title">Live Log</div>
-                <div class="debug-log" id="debug-log">Debug information will appear here...</div>
-                <div>
-                    <button onclick="testOuraAPI()" class="test-button">Test Oura API</button>
-                    <button onclick="checkStoredData()" class="test-button">Check Stored Data</button>
-                    <button onclick="resendToPebble()" class="test-button">Resend to Pebble</button>
-                    <button onclick="copyLog()" class="test-button">Copy Log</button>
-                    <button onclick="clearDebugLog()" class="test-button">Clear Log</button>
+        <!-- Customize Tab -->
+        <div id="customize-tab" class="tab-content active">
+            <!-- Display Settings -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>⚙️ Display Settings</span>
+                    <span class="toggle-icon">▼</span>
                 </div>
-                <div id="copy-status" style="font-size:11px;color:#555;margin-top:6px;display:none;">Copied!</div>
-            </div>
-
-            <div class="section-box">
-                <div class="section-title">Token Details</div>
-                <div id="token-details"></div>
-            </div>
-
-            <div class="section-box">
-                <div class="section-title">API Test Results</div>
-                <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#333;">
-                        <input type="checkbox" id="use-proxy-toggle" />
-                        Use Proxy for Test
-                    </label>
-                    <span style="font-size:11px;color:#666;">Direct API calls often fail inside the Pebble webview due to CORS/TLS; enable Proxy.</span>
-                </div>
-                <div id="api-test-results"></div>
-            </div>
-        </div>
-        
-        </div> <!-- End Setup Tab -->
-        
-        <!-- Customization Tab -->
-        <div id="customization-tab" class="tab-content">
-            
-            <h1>🎛️ Customization</h1>
-            
-            <!-- Layout Configuration -->
-            <div class="section-box" style="margin: 20px 0;">
-                <div class="section-title">📐 Layout Configuration</div>
-                <p style="font-size: 14px; color: #666; margin: 10px 0;">Choose how many rows of measurements to display on your watchface.<br>1 row shows larger emojis, 2 rows allows more measurements</p>
-                
-                <div style="margin: 15px 0;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500;">Number of Rows:</label>
-                    <select id="layout-rows" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        <option value="1" selected>1 Row (3 measurements, larger emojis)</option>
-                        <option value="2">2 Rows (up to 5 measurements, smaller emojis)</option>
-                    </select>
-                    <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">1 row provides larger, more visible emojis. 2 rows allow more data but with smaller display.</p>
-                </div>
-            </div>
-            
-            <!-- Measurement Organization -->
-            <div class="section-box" style="margin: 20px 0;">
-                <div class="section-title">📊 Measurement Organization</div>
-                <p style="font-size: 14px; color: #666; margin: 10px 0;">Choose which measurement appears in each position on your watchface.</p>
-                
-                <!-- Visual Layout Preview -->
-                <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                    <div style="text-align: center; margin: 0 15px;">
-                        <div style="font-size: 12px; color: #999; margin-bottom: 5px;">LEFT</div>
-                        <div id="preview-left" style="font-size: 24px; padding: 10px; background: white; border-radius: 4px; min-width: 60px; border: 2px solid #dee2e6;">🎉</div>
-                        <div style="font-size: 10px; color: #666; margin-top: 5px;">RDY</div>
-                    </div>
-                    
-                    <div style="text-align: center; margin: 0 15px;">
-                        <div style="font-size: 12px; color: #999; margin-bottom: 5px;">MIDDLE</div>
-                        <div id="preview-middle" style="font-size: 24px; padding: 10px; background: white; border-radius: 4px; min-width: 60px; border: 2px solid #dee2e6;">😴</div>
-                        <div style="font-size: 10px; color: #666; margin-top: 5px;">SLP</div>
-                    </div>
-                    
-                    <div style="text-align: center; margin: 0 15px;">
-                        <div style="font-size: 12px; color: #999; margin-bottom: 5px;">RIGHT</div>
-                        <div id="preview-right" style="font-size: 24px; padding: 10px; background: white; border-radius: 4px; min-width: 60px; border: 2px solid #dee2e6;">❤️</div>
-                        <div style="font-size: 10px; color: #666; margin-top: 5px;">HR</div>
-                    </div>
-                </div>
-                
-                <!-- Row 1 Position Selectors -->
-                <div style="margin: 20px 0;">
-                    <h4 style="margin: 10px 0; color: #333;">Row 1 (Top Row)</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
-                            <select id="left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="0">🎉 Readiness</option>
-                                <option value="1">😴 Sleep</option>
-                                <option value="2">❤️ Heart Rate</option>
-                                <option value="3">🔥 Activity</option>
-                                <option value="4">😰 Stress</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Middle Position:</label>
-                            <select id="middle-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="0">🎉 Readiness</option>
-                                <option value="1" selected>😴 Sleep</option>
-                                <option value="2">❤️ Heart Rate</option>
-                                <option value="3">🔥 Activity</option>
-                                <option value="4">😰 Stress</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
-                            <select id="right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="0">🎉 Readiness</option>
-                                <option value="1">😴 Sleep</option>
-                                <option value="2" selected>❤️ Heart Rate</option>
-                                <option value="3">🔥 Activity</option>
-                                <option value="4">😰 Stress</option>
-                            </select>
+                <div class="section-content">
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="show-seconds">
+                            <label for="show-seconds">Show Seconds</label>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Row 2 Position Selectors (Hidden by default) -->
-                <div id="row2-selectors" style="margin: 20px 0; display: none;">
-                    <h4 style="margin: 10px 0; color: #333;">Row 2 (Bottom Row)</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Left Position:</label>
-                            <select id="row2-left-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="0">🎉 Readiness</option>
-                                <option value="1">😴 Sleep</option>
-                                <option value="2">❤️ Heart Rate</option>
-                                <option value="3" selected>🔥 Activity</option>
-                                <option value="4">😰 Stress</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; font-weight: 500; margin-bottom: 5px;">Right Position:</label>
-                            <select id="row2-right-position" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                                <option value="0">🎉 Readiness</option>
-                                <option value="1">😴 Sleep</option>
-                                <option value="2">❤️ Heart Rate</option>
-                                <option value="3">🔥 Activity</option>
-                                <option value="4" selected>😰 Stress</option>
-                            </select>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="compact-time">
+                            <label for="compact-time">Compact Time</label>
                         </div>
                     </div>
-                </div>
-                
-                <div class="section-box" style="margin: 20px 0;">
-                    <div class="section-title">⚙️ Display Settings</div>
-                    <p style="font-size: 14px; color: #666; margin: 10px 0;">Configure how your watchface displays information.</p>
-                    
-                    <div style="margin: 15px 0;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Data Refresh Frequency:</label>
-                        <select id="refresh-frequency" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="15">15 minutes</option>
-                            <option value="30" selected>30 minutes</option>
-                            <option value="60">1 hour</option>
-                            <option value="120">2 hours</option>
-                            <option value="240">4 hours</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Time controls placed before Date Format per UX preference -->
-                    <div style="margin: 15px 0;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="show-seconds" style="margin-right: 10px;">
-                            <span>Show Seconds</span>
-                        </label>
-                    </div>
-                    <div style="margin: 15px 0;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="compact-time" style="margin-right: 10px;">
-                            <span>Compact Time</span>
-                        </label>
-                    </div>
-                    
-                    <div style="margin: 15px 0;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">📅 Date Format:</label>
-                        <select id="date-format" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <div class="form-group">
+                        <label for="date-format">Date Format</label>
+                        <select id="date-format">
                             <optgroup label="Traditional">
-                                <option value="0" selected>MM-DD-YYYY (US Format)</option>
-                                <option value="1">DD-MM-YYYY (International Format)</option>
+                                <option value="0">08-17-2025</option>
+                                <option value="1">17-08-2025</option>
+                                <option value="12">2025-08-17</option>
                             </optgroup>
                             <optgroup label="Full Month">
-                                <option value="2">June 6, 2025</option>
-                                <option value="3">6 June 2025</option>
-                                <option value="4">June 6</option>
-                                <option value="5">6 June</option>
+                                <option value="2">August 17, 2025</option>
+                                <option value="3">17 August 2025</option>
+                                <option value="4">August 17</option>
+                                <option value="5">17 August</option>
                             </optgroup>
                             <optgroup label="Short Month">
-                                <option value="6">Jun 6, 2025</option>
-                                <option value="7">6 Jun 2025</option>
-                                <option value="8">Jun 6</option>
-                                <option value="9">6 Jun</option>
+                                <option value="6">Aug 17, 2025</option>
+                                <option value="7">17 Aug 2025</option>
+                                <option value="8">Aug 17</option>
+                                <option value="9">17 Aug</option>
                             </optgroup>
                             <optgroup label="With Weekday">
-                                <option value="10">Friday, June 6</option>
-                                <option value="11">Fri, Jun 6</option>
+                                <option value="10">Saturday, August 17</option>
+                                <option value="11">Sat, Aug 17</option>
                             </optgroup>
                         </select>
-                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose how the date appears below the time on your watchface</p>
                     </div>
-                    
-                    <div style="margin: 15px 0;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">🌙 Config Page Theme:</label>
-                        <select id="config-theme" onchange="toggleConfigTheme()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="light">☀️ Light Mode</option>
-                            <option value="dark">🌙 Dark Mode</option>
-                        </select>
-                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose the appearance of this configuration page</p>
-                    </div>
-                    
-                    <div style="margin: 15px 0;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">🎨 Theme Mode:</label>
-                        <select id="theme-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="0" selected>🌙 Dark Mode (Default)</option>
-                            <option value="1">☀️ Light Mode</option>
-                            <option value="2">🎨 Custom Color</option>
-                        </select>
-                        <p style="font-size: 12px; color: #666; margin: 5px 0 0 0;">Choose between dark mode (white text on black) or light mode (black text on white)</p>
-                    </div>
-                    
-                    <!-- Color Picker Section -->
-                    <div id="color-picker-section" style="margin: 15px 0; display: none;">
-                        <div class="section-title">🎨 Custom Color Selection</div>
-                        <p style="font-size: 12px; color: #666; margin: 10px 0;">Choose a background color for your watchface. Text color will automatically adjust for readability.</p>
-                        
-                        <!-- Color Preview -->
-                        <div style="margin: 15px 0; text-align: center;">
-                            <div id="color-preview" style="display: inline-block; padding: 20px 40px; border-radius: 8px; background: #000000; color: #ffffff; font-weight: bold; border: 2px solid #ddd;">
-                                Selected: <span id="color-name">Black</span>
+                </div>
+            </div>
+
+            <!-- Watchface Preview -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>👁️ Live Preview</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content expanded">
+                    <div class="preview-container">
+                        <div class="watchface-preview" id="watchface-preview">
+                            <div class="preview-time" id="preview-time">10:09</div>
+                            <div class="preview-date" id="preview-date">Aug 17</div>
+                            <div class="preview-complications">
+                                <div class="preview-row" id="preview-row1">
+                                    <div class="preview-complication">
+                                        <div class="preview-value" id="preview-rdy-value">74</div>
+                                        <div class="preview-label" id="preview-rdy-label">RDY</div>
+                                    </div>
+                                    <div class="preview-complication">
+                                        <div class="preview-value" id="preview-slp-value">71</div>
+                                        <div class="preview-label" id="preview-slp-label">SLP</div>
+                                    </div>
+                                    <div class="preview-complication">
+                                        <div class="preview-value" id="preview-hr-value">68</div>
+                                        <div class="preview-label" id="preview-hr-label">HR</div>
+                                    </div>
+                                </div>
+                                <div class="preview-row" id="preview-row2" style="display: none;">
+                                    <div class="preview-complication">
+                                        <div class="preview-value" id="preview-act-value">85</div>
+                                        <div class="preview-label" id="preview-act-label">ACT</div>
+                                    </div>
+                                    <div class="preview-complication">
+                                        <div class="preview-value" id="preview-str-value">2h</div>
+                                        <div class="preview-label" id="preview-str-label">STR</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Color Palette Grid -->
-                        <div id="color-palette" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 6px; max-width: 100%; margin: 0 auto; padding: 0 10px;">
-                            <!-- Colors will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme & Colors -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>🎨 Colors & Display</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label for="theme-mode">Theme Mode</label>
+                        <select id="theme-mode" onchange="onThemeModeChange()">
+                            <option value="0">Dark Mode</option>
+                            <option value="1">Light Mode</option>
+                            <option value="2">Custom Colors</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="use-emoji">
+                            <label for="use-emoji">Use Emoji Labels (vs Text)</label>
                         </div>
                     </div>
                     
-                    <div style="margin: 15px 0;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="show-loading-screen" style="margin-right: 10px;">
-                            <span>Show loading screen</span>
-                        </label>
+                    <div class="color-picker-container" id="color-picker">
+                        <div class="component-color-group">
+                            <div class="color-input-group">
+                                <label>Background</label>
+                                <select id="background-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="color-input-group">
+                                <label>Time</label>
+                                <select id="time-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="color-input-group">
+                                <label>Date</label>
+                                <select id="date-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="color-input-group">
+                                <label>Readiness</label>
+                                <select id="readiness-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="color-input-group">
+                                <label>Sleep</label>
+                                <select id="sleep-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="color-input-group">
+                                <label>Heart Rate</label>
+                                <select id="heart-rate-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="color-input-group">
+                                <label>Activity</label>
+                                <select id="activity-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="color-input-group">
+                                <label>Stress</label>
+                                <select id="stress-color" onchange="updatePreview()">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div style="text-align: center; margin: 15px 0;">
-                    <button onclick="applyMeasurementLayout()" class="connect-btn" style="width: auto; padding: 10px 20px;">Apply Layout</button>
+            </div>
+
+            <!-- Layout Options -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>📐 Layout Options</span>
+                    <span class="toggle-icon">▼</span>
                 </div>
-                
-                <!-- Coming Soon section commented out
-        <div>
-            <strong>Coming Soon:</strong>
-            <ul>
-                <li>Font size options</li>
-                <li>Custom emoji selection</li>
-            </ul>
-        </div>
-        -->
+                <div class="section-content">
+                    <div class="form-group">
+                        <label for="layout-rows">Number of Rows</label>
+                        <select id="layout-rows" onchange="toggleRow2Options()">
+                            <option value="1">1 Row</option>
+                            <option value="2">2 Rows</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="layout-left">Left Position</label>
+                        <select id="layout-left">
+                            <option value="0">Readiness</option>
+                            <option value="1">Sleep</option>
+                            <option value="2">Heart Rate</option>
+                            <option value="3">Activity</option>
+                            <option value="4">Stress</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="layout-middle">Middle Position</label>
+                        <select id="layout-middle">
+                            <option value="0">Readiness</option>
+                            <option value="1">Sleep</option>
+                            <option value="2">Heart Rate</option>
+                            <option value="3">Activity</option>
+                            <option value="4">Stress</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="layout-right">Right Position</label>
+                        <select id="layout-right">
+                            <option value="0">Readiness</option>
+                            <option value="1">Sleep</option>
+                            <option value="2">Heart Rate</option>
+                            <option value="3">Activity</option>
+                            <option value="4">Stress</option>
+                        </select>
+                    </div>
+                    <div id="row2-options" class="hidden">
+                        <div class="form-group">
+                            <label for="layout-row2-left">Row 2 Left</label>
+                            <select id="layout-row2-left">
+                                <option value="0">Readiness</option>
+                                <option value="1">Sleep</option>
+                                <option value="2">Heart Rate</option>
+                                <option value="3">Activity</option>
+                                <option value="4">Stress</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="layout-row2-right">Row 2 Right</label>
+                            <select id="layout-row2-right">
+                                <option value="0">Readiness</option>
+                                <option value="1">Sleep</option>
+                                <option value="2">Heart Rate</option>
+                                <option value="3">Activity</option>
+                                <option value="4">Stress</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Saved Presets -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>💾 Saved Presets</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group" style="display:flex; gap:8px; align-items:center;">
+                        <input id="preset-name-input" type="text" placeholder="Preset name (optional)" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;" />
+                        <button class="save-btn" onclick="savePresetAutoSlot()">Save Current</button>
+                    </div>
+                    <div id="preset-grid" class="preset-grid"></div>
                 </div>
             </div>
         </div>
-        
-    </div> <!-- End Container -->
+        <!-- Setup Tab -->
+        <div id="setup-tab" class="tab-content">
+            <!-- Oura Connection -->
+            <div class="collapsible-section">
+                <div class="section-header expanded" onclick="toggleSection(this)">
+                    <span>🔗 Oura Ring Connection</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content expanded">
+                    <div class="form-group">
+                        <button class="connect-btn disconnected" id="connect-btn" onclick="connectToOura()">Connect to Oura Ring</button>
+                        <div class="connection-status" id="connection-status" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Settings -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>📊 Data Settings</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label for="refresh-frequency">Refresh Frequency (minutes)</label>
+                        <input type="number" id="refresh-frequency" min="1" max="1440" value="30">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>⚙️ Configuration</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="show-loading">
+                            <label for="show-loading">Show Loading Screen</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debug Tab -->
+        <div id="debug-tab" class="tab-content">
+            <!-- Debug Settings -->
+            <div class="collapsible-section">
+                <div class="section-header expanded" onclick="toggleSection(this)">
+                    <span>🐛 Debug Settings</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content expanded">
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="show-debug">
+                            <label for="show-debug">Show Debug Information</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Development -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    <span>❤️ Support Development</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <p style="margin: 0 0 12px 0; color: #666; line-height: 1.4;">
+                            Enjoying this watchface? Consider supporting its development:
+                        </p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button onclick="window.open('https://ko-fi.com/arturojreal', '_blank')" 
+                                    style="padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                ☕ Buy me a coffee
+                            </button>
+                            <!-- <button onclick="window.open('https://github.com/arturojreal/pebble-oura-stats, '_blank')" 
+                                    style="padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                ⭐ Star on GitHub
+                            </button> -->
+                        </div>
+                        <p style="margin: 12px 0 0 0; font-size: 12px; color: #999;">
+                            Created by Arturo J. Real • Version 2.5.0
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // Tab switching functionality
-        function switchTab(tabName, el) {
-            // Hide all tab contents
-            var tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(function(tab) {
-                tab.classList.remove('active');
-            });
+        // Pebble color palette with names
+        const colorPalette = [
+            { name: 'Black', hex: '#000000' },
+            { name: 'Oxford Blue', hex: '#002E5D' },
+            { name: 'Duke Blue', hex: '#003F88' },
+            { name: 'Blue', hex: '#0055FF' },
+            { name: 'Dark Green', hex: '#005500' },
+            { name: 'Midnight Green', hex: '#004953' },
+            { name: 'Cobalt Blue', hex: '#0066FF' },
+            { name: 'Blue Moon', hex: '#0077FF' },
+            { name: 'Islamic Green', hex: '#009900' },
+            { name: 'Jaeger Green', hex: '#00AA55' },
+            { name: 'Tiffany Blue', hex: '#00AAAA' },
+            { name: 'Vivid Cerulean', hex: '#00BBFF' },
+            { name: 'Green', hex: '#00FF00' },
+            { name: 'Malachite', hex: '#00FF55' },
+            { name: 'Medium Spring Green', hex: '#00FFAA' },
+            { name: 'Cyan', hex: '#00FFFF' },
+            { name: 'Bulgarian Rose', hex: '#550000' },
+            { name: 'Imperial Purple', hex: '#550055' },
+            { name: 'Indigo', hex: '#5500AA' },
+            { name: 'Electric Ultramarine', hex: '#5500FF' },
+            { name: 'Army Green', hex: '#555500' },
+            { name: 'Dark Gray', hex: '#555555' },
+            { name: 'Liberty', hex: '#5555AA' },
+            { name: 'Very Light Blue', hex: '#5555FF' },
+            { name: 'Kelly Green', hex: '#55AA00' },
+            { name: 'May Green', hex: '#55AA55' },
+            { name: 'Cadet Blue', hex: '#55AAAA' },
+            { name: 'Picton Blue', hex: '#55AAFF' },
+            { name: 'Bright Green', hex: '#55FF00' },
+            { name: 'Screamin Green', hex: '#55FF55' },
+            { name: 'Medium Aquamarine', hex: '#55FFAA' },
+            { name: 'Electric Blue', hex: '#55FFFF' },
+            { name: 'Dark Candy Apple Red', hex: '#AA0000' },
+            { name: 'Jazzberry Jam', hex: '#AA0055' },
+            { name: 'Purple', hex: '#AA00AA' },
+            { name: 'Vivid Violet', hex: '#AA00FF' },
+            { name: 'Windsor Tan', hex: '#AA5500' },
+            { name: 'Rose Vale', hex: '#AA5555' },
+            { name: 'Purpureus', hex: '#AA55AA' },
+            { name: 'Lavender Indigo', hex: '#AA55FF' },
+            { name: 'Limerick', hex: '#AAAA00' },
+            { name: 'Brass', hex: '#AAAA55' },
+            { name: 'Light Gray', hex: '#AAAAAA' },
+            { name: 'Baby Blue Eyes', hex: '#AAAAFF' },
+            { name: 'Spring Bud', hex: '#AAFF00' },
+            { name: 'Inchworm', hex: '#AAFF55' },
+            { name: 'Mint Green', hex: '#AAFFAA' },
+            { name: 'Celeste', hex: '#AAFFFF' },
+            { name: 'Red', hex: '#FF0000' },
+            { name: 'Folly', hex: '#FF0055' },
+            { name: 'Fashion Magenta', hex: '#FF00AA' },
+            { name: 'Magenta', hex: '#FF00FF' },
+            { name: 'Orange', hex: '#FF5500' },
+            { name: 'Sunset Orange', hex: '#FF5555' },
+            { name: 'Brilliant Rose', hex: '#FF55AA' },
+            { name: 'Shocking Pink', hex: '#FF55FF' },
+            { name: 'Chrome Yellow', hex: '#FFAA00' },
+            { name: 'Rajah', hex: '#FFAA55' },
+            { name: 'Melon', hex: '#FFAAAA' },
+            { name: 'Rich Brilliant Lavender', hex: '#FFAAFF' },
+            { name: 'Yellow', hex: '#FFFF00' },
+            { name: 'Icterine', hex: '#FFFF55' },
+            { name: 'Pastel Yellow', hex: '#FFFFAA' },
+            { name: 'White', hex: '#FFFFFF' }
+        ];
+
+        // Default settings object
+        let defaultSettings = {
+            show_seconds: false,
+            compact_time: false,
+            date_format: 0,
+            // Default to Dark Mode
+            theme_mode: 0,
+            custom_color_index: 0,
+            use_emoji: false,
+            // Default colors for dark mode: Black background (index 0), white text (index 63)
+            background_color: 0,
+            time_color: 63,
+            date_color: 63,
+            readiness_color: 63,
+            sleep_color: 63,
+            heart_rate_color: 63,
+            activity_color: 63,
+            stress_color: 63,
+            layout_rows: 1,
+            layout_left: 0,
+            layout_middle: 1,
+            layout_right: 2,
+            layout_row2_left: 3,
+            layout_row2_right: 4,
+            refresh_frequency: 30,
+            show_debug: false,
+            show_loading: false
+        };
+
+        // State management
+        let currentTab = 'customize';
+        let isDarkMode = false;
+        let settings = {};
+        let originalSettings = {};
+        let hasUnsavedChanges = false;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Populate color selects first so selected values apply correctly
+            populateColorDropdowns();
+            loadSettings();
+            restoreLastTab();
+            updateThemeToggle();
+            setupChangeDetection();
+            updatePreview();
+            // Render presets grid
+            renderPresetsGrid();
             
-            // Remove active class from all tab buttons
-            var tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(function(button) {
-                button.classList.remove('active');
-            });
+            // Check for OAuth token in URL hash
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
             
-            // Show selected tab content
+            if (accessToken) {
+                localStorage.setItem('oura_access_token', accessToken);
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            
+            // Update connection state
+            updateConnectionState();
+        });
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById(tabName + '-tab').classList.add('active');
             
-            // Add active class to clicked tab button
-            if (el) { el.classList.add('active'); }
-        }
-        
-        // Toggle debug information visibility
-        function initializeDebugVisibility() {
-            var debugSection = document.querySelector('.debug-section');
-            var debugCheckbox = document.getElementById('show-debug');
-            if (!debugSection || !debugCheckbox) return;
-            
-            // Load saved preference if present
-            var stored = localStorage.getItem('oura_show_debug');
-            if (stored !== null && stored !== undefined) {
-                debugCheckbox.checked = (stored === 'true' || stored === '1');
-            }
-            
-            debugSection.style.display = debugCheckbox.checked ? 'block' : 'none';
+            currentTab = tabName;
+            localStorage.setItem('oura_last_tab', tabName);
         }
 
-        function toggleDebugVisibility() {
-            var debugSection = document.querySelector('.debug-section');
-            var debugCheckbox = document.getElementById('show-debug');
-            if (!debugSection || !debugCheckbox) return;
+        // Section toggling
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const isExpanded = header.classList.contains('expanded');
             
-            var show = !!debugCheckbox.checked;
-            debugSection.style.display = show ? 'block' : 'none';
-            localStorage.setItem('oura_show_debug', show ? 'true' : 'false');
-            debugLog('🪵 show_debug set to ' + (show ? 'true' : 'false'));
-        }
-        
-        // ===== TIME DISPLAY SETTINGS (Show Seconds, Compact Time) =====
-        function loadTimeDisplaySettings() {
-            var ssEl = document.getElementById('show-seconds');
-            var ctEl = document.getElementById('compact-time');
-            if (!ssEl || !ctEl) return;
-            
-            var ss = localStorage.getItem('oura_show_seconds');
-            var ct = localStorage.getItem('oura_compact_time');
-            ssEl.checked = (ss === '1');
-            ctEl.checked = (ct === '1');
-            debugLog('⏱️ Time settings loaded: show_seconds=' + (ssEl.checked ? '1' : '0') + ', compact_time=' + (ctEl.checked ? '1' : '0'));
-        }
-        
-        function setupTimeDisplayHandlers() {
-            var ssEl = document.getElementById('show-seconds');
-            var ctEl = document.getElementById('compact-time');
-            if (!ssEl || !ctEl) return;
-            
-            ssEl.addEventListener('change', function() {
-                var val = ssEl.checked ? '1' : '0';
-                localStorage.setItem('oura_show_seconds', val);
-                debugLog('🔧 show_seconds set to ' + val);
-            });
-            ctEl.addEventListener('change', function() {
-                var val = ctEl.checked ? '1' : '0';
-                localStorage.setItem('oura_compact_time', val);
-                debugLog('🔧 compact_time set to ' + val);
-            });
-        }
-        
-        // Measurement layout customization - using numeric keys to match select values
-        var measurementConfig = {
-            '0': { emoji: '🎉', label: 'RDY', name: 'readiness' },
-            '1': { emoji: '😴', label: 'SLP', name: 'sleep' },
-            '2': { emoji: '❤️', label: 'HR', name: 'heart_rate' },
-            '3': { emoji: '🔥', label: 'ACT', name: 'activity' },
-            '4': { emoji: '😰', label: 'STR', name: 'stress' }
-        };
-        
-        // Smart duplicate prevention - automatically adjust conflicting selections
-        function preventDuplicates(changedSelectId) {
-            var leftSelect = document.getElementById('left-position');
-            var middleSelect = document.getElementById('middle-position');
-            var rightSelect = document.getElementById('right-position');
-            
-            var leftValue = leftSelect.value;
-            var middleValue = middleSelect.value;
-            var rightValue = rightSelect.value;
-            
-            var allValues = ['0', '1', '2']; // All possible measurement values
-            
-            console.log('Preventing duplicates after changing', changedSelectId, '- Values: L=' + leftValue + ' M=' + middleValue + ' R=' + rightValue);
-            
-            // Find duplicates and resolve them intelligently
-            if (changedSelectId === 'left-position') {
-                // If left conflicts with middle, move middle to available value
-                if (leftValue === middleValue) {
-                    var availableForMiddle = allValues.find(function(val) {
-                        return val !== leftValue && val !== rightValue;
-                    });
-                    if (availableForMiddle) {
-                        middleSelect.value = availableForMiddle;
-                        console.log('Auto-moved middle from', middleValue, 'to', availableForMiddle);
-                    }
-                }
-                // If left conflicts with right, move right to available value
-                if (leftValue === rightValue) {
-                    var availableForRight = allValues.find(function(val) {
-                        return val !== leftValue && val !== middleSelect.value;
-                    });
-                    if (availableForRight) {
-                        rightSelect.value = availableForRight;
-                        console.log('Auto-moved right from', rightValue, 'to', availableForRight);
-                    }
-                }
-            } else if (changedSelectId === 'middle-position') {
-                // If middle conflicts with left, move left to available value
-                if (middleValue === leftValue) {
-                    var availableForLeft = allValues.find(function(val) {
-                        return val !== middleValue && val !== rightValue;
-                    });
-                    if (availableForLeft) {
-                        leftSelect.value = availableForLeft;
-                        console.log('Auto-moved left from', leftValue, 'to', availableForLeft);
-                    }
-                }
-                // If middle conflicts with right, move right to available value
-                if (middleValue === rightValue) {
-                    var availableForRight = allValues.find(function(val) {
-                        return val !== middleValue && val !== leftSelect.value;
-                    });
-                    if (availableForRight) {
-                        rightSelect.value = availableForRight;
-                        console.log('Auto-moved right from', rightValue, 'to', availableForRight);
-                    }
-                }
-            } else if (changedSelectId === 'right-position') {
-                // If right conflicts with left, move left to available value
-                if (rightValue === leftValue) {
-                    var availableForLeft = allValues.find(function(val) {
-                        return val !== rightValue && val !== middleValue;
-                    });
-                    if (availableForLeft) {
-                        leftSelect.value = availableForLeft;
-                        console.log('Auto-moved left from', leftValue, 'to', availableForLeft);
-                    }
-                }
-                // If right conflicts with middle, move middle to available value
-                if (rightValue === middleValue) {
-                    var availableForMiddle = allValues.find(function(val) {
-                        return val !== rightValue && val !== leftSelect.value;
-                    });
-                    if (availableForMiddle) {
-                        middleSelect.value = availableForMiddle;
-                        console.log('Auto-moved middle from', middleValue, 'to', availableForMiddle);
-                    }
-                }
-            }
-        }
-        
-        function updateMeasurementLayout() {
-            var leftValue = document.getElementById('left-position').value;
-            var middleValue = document.getElementById('middle-position').value;
-            var rightValue = document.getElementById('right-position').value;
-            
-            console.log('Updating preview - L:', leftValue, 'M:', middleValue, 'R:', rightValue);
-            
-            // Update visual preview
-            if (measurementConfig[leftValue]) {
-                document.getElementById('preview-left').textContent = measurementConfig[leftValue].emoji;
-                document.querySelector('#preview-left').nextElementSibling.textContent = measurementConfig[leftValue].label;
-            }
-            
-            if (measurementConfig[middleValue]) {
-                document.getElementById('preview-middle').textContent = measurementConfig[middleValue].emoji;
-                document.querySelector('#preview-middle').nextElementSibling.textContent = measurementConfig[middleValue].label;
-            }
-            
-            if (measurementConfig[rightValue]) {
-                document.getElementById('preview-right').textContent = measurementConfig[rightValue].emoji;
-                document.querySelector('#preview-right').nextElementSibling.textContent = measurementConfig[rightValue].label;
-            }
-            
-            // Check for duplicates and enable/disable apply button accordingly
-            var positions = [leftValue, middleValue, rightValue];
-            var hasDuplicates = positions.length !== new Set(positions).size;
-            
-            // Visual feedback - always show clean state since we prevent duplicates
-            var selects = ['left-position', 'middle-position', 'right-position'];
-            selects.forEach(function(selectId) {
-                var select = document.getElementById(selectId);
-                select.style.borderColor = '#ccc';
-                select.style.backgroundColor = 'white';
-            });
-            
-            // Update apply button state
-            var applyButton = document.querySelector('button[onclick="applyMeasurementLayout()"]');
-            if (hasDuplicates) {
-                applyButton.disabled = true;
-                applyButton.textContent = 'Fix Duplicates First';
-                applyButton.style.backgroundColor = '#6c757d';
+            if (isExpanded) {
+                header.classList.remove('expanded');
+                content.classList.remove('expanded');
             } else {
-                applyButton.disabled = false;
-                applyButton.textContent = 'Apply Layout';
-                applyButton.style.backgroundColor = '#007bff';
+                header.classList.add('expanded');
+                content.classList.add('expanded');
             }
         }
-        
-        function applyMeasurementLayout() {
-            // Get flexible layout configuration
-            var layoutRows = document.getElementById('layout-rows').value;
-            var row1Left = document.getElementById('left-position').value;
-            var row1Middle = document.getElementById('middle-position').value;
-            var row1Right = document.getElementById('right-position').value;
-            var row2Left = document.getElementById('row2-left-position').value;
-            var row2Right = document.getElementById('row2-right-position').value;
-            
-            // Check for duplicates in active positions
-            var activePositions = [row1Left, row1Middle, row1Right];
-            if (layoutRows === '2') {
-                activePositions.push(row2Left, row2Right);
-            }
-            
-            if (activePositions.length !== new Set(activePositions).size) {
-                alert('Please ensure each measurement appears in only one position.');
-                return;
-            }
-            
-            // Store the flexible layout configuration
-            var flexibleLayoutConfig = {
-                rows: parseInt(layoutRows),
-                row1: {
-                    left: parseInt(row1Left),
-                    middle: parseInt(row1Middle),
-                    right: parseInt(row1Right)
-                },
-                row2: {
-                    left: parseInt(row2Left),
-                    right: parseInt(row2Right)
-                }
-            };
-            
-            // Store in localStorage for persistence
-            localStorage.setItem('oura_flexible_layout', JSON.stringify(flexibleLayoutConfig));
-            
-            // Also store legacy format for backward compatibility
-            var legacyLayoutConfig = {
-                left: row1Left,
-                middle: row1Middle,
-                right: row1Right
-            };
-            localStorage.setItem('oura_measurement_layout', JSON.stringify(legacyLayoutConfig));
-            
-            // Unify behavior with Send to Pebble: delegate sending to sendToPebble()
-            debugLog('📊 Applying flexible layout: ' + JSON.stringify(flexibleLayoutConfig));
-            var currentToken = localStorage.getItem('oura_access_token');
-            debugLog('🔍 Current token status: ' + (currentToken ? 'Found' : 'Not found'));
-            if (currentToken) {
-                debugLog('🔄 Delegating send to sendToPebble()');
-                sendToPebble(currentToken);
-            } else {
-                debugLog('⚠️ No token found - cannot send layout update');
-                debugLog('💡 Layout saved to localStorage - will apply on next data refresh');
-                alert('Please connect to your Oura Ring first before applying layout changes.');
-            }
-            
-            // Visual feedback
-            var button = document.querySelector('button[onclick="applyMeasurementLayout()"]');
-            var originalText = button.textContent;
-            button.textContent = '✅ Applied!';
-            button.style.backgroundColor = '#28a745';
-            
-            setTimeout(function() {
-                button.textContent = originalText;
-                button.style.backgroundColor = '#007bff';
-            }, 2000);
-        }
-        
-        function loadSavedMeasurementLayout() {
-            var saved = localStorage.getItem('oura_measurement_layout');
-            if (saved) {
-                try {
-                    var layout = JSON.parse(saved);
-                    console.log('Loading saved layout:', layout);
-                    document.getElementById('left-position').value = layout.left;
-                    document.getElementById('middle-position').value = layout.middle;
-                    document.getElementById('right-position').value = layout.right;
-                    updateMeasurementLayout();
-                } catch (e) {
-                    console.log('Error loading saved layout:', e);
-                    // If loading fails, set defaults and update preview
-                    setDefaultLayout();
-                }
-            } else {
-                // No saved layout, set defaults
-                setDefaultLayout();
-            }
-        }
-        
-        function setDefaultLayout() {
-            // Default: Readiness(0) - Sleep(1) - Heart Rate(2)
-            document.getElementById('left-position').value = '0';
-            document.getElementById('middle-position').value = '1';
-            document.getElementById('right-position').value = '2';
-            updateMeasurementLayout();
-            debugLog('📊 Using default measurement layout');
-        }
-        
-        // PURE STATIC CONFIG - NO POPUPS, ONLY REDIRECTS
-        var CLIENT_ID = 'TGDTXUBGWULVNKSC';
-        var REDIRECT_URI = 'https://peppy-pothos-093b81.netlify.app/pebble-static-config.html';
-        var AUTH_URL = 'https://cloud.ouraring.com/oauth/authorize';
-        var SCOPES = 'daily heartrate'; // daily_* endpoints + /usercollection/heartrate
 
-        // Generate OAuth URL - client-side-only flow
-        function generateAuthUrl() {
-            return AUTH_URL + 
-                '?response_type=token' +  // CLIENT-SIDE-ONLY
-                '&client_id=' + CLIENT_ID +
-                '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
-                '&scope=' + encodeURIComponent(SCOPES);
-        }
-
-        // Check for token in URL fragment
-        function checkForToken() {
-            var hash = window.location.hash;
-            if (hash && hash.includes('access_token=')) {
-                var params = new URLSearchParams(hash.substring(1));
-                var token = params.get('access_token');
-                var expiresIn = params.get('expires_in') || 2592000;
-                
-                if (token) {
-                    // Store token
-                    localStorage.setItem('oura_access_token', token);
-                    localStorage.setItem('oura_token_expires', Date.now() + (expiresIn * 1000));
-                    
-                    // Clean URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    // Show connected state
-                    showConnected(token);
-                    // Do not auto-close or auto-send. Developer can review and send manually.
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Check stored token
-        function checkStoredToken() {
-            var token = localStorage.getItem('oura_access_token');
-            var expires = localStorage.getItem('oura_token_expires');
-            
-            if (token && expires && Date.now() < parseInt(expires)) {
-                showConnected(token);
-                return true;
-            }
-            return false;
-        }
-
-        // Show connected state
-        function showConnected(token) {
-            document.getElementById('status').className = 'status connected';
-            document.getElementById('status').textContent = '✅ Connected to Oura (token stored)';
-            document.getElementById('connect-section').style.display = 'none';
-            document.getElementById('connected-section').style.display = 'block';
-            
-            var display = token.substring(0, 8) + '...' + token.substring(token.length - 4);
-            document.getElementById('token-display').textContent = 'Token: ' + display;
-        }
-
-        // Show disconnected state
-        function showDisconnected() {
-            document.getElementById('status').className = 'status disconnected';
-            document.getElementById('status').textContent = '❌ Not connected';
-            document.getElementById('connect-section').style.display = 'block';
-            document.getElementById('connected-section').style.display = 'none';
-        }
-
-        // DIRECT REDIRECT - NO POPUP!
-        function connect() {
-            console.log('Direct redirect to Oura OAuth2...');
-            window.location = generateAuthUrl();  // PURE REDIRECT
-        }
-
-        // Reconnect
-        function reconnect() {
-            clearSettings();
-            window.location = generateAuthUrl();  // PURE REDIRECT
-        }
-
-        // Send settings to Pebble
-        function sendToPebble(token) {
+        // Presets management (up to 3)
+        function getPresets() {
             try {
-                // Load layout from storage (prefer flexible layout if available)
-                var layoutConfig = { left: '0', middle: '1', right: '2' }; // legacy defaults
-                var layoutRows = 1;
-                var row2Left = undefined;
-                var row2Right = undefined;
-
-                var savedFlexible = localStorage.getItem('oura_flexible_layout');
-                if (savedFlexible) {
-                    try {
-                        var flex = JSON.parse(savedFlexible);
-                        if (flex && flex.row1) {
-                            layoutConfig.left = String(flex.row1.left);
-                            layoutConfig.middle = String(flex.row1.middle);
-                            layoutConfig.right = String(flex.row1.right);
-                        }
-                        if (typeof flex.rows !== 'undefined') layoutRows = parseInt(flex.rows);
-                        if (flex.row2) {
-                            row2Left = flex.row2.left;
-                            row2Right = flex.row2.right;
-                        }
-                    } catch (e) {
-                        debugLog('⚠️ Error parsing flexible layout, will try legacy layout');
-                    }
-                }
-
-                if (!savedFlexible) {
-                    // Fallback to legacy layout
-                    var savedLayout = localStorage.getItem('oura_measurement_layout');
-                    if (savedLayout) {
-                        try {
-                            var legacy = JSON.parse(savedLayout);
-                            layoutConfig.left = legacy.left;
-                            layoutConfig.middle = legacy.middle;
-                            layoutConfig.right = legacy.right;
-                        } catch (e2) {
-                            debugLog('⚠️ Error parsing legacy layout, using defaults');
-                        }
-                    }
-                }
-                
-                // Get date format setting
-                var dateFormat = localStorage.getItem('oura_date_format') || '0';
-                
-                // Get theme mode setting
-                var themeMode = localStorage.getItem('oura_theme_mode') || '0';
-                
-                // Get show loading setting
-                var showLoading = localStorage.getItem('oura_show_loading') || '0';
-
-                // Get Show Seconds & Compact Time settings
-                var showSeconds = localStorage.getItem('oura_show_seconds') === '1';
-                var compactTime = localStorage.getItem('oura_compact_time') === '1';
-                
-                // Get Show Debug setting
-                var showDebugStored = localStorage.getItem('oura_show_debug');
-                var showDebug = (showDebugStored === null || showDebugStored === undefined) ? true : (showDebugStored === 'true');
-                
-                // Get Refresh Frequency setting
-                var refreshFreqStored = localStorage.getItem('oura_refresh_frequency');
-                var refreshFrequency = refreshFreqStored ? parseInt(refreshFreqStored) : 30;
-                if (refreshFrequency !== 15 && refreshFrequency !== 30 && refreshFrequency !== 60) refreshFrequency = 30;
-                
-                // Get custom color data if theme mode is custom color
-                var customColorData = null;
-                if (themeMode === '2') {
-                    var savedColor = localStorage.getItem('oura_custom_color');
-                    if (savedColor) {
-                        try {
-                            customColorData = JSON.parse(savedColor);
-                        } catch (e) {
-                            console.log('Error parsing custom color data:', e);
-                        }
-                    }
-                }
-                
-                var settings = {
-                    oura_token: token,
-                    // legacy layout fields for compatibility
-                    layout_left: parseInt(layoutConfig.left),
-                    layout_middle: parseInt(layoutConfig.middle),
-                    layout_right: parseInt(layoutConfig.right),
-                    // flexible layout fields (preferred by watchface)
-                    layout_rows: parseInt(layoutRows),
-                    row1_left: parseInt(layoutConfig.left),
-                    row1_middle: parseInt(layoutConfig.middle),
-                    row1_right: parseInt(layoutConfig.right),
-                    row2_left: (typeof row2Left === 'number') ? row2Left : undefined,
-                    row2_right: (typeof row2Right === 'number') ? row2Right : undefined,
-                    date_format: parseInt(dateFormat),
-                    theme_mode: parseInt(themeMode),
-                    // New config wiring
-                    show_debug: showDebug,
-                    refresh_frequency: refreshFrequency,
-                    // include show_loading so PKJS can apply immediately
-                    show_loading: (showLoading === '1') ? 1 : 0,
-                    // new time display options
-                    show_seconds: showSeconds ? 1 : 0,
-                    compact_time: compactTime ? 1 : 0
-                };
-
-                // Add custom color fields if available
-                if (customColorData) {
-                    settings.custom_color_index = customColorData.index;
-                    settings.custom_color_name = customColorData.name;
-                    settings.custom_color_hex = customColorData.hex;
-                    settings.custom_color_pebble = customColorData.pebble;
-                }
-                var returnUrl = 'pebblejs://close#' + encodeURIComponent(JSON.stringify(settings));
-                
-                debugLog('📱 Sending settings to Pebble:');
-                debugLog('Token: ' + token.substring(0, 10) + '...' + token.substring(token.length - 6));
-                debugLog('Layout Rows: ' + layoutConfig.rows);
-                debugLog('Row 1: L=' + layoutConfig.left + ' M=' + layoutConfig.middle + ' R=' + layoutConfig.right);
-                debugLog('Row 2: L=' + layoutConfig.row2_left + ' R=' + layoutConfig.row2_right);
-                debugLog('Settings: ' + JSON.stringify(settings));
-                debugLog('Return URL: ' + returnUrl);
-                
-                // Perform the close immediately when user requests send
-                window.location = returnUrl;
-            } catch (error) {
-                debugLog('❌ Error sending to Pebble: ' + error.message);
-                console.log('Could not return to Pebble (expected in browser)');
-            }
+                const raw = localStorage.getItem('oura_presets');
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr.slice(0,3) : [];
+            } catch(e) { return []; }
         }
-
-        function resendToPebble() {
-            var token = localStorage.getItem('oura_access_token');
-            if (!token) { debugLog('❌ Resend failed: no token in storage'); return; }
-            debugLog('🔁 Manual resend to Pebble requested');
-            sendToPebble(token);
+        function setPresets(presets) {
+            localStorage.setItem('oura_presets', JSON.stringify((presets||[]).slice(0,3)));
         }
-
-        function sendAndClose() {
-            var token = localStorage.getItem('oura_access_token');
-            if (!token) { debugLog('❌ Send failed: no token in storage'); return; }
-            sendToPebble(token);
-        }
-
-        function closeWebview() {
-            try {
-                debugLog('🔒 Closing webview without sending');
-                window.location = 'pebblejs://close#' + encodeURIComponent(JSON.stringify({}));
-            } catch (e) {
-                debugLog('❌ Close failed (likely in normal browser): ' + e.message);
-            }
-        }
-
-        function clearSettings() {
-            localStorage.removeItem('oura_access_token');
-            localStorage.removeItem('oura_token_expires');
-            document.getElementById('debug-log').textContent = 'Debug information will appear here...';
-            showDisconnected();
-            updateDevPanel();
-            renderTokenDetails();
-            clearApiResults();
-            debugLog('🧹 Cleared stored settings');
-        }
-
-        // Debug logging function with HTML sanitization
-        function debugLog(message) {
-            var timestamp = new Date().toLocaleTimeString();
-            var logElement = document.getElementById('debug-log');
-            if (!logElement) return;
-            
-            // Sanitize message to prevent HTML injection
-            var sanitized = String(message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            // Truncate very long messages that might contain full HTML pages
-            if (sanitized.length > 500) {
-                sanitized = sanitized.substring(0, 500) + '... [truncated]';
-            }
-            
-            logElement.textContent += '[' + timestamp + '] ' + sanitized + '\n';
-            logElement.scrollTop = logElement.scrollHeight;
-        }
-
-        function copyLog() {
-            var logElement = document.getElementById('debug-log');
-            var statusEl = document.getElementById('copy-status');
-            if (!logElement) return;
-            var text = logElement.innerText || logElement.textContent || '';
-            if (!text) {
-                if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Log is empty'; }
-                setTimeout(function(){ if (statusEl) statusEl.style.display = 'none'; }, 1500);
-                return;
-            }
-            var onSuccess = function(){
-                if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Copied!'; }
-                debugLog(' Log copied to clipboard');
-                setTimeout(function(){ if (statusEl) statusEl.style.display = 'none'; }, 1200);
-            };
-            var onFail = function(err){
-                if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Copy failed'; }
-                debugLog(' Copy failed: ' + (err && err.message ? err.message : 'unknown error'));
-                setTimeout(function(){ if (statusEl) statusEl.style.display = 'none'; }, 1500);
-            };
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(onSuccess).catch(onFail);
+        function savePresetAutoSlot() {
+            const nameInput = document.getElementById('preset-name-input');
+            const name = (nameInput && nameInput.value.trim()) || `Preset ${new Date().toLocaleTimeString()}`;
+            let presets = getPresets();
+            // Find first empty slot or cap at 3
+            if (presets.length < 3) {
+                presets.push(createPresetObject(name));
             } else {
-                // Fallback
-                try {
-                    var ta = document.createElement('textarea');
-                    ta.value = text;
-                    ta.setAttribute('readonly', '');
-                    ta.style.position = 'absolute';
-                    ta.style.left = '-9999px';
-                    document.body.appendChild(ta);
-                    ta.select();
-                    var ok = document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    if (ok) onSuccess(); else onFail();
-                } catch (e) { onFail(e); }
+                // Overwrite oldest (index 0)
+                presets[0] = createPresetObject(name);
             }
+            setPresets(presets);
+            renderPresetsGrid();
         }
-
-        // Test Oura API with current token
-        function testOuraAPI() {
-            var token = localStorage.getItem('oura_access_token');
-            
-            if (!token) {
-                debugLog('❌ No token found in localStorage');
-                appendApiResult('Direct API Test', 'No Token', 'Please authenticate first.');
-                return;
-            }
-            
-            var useProxy = getUseProxySetting() || isPebbleWebView();
-            var today = new Date().toISOString().split('T')[0];
-            if (useProxy) {
-                debugLog('🧪 Testing Oura API via Proxy');
-                var pu = 'https://peppy-pothos-093b81.netlify.app/.netlify/functions/oura-proxy?endpoint=heartrate&token=' + encodeURIComponent(token) + '&start_date=' + today + '&end_date=' + today;
-                var px = new XMLHttpRequest();
-                px.open('GET', pu, true);
-                var start = Date.now();
-                px.onreadystatechange = function(){
-                    if (px.readyState === 4) {
-                        var ms = Date.now() - start;
-                        debugLog('📡 Proxy Test → status ' + px.status + ' in ' + ms + 'ms');
-                        appendApiResult('Proxy API Test (heartrate)', px.status, (px.responseText || '').substring(0, 200) + '...');
-                        if (px.status === 200) {
-                            try { var data = JSON.parse(px.responseText); debugLog('✅ Proxy OK - Data count: ' + (data.data ? data.data.length : 0)); } catch(e){ debugLog('❌ Proxy JSON Parse Error: ' + e.message); }
-                        } else if (px.status === 401) {
-                            debugLog('⚠️ Proxy 401: token expired or missing required scope');
-                        }
-                    }
-                };
-                px.send();
-                return;
-            }
-
-            debugLog('🧪 Testing Oura API directly (browser request)');
-            var xhr = new XMLHttpRequest();
-            var url = 'https://api.ouraring.com/v2/usercollection/heartrate?start_date=' + today + '&end_date=' + today;
-            xhr.open('GET', url, true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    debugLog('📊 Heart Rate API Response:');
-                    debugLog('Status: ' + xhr.status);
-                    debugLog('Response (first 200): ' + (xhr.responseText || '').substring(0, 200) + '...');
-                    appendApiResult('Direct API Test (heartrate)', xhr.status, (xhr.responseText || '').substring(0, 200) + '...');
-                    if (xhr.status === 0) {
-                        debugLog('ℹ️ Status 0 usually indicates the Pebble webview blocked the request (CORS/TLS). Use the Proxy toggle.');
-                    }
-                    if (xhr.status === 200) {
-                        try { var data2 = JSON.parse(xhr.responseText); debugLog('✅ API Success - Data count: ' + (data2.data ? data2.data.length : 0)); } catch (e) { debugLog('❌ JSON Parse Error: ' + e.message); }
-                    } else {
-                        debugLog('❌ API Error: ' + xhr.status + ' - ' + xhr.statusText);
-                    }
-                }
-            };
-            xhr.send();
+        function createPresetObject(name) {
+            // Use current normalized settings
+            collectAllSettings();
+            const snapshot = JSON.parse(JSON.stringify(settings));
+            return { name, settings: snapshot, ts: Date.now() };
         }
-
-        function maskToken(t) {
-            if (!t) return '(none)';
-            if (t.length <= 14) return t;
-            return t.substring(0, 8) + '...' + t.substring(t.length - 6);
-        }
-
-        function renderTokenDetails() {
-            var token = localStorage.getItem('oura_access_token');
-            var expires = localStorage.getItem('oura_token_expires');
-            var el = document.getElementById('token-details');
-            if (!el) return;
-            if (!token) {
-                el.innerHTML = '<div class="warn">No token in storage.</div>';
-                return;
-            }
-            var expText = '(n/a)';
-            if (expires) {
-                var expMs = parseInt(expires, 10);
-                var delta = expMs - Date.now();
-                var mins = Math.max(0, Math.floor(delta / 60000));
-                expText = new Date(expMs).toLocaleString() + '  (' + mins + ' min left)';
-            }
-            el.innerHTML = '' +
-                '<div><strong>Masked Token:</strong> ' + maskToken(token) + '</div>' +
-                '<div><strong>Scopes:</strong> ' + SCOPES + '</div>' +
-                '<div><strong>Expires:</strong> ' + expText + '</div>';
-        }
-
-        function clearApiResults() {
-            var r = document.getElementById('api-test-results');
-            if (r) r.innerHTML = '';
-        }
-
-        function appendApiResult(title, status, bodySnippet) {
-            var r = document.getElementById('api-test-results');
-            if (!r) return;
-            
-            // Enhanced sanitization and truncation
-            var body = String(bodySnippet || '');
-            // If it looks like HTML (starts with DOCTYPE or <html), truncate heavily
-            if (/^\s*<!DOCTYPE|^\s*<html/i.test(body)) {
-                body = '[HTML Response - likely error page] ' + body.substring(0, 100) + '...';
-            } else if (body.length > 300) {
-                body = body.substring(0, 300) + '... [truncated]';
-            }
-            var safeBody = body.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            
-            var row = '<div style="margin:6px 0;">' +
-                      '<div><strong>' + title + ':</strong> status ' + status + '</div>' +
-                      (safeBody ? '<pre style="white-space:pre-wrap;word-break:break-word;background:#f8f9fa;border:1px solid #e9ecef;padding:8px;border-radius:4px;margin:6px 0 0 0;">' + safeBody + '</pre>' : '') +
-                      '</div>';
-            r.innerHTML = r.innerHTML + row;
-        }
-
-        function isPebbleWebView() {
-            var ua = (navigator.userAgent || '').toLowerCase();
-            return /pebble|rebble/.test(ua);
-        }
-
-        function getUseProxySetting() {
-            var el = document.getElementById('use-proxy-toggle');
-            if (!el) return false;
-            return !!el.checked;
-        }
-
-        function setUseProxyDefault() {
-            var el = document.getElementById('use-proxy-toggle');
-            if (!el) return;
-            // Default ON in Pebble webview; OFF in normal desktop browser
-            var def = isPebbleWebView();
-            el.checked = def;
-            el.addEventListener('change', function(){
-                // no-op for now; could persist if desired
-            });
-        }
-
-        function updateDevPanel() {
-            var kv = document.getElementById('dev-kv');
-            if (!kv) return;
-            var token = localStorage.getItem('oura_access_token');
-            var expires = localStorage.getItem('oura_token_expires');
-            var ua = navigator.userAgent || '';
-            var inPebble = /pebble|watch|mobile safari/i.test(ua);
-            var expText = '(n/a)';
-            if (expires) {
-                var expMs = parseInt(expires, 10);
-                var delta = expMs - Date.now();
-                var mins = Math.max(0, Math.floor(delta / 60000));
-                expText = new Date(expMs).toLocaleString() + '  (' + mins + ' min left)';
-            }
-            kv.innerHTML = '' +
-                '<div>Env</div><div>' + (inPebble ? '<span class="ok">Pebble WebView</span>' : ua) + '</div>' +
-                '<div>Scopes</div><div>' + SCOPES + '</div>' +
-                '<div>Token</div><div>' + maskToken(token) + '</div>' +
-                '<div>Expires</div><div>' + expText + '</div>' +
-                '<div>Redirect URI</div><div>' + REDIRECT_URI + '</div>' +
-                '<div>Auth URL</div><div>' + AUTH_URL + '</div>';
-        }
-
-        function autoProxySmokeTest() {
-            var token = localStorage.getItem('oura_access_token');
-            if (!token) return;
-            var today = new Date().toISOString().split('T')[0];
-            var u = 'https://peppy-pothos-093b81.netlify.app/.netlify/functions/oura-proxy?endpoint=heartrate&token=' + encodeURIComponent(token) + '&start_date=' + today + '&end_date=' + today;
-            var xhr = new XMLHttpRequest();
-            var started = Date.now();
-            xhr.open('GET', u, true);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    var ms = Date.now() - started;
-                    debugLog('🛰️ Proxy smoke test → status ' + xhr.status + ' in ' + ms + 'ms');
-                    appendApiResult('Proxy Smoke Test', xhr.status, (xhr.responseText || '').substring(0, 200) + '...');
-                    if (xhr.status !== 200) {
-                        debugLog('↪︎ Body (first 200): ' + (xhr.responseText || '').substring(0, 200) + '...');
-                        if (xhr.status === 401) {
-                            debugLog('⚠️ Token likely missing required scope ("heartrate") or expired');
-                        }
-                    }
-                }
-            };
-            xhr.send();
-        }
-
-        // Check all stored data
-        function checkStoredData() {
-            debugLog('🔍 Checking localStorage data:');
-            
-            var keys = ['oura_access_token', 'oura_token_expires', 'oura_config_settings', 'oura_last_update'];
-            
-            keys.forEach(function(key) {
-                var value = localStorage.getItem(key);
-                if (value) {
-                    if (key === 'oura_access_token') {
-                        debugLog(key + ': ' + value.substring(0, 10) + '...' + value.substring(value.length - 6));
-                    } else if (key === 'oura_token_expires') {
-                        var expires = new Date(parseInt(value));
-                        var now = new Date();
-                        var isExpired = now > expires;
-                        debugLog(key + ': ' + expires.toLocaleString() + ' (Expired: ' + isExpired + ')');
-                    } else {
-                        debugLog(key + ': ' + value);
-                    }
+        function renderPresetsGrid() {
+            const grid = document.getElementById('preset-grid');
+            if (!grid) return;
+            const presets = getPresets();
+            grid.innerHTML = '';
+            // Ensure exactly 3 slots for UI
+            for (let i=0;i<3;i++) {
+                const card = document.createElement('div');
+                card.className = 'preset-card';
+                const preset = presets[i];
+                if (preset) {
+                    const titleRow = document.createElement('div');
+                    titleRow.className = 'preset-title-row';
+                    const title = document.createElement('div');
+                    title.className = 'preset-title';
+                    title.textContent = preset.name || `Preset ${i+1}`;
+                    const renameBtn = document.createElement('button');
+                    renameBtn.textContent = 'Rename';
+                    renameBtn.onclick = () => renamePreset(i);
+                    titleRow.appendChild(title);
+                    titleRow.appendChild(renameBtn);
+                    const thumbWrap = document.createElement('div');
+                    thumbWrap.className = 'preset-thumb';
+                    const previewEl = buildMiniPreviewElement();
+                    thumbWrap.appendChild(previewEl);
+                    const actions = document.createElement('div');
+                    actions.className = 'preset-actions';
+                    const loadBtn = document.createElement('button');
+                    loadBtn.textContent = 'Load';
+                    loadBtn.onclick = () => loadPreset(i);
+                    const replaceBtn = document.createElement('button');
+                    replaceBtn.textContent = 'Replace';
+                    replaceBtn.onclick = () => replacePreset(i);
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = () => deletePreset(i);
+                    actions.appendChild(loadBtn);
+                    actions.appendChild(replaceBtn);
+                    actions.appendChild(deleteBtn);
+                    card.appendChild(titleRow);
+                    card.appendChild(thumbWrap);
+                    card.appendChild(actions);
+                    grid.appendChild(card);
+                    // Render mini preview with stored settings
+                    renderMiniPreview(previewEl, preset.settings);
                 } else {
-                    debugLog(key + ': (not set)');
+                    const title = document.createElement('div');
+                    title.className = 'preset-title';
+                    title.textContent = `Empty Slot ${i+1}`;
+                    const thumbWrap = document.createElement('div');
+                    thumbWrap.className = 'preset-thumb';
+                    const previewEl = buildMiniPreviewElement();
+                    thumbWrap.appendChild(previewEl);
+                    const actions = document.createElement('div');
+                    actions.className = 'preset-actions';
+                    const saveHereBtn = document.createElement('button');
+                    saveHereBtn.textContent = 'Save here';
+                    saveHereBtn.onclick = () => savePresetToSlot(i);
+                    actions.appendChild(saveHereBtn);
+                    card.appendChild(title);
+                    card.appendChild(thumbWrap);
+                    card.appendChild(actions);
+                    grid.appendChild(card);
+                    // Render mini preview of current settings to illustrate
+                    renderMiniPreview(previewEl, settings);
+                }
+            }
+        }
+        function savePresetToSlot(i) {
+            const nameInput = document.getElementById('preset-name-input');
+            const name = (nameInput && nameInput.value.trim()) || `Preset ${i+1}`;
+            const presets = getPresets();
+            presets[i] = createPresetObject(name);
+            setPresets(presets);
+            renderPresetsGrid();
+        }
+        function replacePreset(i) { savePresetToSlot(i); }
+        function renamePreset(i) {
+            const presets = getPresets();
+            if (!presets[i]) return;
+            const newName = prompt('Rename preset:', presets[i].name || `Preset ${i+1}`);
+            if (newName && newName.trim()) {
+                presets[i].name = newName.trim();
+                setPresets(presets);
+                renderPresetsGrid();
+            }
+        }
+        function deletePreset(i) {
+            const presets = getPresets();
+            presets.splice(i,1);
+            setPresets(presets);
+            renderPresetsGrid();
+        }
+        function loadPreset(i) {
+            const presets = getPresets();
+            const preset = presets[i];
+            if (!preset) return;
+            settings = { ...defaultSettings, ...preset.settings };
+            normalizeSettings();
+            applySettingsToUI();
+            updatePreview();
+            detectChanges();
+            // Bring user to preview
+            const previewSection = document.querySelector('#customize-tab .collapsible-section:nth-of-type(2) .section-header');
+            if (previewSection && !previewSection.classList.contains('expanded')) previewSection.click();
+        }
+        function buildMiniPreviewElement() {
+            const wrap = document.createElement('div');
+            wrap.className = 'watchface-preview';
+            wrap.style.width = '120px';
+            wrap.style.height = '146px';
+            // time
+            const t = document.createElement('div'); t.className = 'preview-time'; t.textContent = '10:09';
+            const d = document.createElement('div'); d.className = 'preview-date'; d.textContent = 'Aug 17';
+            const comps = document.createElement('div'); comps.className = 'preview-complications';
+            const row1 = document.createElement('div'); row1.className = 'preview-row'; row1.id = '';
+            const mk = (id, v, l) => { const c = document.createElement('div'); c.className = 'preview-complication'; const vv = document.createElement('div'); vv.className = 'preview-value'; vv.id = id+'-value'; vv.textContent = v; const ll = document.createElement('div'); ll.className = 'preview-label'; ll.id = id+'-label'; ll.textContent = l; c.appendChild(vv); c.appendChild(ll); return c; };
+            row1.appendChild(mk('mini-rdy','74','RDY'));
+            row1.appendChild(mk('mini-slp','71','SLP'));
+            row1.appendChild(mk('mini-hr','68','HR'));
+            const row2 = document.createElement('div'); row2.className = 'preview-row'; row2.style.display = 'none';
+            row2.appendChild(mk('mini-act','85','ACT'));
+            row2.appendChild(mk('mini-str','2h','STR'));
+            comps.appendChild(row1); comps.appendChild(row2);
+            wrap.appendChild(t); wrap.appendChild(d); wrap.appendChild(comps);
+            return wrap;
+        }
+        function renderMiniPreview(container, presetSettings) {
+            if (!container) return;
+            const s = { ...defaultSettings, ...presetSettings };
+            // Colors
+            const bg = getColorHexByIndex(s.background_color ?? 0, 0);
+            const timeC = ensureContrast(getColorHexByIndex(s.time_color ?? 63, 63), bg);
+            const dateC = ensureContrast(getColorHexByIndex(s.date_color ?? 63, 63), bg);
+            container.style.backgroundColor = bg;
+            const t = container.querySelector('.preview-time'); if (t) t.style.color = timeC;
+            const d = container.querySelector('.preview-date'); if (d) d.style.color = dateC;
+            // Layout rows
+            const isDouble = s.layout_rows === 2 || s.layout_rows === '2';
+            const rows = container.querySelectorAll('.preview-row');
+            rows[0].className = `preview-row ${isDouble ? 'dual-row' : 'single-row'}`;
+            rows[1].className = 'preview-row dual-row';
+            rows[1].style.display = isDouble ? 'flex' : 'none';
+            // Labels and values
+            const measurements = ['readiness', 'sleep', 'heart_rate', 'activity', 'stress'];
+            const sampleData = { readiness: 74, sleep: 71, heart_rate: 68, activity: 85, stress: '2h' };
+            const emojiLabels = { readiness: '🎯', sleep: '😴', heart_rate: '❤️', activity: '🔥', stress: '😰' };
+            const textLabels = { readiness: 'RDY', sleep: 'SLP', heart_rate: 'HR', activity: 'ACT', stress: 'STR' };
+            const layoutPositions = [ parseInt(s.layout_left||0), parseInt(s.layout_middle||1), parseInt(s.layout_right||2) ];
+            const row2Positions = [ parseInt(s.layout_row2_left||3), parseInt(s.layout_row2_right||4) ];
+            const idsRow1 = ['mini-rdy','mini-slp','mini-hr'];
+            idsRow1.forEach((id, idx) => {
+                const meas = measurements[ layoutPositions[idx] ];
+                const valEl = container.querySelector(`#${id}-value`);
+                const labEl = container.querySelector(`#${id}-label`);
+                if (valEl && labEl) {
+                    valEl.textContent = sampleData[meas];
+                    const label = s.use_emoji ? emojiLabels[meas] : textLabels[meas];
+                    labEl.textContent = label;
+                    labEl.className = `preview-label ${s.use_emoji ? 'emoji' : ''}`;
+                    const colorKey = (meas + '_color');
+                    const c = ensureContrast(getColorHexByIndex(s[colorKey] ?? 63, 63), bg);
+                    valEl.style.color = c; labEl.style.color = c;
                 }
             });
-            
-            // Check token validity
-            var token = localStorage.getItem('oura_access_token');
-            var expires = localStorage.getItem('oura_token_expires');
-            
-            if (token && expires) {
-                var isValid = Date.now() < parseInt(expires);
-                debugLog('🔐 Token Status: ' + (isValid ? 'VALID' : 'EXPIRED'));
-            }
-        }
-
-        // Clear debug log
-        function clearDebugLog() {
-            document.getElementById('debug-log').textContent = 'Debug information will appear here...';
-        }
-
-        // Initialize debug section as hidden by default
-        function initializeDebugVisibility() {
-            var debugSection = document.querySelector('.debug-section');
-            var showLoading = document.getElementById('show-loading-screen').checked;
-            
-            // Hide debug section by default
-            if (debugSection) {
-                debugSection.style.display = showLoading ? 'block' : 'none';
-            }
-        }
-        
-        // Update construction banner with current date
-        function updateConstructionDate() {
-            var constructionDateElement = document.getElementById('construction-date');
-            if (constructionDateElement) {
-                var now = new Date();
-                var dateString = now.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+            if (isDouble) {
+                const idsRow2 = ['mini-act','mini-str'];
+                idsRow2.forEach((id, idx) => {
+                    const meas = measurements[ row2Positions[idx] ];
+                    const valEl = container.querySelector(`#${id}-value`);
+                    const labEl = container.querySelector(`#${id}-label`);
+                    if (valEl && labEl) {
+                        valEl.textContent = sampleData[meas];
+                        const label = s.use_emoji ? emojiLabels[meas] : textLabels[meas];
+                        labEl.textContent = label;
+                        labEl.className = `preview-label ${s.use_emoji ? 'emoji' : ''}`;
+                        const colorKey = (meas + '_color');
+                        const c = ensureContrast(getColorHexByIndex(s[colorKey] ?? 63, 63), bg);
+                        valEl.style.color = c; labEl.style.color = c;
+                    }
                 });
-                constructionDateElement.textContent = dateString + ' - Some features may experience issues, delays, or unexpected behavior';
             }
-        }
-        
-        // Load saved date format setting
-        function loadSavedDateFormat() {
-            var savedDateFormat = localStorage.getItem('oura_date_format');
-            if (savedDateFormat !== null) {
-                var dateFormatSelect = document.getElementById('date-format');
-                if (dateFormatSelect) {
-                    dateFormatSelect.value = savedDateFormat;
-                }
-            }
-        }
-        
-        // Save date format setting
-        function saveDateFormat() {
-            var dateFormatSelect = document.getElementById('date-format');
-            if (dateFormatSelect) {
-                localStorage.setItem('oura_date_format', dateFormatSelect.value);
-                var label = dateFormatSelect.options[dateFormatSelect.selectedIndex].text;
-                debugLog('📅 Date format saved: #' + dateFormatSelect.value + ' - ' + label);
-            }
-        }
-        
-        // Load saved theme mode setting
-        function loadSavedThemeMode() {
-            var savedThemeMode = localStorage.getItem('oura_theme_mode');
-            if (savedThemeMode !== null) {
-                var themeModeSelect = document.getElementById('theme-mode');
-                if (themeModeSelect) {
-                    themeModeSelect.value = savedThemeMode;
-                    // Also reflect visibility immediately
-                    var colorPickerSection = document.getElementById('color-picker-section');
-                    if (colorPickerSection) {
-                        colorPickerSection.style.display = (savedThemeMode === '2') ? 'block' : 'none';
-                    }
-                }
-            }
-        }
-        
-        // Save theme mode setting
-        function saveThemeMode() {
-            var themeModeSelect = document.getElementById('theme-mode');
-            if (themeModeSelect) {
-                localStorage.setItem('oura_theme_mode', themeModeSelect.value);
-                // Robustly toggle color picker visibility here as well
-                var colorPickerSection = document.getElementById('color-picker-section');
-                if (colorPickerSection) {
-                    colorPickerSection.style.display = (themeModeSelect.value === '2') ? 'block' : 'none';
-                }
-                debugLog('🎨 Theme mode saved: ' + (themeModeSelect.value === '0' ? '🌙 Dark Mode' : (themeModeSelect.value === '1' ? '☀️ Light Mode' : '🎨 Custom Color')));
-            }
-        }
-        
-        // Save show loading screen setting
-        function saveShowLoadingSetting() {
-            var showLoadingCheckbox = document.getElementById('show-loading-screen');
-            if (showLoadingCheckbox) {
-                localStorage.setItem('oura_show_loading', showLoadingCheckbox.checked ? '1' : '0');
-                debugLog('🔄 Show loading screen saved: ' + (showLoadingCheckbox.checked ? 'Enabled' : 'Disabled'));
-            }
-        }
-        
-        // Load saved show loading screen setting
-        function loadSavedShowLoadingSetting() {
-            var saved = localStorage.getItem('oura_show_loading');
-            var showLoadingCheckbox = document.getElementById('show-loading-screen');
-            if (showLoadingCheckbox) {
-                // Default to false (unchecked) if no setting saved
-                showLoadingCheckbox.checked = (saved === '1');
-                debugLog('🔄 Show loading screen loaded: ' + (showLoadingCheckbox.checked ? 'Enabled' : 'Disabled'));
+            // Date sample formatting similar to main preview
+            const dateEl = container.querySelector('.preview-date');
+            if (dateEl) {
+                const now = new Date();
+                const dateFormats = [
+                    () => `${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}-${now.getFullYear()}`,
+                    () => `${now.getDate().toString().padStart(2,'0')}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getFullYear()}`,
+                    () => now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'long' }),
+                    () => now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+                    () => now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                    () => `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`
+                ];
+                const idx = parseInt(s.date_format || 0);
+                dateEl.textContent = dateFormats[idx] ? dateFormats[idx]() : dateFormats[0]();
             }
         }
 
-        // Save Show Seconds setting
-        function saveShowSecondsSetting() {
-            var el = document.getElementById('show-seconds');
-            if (el) {
-                localStorage.setItem('oura_show_seconds', el.checked ? '1' : '0');
-                debugLog('⏱️ Show Seconds saved: ' + (el.checked ? 'Enabled' : 'Disabled'));
-            }
+        // Theme toggle
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            localStorage.setItem('oura_theme', isDarkMode ? 'dark' : 'light');
         }
 
-        // Load Show Seconds setting
-        function loadSavedShowSecondsSetting() {
-            var saved = localStorage.getItem('oura_show_seconds');
-            var el = document.getElementById('show-seconds');
-            if (el) {
-                el.checked = (saved === '1');
-                debugLog('⏱️ Show Seconds loaded: ' + (el.checked ? 'Enabled' : 'Disabled'));
-            }
-        }
-
-        // Save Compact Time setting
-        function saveCompactTimeSetting() {
-            var el = document.getElementById('compact-time');
-            if (el) {
-                localStorage.setItem('oura_compact_time', el.checked ? '1' : '0');
-                debugLog('🕘 Compact Time saved: ' + (el.checked ? 'Enabled' : 'Disabled'));
-            }
-        }
-
-        // Load Compact Time setting
-        function loadSavedCompactTimeSetting() {
-            var saved = localStorage.getItem('oura_compact_time');
-            var el = document.getElementById('compact-time');
-            if (el) {
-                el.checked = (saved === '1');
-                debugLog('🕘 Compact Time loaded: ' + (el.checked ? 'Enabled' : 'Disabled'));
-            }
-        }
-        
-        // Save Show Debug setting
-        function saveShowDebugSetting() {
-            var showDebugEl = document.getElementById('show-debug');
-            if (showDebugEl) {
-                var val = showDebugEl.checked ? 'true' : 'false';
-                localStorage.setItem('oura_show_debug', val);
-                debugLog('🪲 Show debug saved: ' + val);
-            }
-        }
-        
-        // Load Show Debug setting
-        function loadSavedShowDebugSetting() {
-            var saved = localStorage.getItem('oura_show_debug');
-            var showDebugEl = document.getElementById('show-debug');
-            if (showDebugEl) {
-                // Default to true if not present
-                var checked = (saved === null || saved === undefined) ? true : (saved === 'true');
-                showDebugEl.checked = checked;
-                debugLog('🪲 Show debug loaded: ' + (checked ? 'true' : 'false'));
-            }
-        }
-        
-        // Save Refresh Frequency setting
-        function saveRefreshFrequencySetting() {
-            var freqEl = document.getElementById('refresh-frequency');
-            if (freqEl) {
-                var minutes = parseInt(freqEl.value) || 30;
-                localStorage.setItem('oura_refresh_frequency', String(minutes));
-                debugLog('⏱️ Refresh frequency saved: ' + minutes + ' minutes');
-            }
-        }
-        
-        // Load Refresh Frequency setting
-        function loadSavedRefreshFrequencySetting() {
-            var saved = localStorage.getItem('oura_refresh_frequency');
-            var freqEl = document.getElementById('refresh-frequency');
-            if (freqEl) {
-                var minutes = saved ? parseInt(saved) : 30;
-                // Ensure option exists; fallback to 30
-                if (minutes !== 15 && minutes !== 30 && minutes !== 60) minutes = 30;
-                freqEl.value = String(minutes);
-                debugLog('⏱️ Refresh frequency loaded: ' + minutes + ' minutes');
-            }
-        }
-        
-        // Initialize - PURE STATIC, NO DYNAMIC LOADING
-        document.addEventListener('DOMContentLoaded', function() {
-            // Update construction banner with current date
-            updateConstructionDate();
-            
-            // Initialize debug visibility
-            initializeDebugVisibility();
-            
-            // Initialize time display settings (Show Seconds, Compact Time)
-            loadTimeDisplaySettings();
-            setupTimeDisplayHandlers();
-            
-            // Initialize measurement layout
-            loadSavedMeasurementLayout();
-            
-            // Load saved date format
-            loadSavedDateFormat();
-            
-            // Load saved theme mode
-            loadSavedThemeMode();
-            
-            // Load saved show loading setting
-            loadSavedShowLoadingSetting();
-
-            // Load saved Show Seconds
-            loadSavedShowSecondsSetting();
-
-            // Load saved Compact Time
-            loadSavedCompactTimeSetting();
-            
-            // Load saved Show Debug setting
-            loadSavedShowDebugSetting();
-            
-            // Load saved Refresh Frequency setting
-            loadSavedRefreshFrequencySetting();
-            
-            // Add date format change listener
-            var dateFormatSelect = document.getElementById('date-format');
-            if (dateFormatSelect) {
-                dateFormatSelect.addEventListener('change', saveDateFormat);
-            }
-            
-            // Add theme mode change listener
-            var themeModeSelect = document.getElementById('theme-mode');
-            if (themeModeSelect) {
-                themeModeSelect.addEventListener('change', saveThemeMode);
-            }
-            
-            // Add show loading screen change listener
-            var showLoadingCheckbox = document.getElementById('show-loading-screen');
-            if (showLoadingCheckbox) {
-                showLoadingCheckbox.addEventListener('change', saveShowLoadingSetting);
-            }
-
-            // Add Show Seconds change listener
-            var showSecondsEl = document.getElementById('show-seconds');
-            if (showSecondsEl) {
-                showSecondsEl.addEventListener('change', saveShowSecondsSetting);
-            }
-
-            // Add Compact Time change listener
-            var compactTimeEl = document.getElementById('compact-time');
-            if (compactTimeEl) {
-                compactTimeEl.addEventListener('change', saveCompactTimeSetting);
-            }
-            
-            // Add Show Debug change listener
-            var showDebugEl = document.getElementById('show-debug');
-            if (showDebugEl) {
-                showDebugEl.addEventListener('change', saveShowDebugSetting);
-            }
-            
-            // Add Refresh Frequency change listener
-            var freqEl = document.getElementById('refresh-frequency');
-            if (freqEl) {
-                freqEl.addEventListener('change', saveRefreshFrequencySetting);
-            }
-            
-            // Add smart duplicate prevention event listeners
-            document.getElementById('left-position').addEventListener('change', function() {
-                preventDuplicates('left-position');
-                updateMeasurementLayout();
-            });
-            document.getElementById('middle-position').addEventListener('change', function() {
-                preventDuplicates('middle-position');
-                updateMeasurementLayout();
-            });
-            document.getElementById('right-position').addEventListener('change', function() {
-                preventDuplicates('right-position');
-                updateMeasurementLayout();
-            });
-            
-            debugLog('🚀 Config page loaded');
-            debugLog('Current URL: ' + window.location.href);
-            debugLog('Requested OAuth scopes: ' + SCOPES);
-            updateDevPanel();
-            renderTokenDetails();
-            clearApiResults();
-            setUseProxyDefault();
-            
-            // Always initialize UI subsystems regardless of auth state
-            // Ensures color picker visibility/behavior, theme mode handling,
-            // and flexible layout controls work
-            loadConfigTheme();
-            initializeColorPicker();
-            setupThemeModeHandler();
-            setupFlexibleLayout();
-            // Ensure Row 2 selectors visibility matches dropdown immediately
-            if (typeof updateRowSelectorsVisibility === 'function') {
-                updateRowSelectorsVisibility();
-            }
-            
-            // Check for OAuth redirect
-            debugLog('🔍 Checking for OAuth redirect token...');
-            if (checkForToken()) {
-                debugLog('✅ Token found in URL redirect');
-                updateDevPanel();
-                renderTokenDetails();
-                autoProxySmokeTest();
-                return;
-            }
-            
-            // Check for stored token
-            debugLog('🔍 Checking for stored token...');
-            if (checkStoredToken()) {
-                debugLog('✅ Valid stored token found');
-                updateDevPanel();
-                renderTokenDetails();
-                autoProxySmokeTest();
-                return;
-            }
-            
-            // Show connect section
-            debugLog('❌ No valid token found - showing connect section');
-            showDisconnected();
-            
-            // Set up connect button - DIRECT REDIRECT ONLY
-            document.getElementById('connect-btn').onclick = connect;
-            
-            // Log initial state
-            debugLog('📋 Initial localStorage check:');
-            checkStoredData();
-            updateDevPanel();
-            renderTokenDetails();
-            clearApiResults();
-        });
-        
-        // ===== CONFIG PAGE DARK MODE =====
-        
-        function toggleConfigTheme() {
-            var theme = document.getElementById('config-theme').value;
-            var body = document.body;
-            
-            if (theme === 'dark') {
-                body.classList.add('dark-mode');
-            } else {
-                body.classList.remove('dark-mode');
-            }
-            
-            // Save preference
-            localStorage.setItem('config_page_theme', theme);
-            debugLog('🌙 Config page theme changed to: ' + theme);
-        }
-        
-        function loadConfigTheme() {
-            var savedTheme = localStorage.getItem('config_page_theme') || 'light';
-            document.getElementById('config-theme').value = savedTheme;
-            
-            if (savedTheme === 'dark') {
+        function updateThemeToggle() {
+            const savedTheme = localStorage.getItem('oura_theme');
+            if (savedTheme === 'dark' || !savedTheme) {
+                // Default config page theme to dark if none saved
+                isDarkMode = true;
                 document.body.classList.add('dark-mode');
+                if (!savedTheme) localStorage.setItem('oura_theme', 'dark');
             }
         }
-        
-        // ===== COLOR PICKER FUNCTIONALITY =====
-        
-        // Complete Pebble Color Palette (64 colors)
-        var pebbleColors = [
-            { name: 'Black', hex: '#000000', pebble: 'GColorBlack' },
-            { name: 'Oxford Blue', hex: '#0F2E4C', pebble: 'GColorOxfordBlue' },
-            { name: 'Duke Blue', hex: '#003D82', pebble: 'GColorDukeBlue' },
-            { name: 'Blue', hex: '#0055FF', pebble: 'GColorBlue' },
-            { name: 'Dark Green', hex: '#005500', pebble: 'GColorDarkGreen' },
-            { name: 'Midnight Green', hex: '#004C5C', pebble: 'GColorMidnightGreen' },
-            { name: 'Cobalt Blue', hex: '#0066FF', pebble: 'GColorCobaltBlue' },
-            { name: 'Blue Moon', hex: '#68A3FF', pebble: 'GColorBlueMoon' },
-            { name: 'Islamic Green', hex: '#00AA00', pebble: 'GColorIslamicGreen' },
-            { name: 'Jaeger Green', hex: '#00AA55', pebble: 'GColorJaegerGreen' },
-            { name: 'Tiffany Blue', hex: '#00AAAA', pebble: 'GColorTiffanyBlue' },
-            { name: 'Vivid Cerulean', hex: '#00AAFF', pebble: 'GColorVividCerulean' },
-            { name: 'Green', hex: '#00FF00', pebble: 'GColorGreen' },
-            { name: 'Malachite', hex: '#00FF55', pebble: 'GColorMalachite' },
-            { name: 'Medium Spring Green', hex: '#00FFAA', pebble: 'GColorMediumSpringGreen' },
-            { name: 'Cyan', hex: '#00FFFF', pebble: 'GColorCyan' },
-            { name: 'Bulgarian Rose', hex: '#550000', pebble: 'GColorBulgarianRose' },
-            { name: 'Imperial Purple', hex: '#550055', pebble: 'GColorImperialPurple' },
-            { name: 'Indigo', hex: '#5500AA', pebble: 'GColorIndigo' },
-            { name: 'Electric Ultramarine', hex: '#5500FF', pebble: 'GColorElectricUltramarine' },
-            { name: 'Army Green', hex: '#555500', pebble: 'GColorArmyGreen' },
-            { name: 'Dark Gray', hex: '#555555', pebble: 'GColorDarkGray' },
-            { name: 'Liberty', hex: '#5555AA', pebble: 'GColorLiberty' },
-            { name: 'Very Light Blue', hex: '#5555FF', pebble: 'GColorVeryLightBlue' },
-            { name: 'Kelly Green', hex: '#55AA00', pebble: 'GColorKellyGreen' },
-            { name: 'May Green', hex: '#55AA55', pebble: 'GColorMayGreen' },
-            { name: 'Cadet Blue', hex: '#55AAAA', pebble: 'GColorCadetBlue' },
-            { name: 'Picton Blue', hex: '#55AAFF', pebble: 'GColorPictonBlue' },
-            { name: 'Bright Green', hex: '#55FF00', pebble: 'GColorBrightGreen' },
-            { name: 'Screamin Green', hex: '#55FF55', pebble: 'GColorScreaminGreen' },
-            { name: 'Medium Aquamarine', hex: '#55FFAA', pebble: 'GColorMediumAquamarine' },
-            { name: 'Electric Blue', hex: '#55FFFF', pebble: 'GColorElectricBlue' },
-            { name: 'Dark Candyapple Red', hex: '#AA0000', pebble: 'GColorDarkCandyappleRed' },
-            { name: 'Jazzberry Jam', hex: '#AA0055', pebble: 'GColorJazzberryJam' },
-            { name: 'Purple', hex: '#AA00AA', pebble: 'GColorPurple' },
-            { name: 'Vivid Violet', hex: '#AA00FF', pebble: 'GColorVividViolet' },
-            { name: 'Windsor Tan', hex: '#AA5500', pebble: 'GColorWindsorTan' },
-            { name: 'Rose Vale', hex: '#AA5555', pebble: 'GColorRoseVale' },
-            { name: 'Purpureus', hex: '#AA55AA', pebble: 'GColorPurpureus' },
-            { name: 'Lavender Indigo', hex: '#AA55FF', pebble: 'GColorLavenderIndigo' },
-            { name: 'Limerick', hex: '#AAAA00', pebble: 'GColorLimerick' },
-            { name: 'Brass', hex: '#AAAA55', pebble: 'GColorBrass' },
-            { name: 'Light Gray', hex: '#AAAAAA', pebble: 'GColorLightGray' },
-            { name: 'Baby Blue Eyes', hex: '#AAAAFF', pebble: 'GColorBabyBlueEyes' },
-            { name: 'Spring Bud', hex: '#AAFF00', pebble: 'GColorSpringBud' },
-            { name: 'Inchworm', hex: '#AAFF55', pebble: 'GColorInchworm' },
-            { name: 'Mint Green', hex: '#AAFFAA', pebble: 'GColorMintGreen' },
-            { name: 'Celeste', hex: '#AAFFFF', pebble: 'GColorCeleste' },
-            { name: 'Red', hex: '#FF0000', pebble: 'GColorRed' },
-            { name: 'Folly', hex: '#FF0055', pebble: 'GColorFolly' },
-            { name: 'Fashion Magenta', hex: '#FF00AA', pebble: 'GColorFashionMagenta' },
-            { name: 'Magenta', hex: '#FF00FF', pebble: 'GColorMagenta' },
-            { name: 'Orange', hex: '#FF5500', pebble: 'GColorOrange' },
-            { name: 'Sunset Orange', hex: '#FF5555', pebble: 'GColorSunsetOrange' },
-            { name: 'Brilliant Rose', hex: '#FF55AA', pebble: 'GColorBrilliantRose' },
-            { name: 'Shocking Pink', hex: '#FF55FF', pebble: 'GColorShockingPink' },
-            { name: 'Chromecast Yellow', hex: '#FFAA00', pebble: 'GColorChromeYellow' },
-            { name: 'Rajah', hex: '#FFAA55', pebble: 'GColorRajah' },
-            { name: 'Melon', hex: '#FFAAAA', pebble: 'GColorMelon' },
-            { name: 'Rich Brilliant Lavender', hex: '#FFAAFF', pebble: 'GColorRichBrilliantLavender' },
-            { name: 'Yellow', hex: '#FFFF00', pebble: 'GColorYellow' },
-            { name: 'Icterine', hex: '#FFFF55', pebble: 'GColorIcterine' },
-            { name: 'Pastel Yellow', hex: '#FFFFAA', pebble: 'GColorPastelYellow' },
-            { name: 'White', hex: '#FFFFFF', pebble: 'GColorWhite' }
-        ];
-        
-        // Initialize color picker
-        function initializeColorPicker() {
-            var colorPalette = document.getElementById('color-palette');
-            if (!colorPalette) return;
+
+        // Color picker dropdowns with visual swatches
+        function populateColorDropdowns() {
+            const colorSelects = [
+                'background-color', 'time-color', 'date-color', 'readiness-color',
+                'sleep-color', 'heart-rate-color', 'activity-color', 'stress-color'
+            ];
             
-            // Create color swatches
-            pebbleColors.forEach(function(color, index) {
-                var swatch = document.createElement('div');
-                swatch.style.cssText = 
-                    'width: 45px; height: 45px; background: ' + color.hex + '; ' +
-                    'border: 2px solid #ddd; border-radius: 6px; cursor: pointer; ' +
-                    'transition: all 0.2s ease; position: relative; ' +
-                    'touch-action: manipulation; min-height: 44px; min-width: 44px;';
-                
-                swatch.title = color.name;
-                swatch.onclick = function() { selectColor(index); };
-                
-                // Hover effects
-                swatch.onmouseenter = function() {
-                    this.style.transform = 'scale(1.1)';
-                    this.style.borderColor = '#007bff';
-                    this.style.zIndex = '10';
-                };
-                swatch.onmouseleave = function() {
-                    this.style.transform = 'scale(1)';
-                    this.style.borderColor = '#ddd';
-                    this.style.zIndex = '1';
-                };
-                
-                colorPalette.appendChild(swatch);
-            });
-            
-            // Load saved color selection
-            loadSavedColor();
-        }
-        
-        // Select a color from the palette
-        function selectColor(colorIndex) {
-            var color = pebbleColors[colorIndex];
-            if (!color) return;
-            
-            // Update preview
-            var preview = document.getElementById('color-preview');
-            var colorName = document.getElementById('color-name');
-            
-            preview.style.background = color.hex;
-            preview.style.color = getContrastColor(color.hex);
-            colorName.textContent = color.name;
-            
-            // Save selection
-            localStorage.setItem('oura_custom_color', JSON.stringify({
-                index: colorIndex,
-                name: color.name,
-                hex: color.hex,
-                pebble: color.pebble
-            }));
-            
-            // Update theme mode to custom color
-            document.getElementById('theme-mode').value = '2';
-            localStorage.setItem('oura_theme_mode', '2');
-            
-            debugLog('🎨 Selected color: ' + color.name + ' (' + color.hex + ')');
-        }
-        
-        // Load saved color selection
-        function loadSavedColor() {
-            var saved = localStorage.getItem('oura_custom_color');
-            if (saved) {
-                try {
-                    var colorData = JSON.parse(saved);
-                    selectColor(colorData.index);
-                } catch (e) {
-                    console.log('Error loading saved color:', e);
-                    selectColor(0); // Default to black
-                }
-            } else {
-                selectColor(0); // Default to black
-            }
-        }
-        
-        // Calculate contrast color for text readability
-        function getContrastColor(hexColor) {
-            // Convert hex to RGB
-            var r = parseInt(hexColor.substr(1, 2), 16);
-            var g = parseInt(hexColor.substr(3, 2), 16);
-            var b = parseInt(hexColor.substr(5, 2), 16);
-            
-            // Calculate luminance
-            var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            
-            // Return black or white based on luminance
-            return luminance > 0.5 ? '#000000' : '#FFFFFF';
-        }
-        
-        // Setup theme mode change handler
-        function setupThemeModeHandler() {
-            var themeModeSelect = document.getElementById('theme-mode');
-            var colorPickerSection = document.getElementById('color-picker-section');
-            
-            if (!themeModeSelect || !colorPickerSection) {
-                debugLog('❌ Theme mode elements not found - themeModeSelect: ' + !!themeModeSelect + ', colorPickerSection: ' + !!colorPickerSection);
-                return;
-            }
-            
-            debugLog('✅ Theme mode handler initialized');
-            
-            // Function to update color picker visibility
-            function updateColorPickerVisibility(selectedMode) {
-                debugLog('🎨 Updating color picker visibility for mode: ' + selectedMode);
-                if (selectedMode === '2') { // Custom Color
-                    colorPickerSection.style.display = 'block';
-                    debugLog('🎨 Color picker shown');
-                } else {
-                    colorPickerSection.style.display = 'none';
-                    debugLog('🎨 Color picker hidden');
-                }
-            }
-            
-            // Add change event listener
-            themeModeSelect.addEventListener('change', function() {
-                var selectedMode = this.value;
-                updateColorPickerVisibility(selectedMode);
-                
-                // Save theme mode
-                localStorage.setItem('oura_theme_mode', selectedMode);
-                debugLog('🎨 Theme mode changed to: ' + selectedMode);
-            });
-            
-            // Load saved theme mode and update visibility
-            var savedThemeMode = localStorage.getItem('oura_theme_mode') || '0';
-            themeModeSelect.value = savedThemeMode;
-            updateColorPickerVisibility(savedThemeMode);
-            
-            debugLog('🎨 Theme mode loaded: ' + savedThemeMode);
-        }
-        
-        // ===== FLEXIBLE LAYOUT SYSTEM =====
-        
-        // Setup flexible layout system
-        function setupFlexibleLayout() {
-            var layoutRowsSelect = document.getElementById('layout-rows');
-            if (!layoutRowsSelect) return;
-            
-            // Add event listener for layout rows change
-            layoutRowsSelect.addEventListener('change', function() {
-                updateRowSelectorsVisibility();
-                saveLayoutConfiguration();
-            });
-            
-            // Load saved layout configuration
-            loadSavedLayoutConfiguration();
-            
-            // Update visibility based on current selection
-            updateRowSelectorsVisibility();
-        }
-        
-        // Update visibility of Row 2 selectors based on layout selection
-        function updateRowSelectorsVisibility() {
-            var layoutRows = document.getElementById('layout-rows').value;
-            var row2Selectors = document.getElementById('row2-selectors');
-            
-            if (layoutRows === '2') {
-                row2Selectors.style.display = 'block';
-                debugLog('📐 Showing Row 2 selectors for 2-row layout');
-            } else {
-                row2Selectors.style.display = 'none';
-                debugLog('📐 Hiding Row 2 selectors for 1-row layout');
-            }
-        }
-        
-        // Save layout configuration to localStorage
-        function saveLayoutConfiguration() {
-            var layoutRows = document.getElementById('layout-rows').value;
-            var row1Left = document.getElementById('left-position').value;
-            var row1Middle = document.getElementById('middle-position').value;
-            var row1Right = document.getElementById('right-position').value;
-            var row2Left = document.getElementById('row2-left-position').value;
-            var row2Right = document.getElementById('row2-right-position').value;
-            
-            var layoutConfig = {
-                rows: parseInt(layoutRows),
-                row1: {
-                    left: parseInt(row1Left),
-                    middle: parseInt(row1Middle),
-                    right: parseInt(row1Right)
-                },
-                row2: {
-                    left: parseInt(row2Left),
-                    right: parseInt(row2Right)
-                }
-            };
-            
-            localStorage.setItem('oura_flexible_layout', JSON.stringify(layoutConfig));
-            debugLog('📐 Saved flexible layout configuration: ' + JSON.stringify(layoutConfig));
-        }
-        
-        // Load saved layout configuration
-        function loadSavedLayoutConfiguration() {
-            var saved = localStorage.getItem('oura_flexible_layout');
-            if (saved) {
-                try {
-                    var config = JSON.parse(saved);
+            colorSelects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.innerHTML = '';
+                    colorPalette.forEach((color, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = `⬤ ${color.name}`;
+                        option.style.backgroundColor = color.hex;
+                        option.style.color = isLightColor(color.hex) ? '#000' : '#fff';
+                        option.style.fontWeight = 'bold';
+                        option.style.padding = '4px 8px';
+                        select.appendChild(option);
+                    });
                     
-                    // Set layout rows
-                    document.getElementById('layout-rows').value = config.rows.toString();
-                    // Ensure row2 selectors visibility matches saved rows
-                    if (typeof updateRowSelectorsVisibility === 'function') {
-                        updateRowSelectorsVisibility();
+                    // Style the select element itself
+                    select.style.fontWeight = 'bold';
+                    select.addEventListener('change', function() {
+                        const selectedIndex = parseInt(this.value);
+                        const selectedColor = colorPalette[selectedIndex];
+                        this.style.backgroundColor = selectedColor.hex;
+                        this.style.color = isLightColor(selectedColor.hex) ? '#000' : '#fff';
+                    });
+                }
+            });
+        }
+        
+        // Check if color is light for contrast
+        function isLightColor(hex) {
+            const r = parseInt(hex.substr(1, 2), 16);
+            const g = parseInt(hex.substr(3, 2), 16);
+            const b = parseInt(hex.substr(5, 2), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128;
+        }
+
+        function selectColor(index, swatch) {
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+            swatch.classList.add('selected');
+            settings.custom_color_index = index;
+            
+            // Send color preview to watchface
+            sendColorPreview(index);
+            
+            // Trigger change detection
+            detectChanges();
+        }
+
+        function toggleColorPicker() {
+            const themeMode = document.getElementById('theme-mode').value;
+            const colorSection = document.getElementById('color-picker');
+            if (colorSection) {
+                colorSection.classList.toggle('visible', themeMode === '2');
+            }
+            updatePreview();
+        }
+
+        // Theme mode change handler - apply sensible defaults per mode
+        function onThemeModeChange() {
+            const themeMode = document.getElementById('theme-mode').value;
+            if (themeMode === '0') {
+                applyThemeDefaults('dark');
+            } else if (themeMode === '1') {
+                applyThemeDefaults('light');
+            }
+            toggleColorPicker();
+            detectChanges();
+        }
+
+        function toggleRow2Options() {
+            const rows = document.getElementById('layout-rows').value;
+            const row2Options = document.getElementById('row2-options');
+            const previewRow2 = document.getElementById('preview-row2');
+            
+            row2Options.classList.toggle('hidden', rows !== '2');
+            if (previewRow2) {
+                previewRow2.style.display = rows === '2' ? 'flex' : 'none';
+            }
+            updatePreview();
+        }
+
+        // Settings management
+        function loadSettings() {
+            // Load from localStorage or use defaults
+            const saved = localStorage.getItem('oura_settings');
+            if (saved) {
+                settings = { ...defaultSettings, ...JSON.parse(saved) };
+            } else {
+                settings = { ...defaultSettings };
+            }
+            normalizeSettings();
+            originalSettings = JSON.parse(JSON.stringify(settings)); // Deep copy
+            applySettingsToUI();
+        }
+
+        function applySettingsToUI() {
+            // Apply all settings to form elements
+            Object.keys(settings).forEach(key => {
+                const element = document.getElementById(key.replace(/_/g, '-'));
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = settings[key];
+                    } else {
+                        element.value = settings[key];
                     }
-                    
-                    // Set Row 1 positions
-                    document.getElementById('left-position').value = config.row1.left.toString();
-                    document.getElementById('middle-position').value = config.row1.middle.toString();
-                    document.getElementById('right-position').value = config.row1.right.toString();
-                    
-                    // Set Row 2 positions
-                    document.getElementById('row2-left-position').value = config.row2.left.toString();
-                    document.getElementById('row2-right-position').value = config.row2.right.toString();
-                    
-                    debugLog('📐 Loaded flexible layout configuration: ' + JSON.stringify(config));
-                } catch (e) {
-                    console.log('Error loading flexible layout configuration:', e);
-                    setDefaultFlexibleLayout();
                 }
-            } else {
-                setDefaultFlexibleLayout();
+            });
+            
+            // Update dependent UI elements
+            toggleColorPicker();
+            toggleRow2Options();
+            // Ensure color selects visually reflect the chosen values
+            styleAllColorSelects();
+            updatePreview();
+        }
+
+        function styleAllColorSelects() {
+            const ids = ['background-color','time-color','date-color','readiness-color','sleep-color','heart-rate-color','activity-color','stress-color'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const idx = parseInt(el.value);
+                if (isNaN(idx) || idx < 0 || idx >= colorPalette.length) return;
+                const hex = colorPalette[idx].hex;
+                el.style.backgroundColor = hex;
+                el.style.color = isLightColor(hex) ? '#000' : '#fff';
+                el.style.fontWeight = 'bold';
+            });
+        }
+
+        function restoreLastTab() {
+            const lastTab = localStorage.getItem('oura_last_tab');
+            if (lastTab && ['customize', 'setup', 'debug'].includes(lastTab)) {
+                const tabButton = document.querySelector(`[onclick="switchTab('${lastTab}')"]`);
+                if (tabButton) {
+                    tabButton.click();
+                }
+            }
+        }
+
+        // Save changes locally
+        function saveChanges() {
+            collectAllSettings();
+            localStorage.setItem('oura_settings', JSON.stringify(settings));
+            originalSettings = JSON.parse(JSON.stringify(settings)); // Update baseline
+            hasUnsavedChanges = false;
+            updateSaveButton();
+        }
+        
+        // Close config using proper Pebble SDK pattern
+        function closeConfig() {
+            try {
+                collectAllSettings();
+                console.log('Closing config and sending settings to Pebble:', settings);
+                // Persist settings locally so the config page reflects choices next time
+                localStorage.setItem('oura_settings', JSON.stringify(settings));
+                
+                // Get the return_to URL parameter (provided by Pebble)
+                function getQueryParam(variable, defaultValue) {
+                    var query = location.search.substring(1);
+                    var vars = query.split('&');
+                    for (var i = 0; i < vars.length; i++) {
+                        var pair = vars[i].split('=');
+                        if (pair[0] === variable) {
+                            return decodeURIComponent(pair[1]);
+                        }
+                    }
+                    return defaultValue || false;
+                }
+                
+                // Use proper Pebble SDK pattern: redirect to return_to URL with encoded data
+                var return_to = getQueryParam('return_to', 'pebblejs://close#');
+                var location_url = return_to + encodeURIComponent(JSON.stringify(settings));
+                
+                console.log('Redirecting to:', location_url);
+                document.location = location_url;
+                
+            } catch (error) {
+                console.error('Error in closeConfig:', error);
+                alert('Settings saved! You can now close this page.');
+            }
+        }
+
+        function collectAllSettings() {
+            // Collect all form values
+            const formElements = document.querySelectorAll('input, select');
+            formElements.forEach(element => {
+                const key = element.id.replace(/-/g, '_');
+                if (element.type === 'checkbox') {
+                    settings[key] = element.checked;
+                } else if (element.type === 'number') {
+                    settings[key] = parseInt(element.value);
+                } else {
+                    settings[key] = element.value;
+                }
+            });
+            normalizeSettings();
+        }
+
+        // Apply default color sets for theme modes without touching other settings
+        function applyThemeDefaults(mode) {
+            if (!settings) return;
+            if (mode === 'dark') {
+                settings.theme_mode = 0;
+                settings.background_color = 0; // Black
+                settings.time_color = 63;      // White
+                settings.date_color = 63;
+                settings.readiness_color = 63;
+                settings.sleep_color = 63;
+                settings.heart_rate_color = 63;
+                settings.activity_color = 63;
+                settings.stress_color = 63;
+            } else if (mode === 'light') {
+                settings.theme_mode = 1;
+                settings.background_color = 63; // White
+                settings.time_color = 0;        // Black
+                settings.date_color = 0;
+                settings.readiness_color = 0;
+                settings.sleep_color = 0;
+                settings.heart_rate_color = 0;
+                settings.activity_color = 0;
+                settings.stress_color = 0;
+            }
+            normalizeSettings();
+            // Push updates to UI controls
+            applySettingsToUI();
+        }
+
+        // Reset all settings to defaults (dark mode baseline)
+        function resetToDefaults() {
+            settings = JSON.parse(JSON.stringify(defaultSettings));
+            normalizeSettings();
+            applySettingsToUI();
+            hasUnsavedChanges = JSON.stringify(settings) !== JSON.stringify(originalSettings);
+            updateSaveButton();
+            updatePreview();
+        }
+
+        // Coerce numeric fields to integers and clamp ranges
+        function normalizeSettings() {
+            const intKeys = [
+              'theme_mode','custom_color_index','background_color','time_color','date_color',
+              'readiness_color','sleep_color','heart_rate_color','activity_color','stress_color',
+              'layout_rows','layout_left','layout_middle','layout_right','layout_row2_left','layout_row2_right',
+              'date_format','refresh_frequency'
+            ];
+            intKeys.forEach(k => {
+                if (settings.hasOwnProperty(k)) {
+                    const n = parseInt(settings[k]);
+                    if (!isNaN(n)) settings[k] = n;
+                }
+            });
+            // Clamp color indices
+            ['background_color','time_color','date_color','readiness_color','sleep_color','heart_rate_color','activity_color','stress_color'].forEach(k => {
+                if (typeof settings[k] === 'number') {
+                    if (settings[k] < 0) settings[k] = 0;
+                    if (settings[k] >= colorPalette.length) settings[k] = colorPalette.length - 1;
+                }
+            });
+        }
+        
+        // Change detection
+        function setupChangeDetection() {
+            const formElements = document.querySelectorAll('input, select');
+            formElements.forEach(element => {
+                element.addEventListener('change', detectChanges);
+                element.addEventListener('input', detectChanges);
+            });
+        }
+        
+        function detectChanges() {
+            collectAllSettings();
+            hasUnsavedChanges = JSON.stringify(settings) !== JSON.stringify(originalSettings);
+            updateSaveButton();
+            updatePreview();
+        }
+        
+        // Helper: safely get a color hex from palette by index with clamping
+        function getColorHexByIndex(index, fallbackIndex) {
+            let idx = Number(index);
+            if (!Number.isInteger(idx)) idx = fallbackIndex;
+            if (idx < 0) idx = 0;
+            if (idx >= colorPalette.length) idx = colorPalette.length - 1;
+            return colorPalette[idx].hex;
+        }
+
+        // Live preview update function
+        function updatePreview() {
+            if (!settings) return;
+            
+            const preview = document.getElementById('watchface-preview');
+            const timeEl = document.getElementById('preview-time');
+            const dateEl = document.getElementById('preview-date');
+            
+            // Get current colors
+            const bgColor = getColorHexByIndex(settings.background_color ?? 0, 0);
+            const timeColor = getColorHexByIndex(settings.time_color ?? 63, 63);
+            const dateColor = getColorHexByIndex(settings.date_color ?? 63, 63);
+            
+            // Apply colors to preview with contrast safeguard
+            if (preview) preview.style.backgroundColor = bgColor;
+            if (timeEl) timeEl.style.color = ensureContrast(timeColor, bgColor);
+            if (dateEl) dateEl.style.color = ensureContrast(dateColor, bgColor);
+            
+            // Update time display
+            if (timeEl) {
+                const now = new Date();
+                let timeStr = now.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                });
+                if (settings.show_seconds) {
+                    timeStr = now.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit',
+                        hour12: false 
+                    });
+                }
+                timeEl.textContent = timeStr;
+            }
+            
+            // Update date display
+            if (dateEl) {
+                const now = new Date();
+                const dateFormats = [
+                    () => `${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}-${now.getFullYear()}`,
+                    () => `${now.getDate().toString().padStart(2,'0')}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getFullYear()}`,
+                    () => now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'long' }),
+                    () => now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+                    () => now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+                    () => now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                    () => `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')}`
+                ];
+                const formatIndex = parseInt(settings.date_format || 0);
+                dateEl.textContent = dateFormats[formatIndex] ? dateFormats[formatIndex]() : dateFormats[0]();
+            }
+            
+            // Update complications
+            updateComplications();
+        }
+        
+        function updateComplications() {
+            const measurements = ['readiness', 'sleep', 'heart_rate', 'activity', 'stress'];
+            const sampleData = { readiness: 74, sleep: 71, heart_rate: 68, activity: 85, stress: '2h' };
+            const emojiLabels = { readiness: '🎯', sleep: '😴', heart_rate: '❤️', activity: '🔥', stress: '😰' };
+            const textLabels = { readiness: 'RDY', sleep: 'SLP', heart_rate: 'HR', activity: 'ACT', stress: 'STR' };
+            
+            // Get layout configuration
+            const layoutPositions = [
+                parseInt(settings.layout_left || 0),
+                parseInt(settings.layout_middle || 1), 
+                parseInt(settings.layout_right || 2)
+            ];
+            
+            const row2Positions = [
+                parseInt(settings.layout_row2_left || 3),
+                parseInt(settings.layout_row2_right || 4)
+            ];
+            
+            const isDoubleRow = settings.layout_rows === 2 || settings.layout_rows === '2';
+            
+            // Update row classes for proper sizing
+            const row1 = document.getElementById('preview-row1');
+            const row2 = document.getElementById('preview-row2');
+            
+            if (row1) {
+                row1.className = `preview-row ${isDoubleRow ? 'dual-row' : 'single-row'}`;
+            }
+            if (row2) {
+                row2.className = 'preview-row dual-row';
+                row2.style.display = isDoubleRow ? 'flex' : 'none';
+            }
+            
+            // Update row 1 complications
+            ['rdy', 'slp', 'hr'].forEach((id, index) => {
+                const measurementIndex = layoutPositions[index];
+                const measurement = measurements[measurementIndex];
+                const valueEl = document.getElementById(`preview-${id}-value`);
+                const labelEl = document.getElementById(`preview-${id}-label`);
+                
+                if (valueEl && labelEl) {
+                    valueEl.textContent = sampleData[measurement];
+                    const labelText = settings.use_emoji ? emojiLabels[measurement] : textLabels[measurement];
+                    labelEl.textContent = labelText;
+                    
+                    // Apply emoji class for proper sizing
+                    labelEl.className = `preview-label ${settings.use_emoji ? 'emoji' : ''}`;
+                    
+                    // Apply colors with contrast checking
+                    const colorKey = measurement.replace('_', '_') + '_color';
+                    const color = getColorHexByIndex(settings[colorKey] ?? 63, 63);
+                    const bgColor = getColorHexByIndex(settings.background_color ?? 0, 0);
+                    
+                    // Ensure sufficient contrast
+                    const finalColor = ensureContrast(color, bgColor);
+                    valueEl.style.color = finalColor;
+                    labelEl.style.color = finalColor;
+                }
+            });
+            
+            // Update row 2 complications if visible
+            if (isDoubleRow) {
+                ['act', 'str'].forEach((id, index) => {
+                    const measurementIndex = row2Positions[index];
+                    const measurement = measurements[measurementIndex];
+                    const valueEl = document.getElementById(`preview-${id}-value`);
+                    const labelEl = document.getElementById(`preview-${id}-label`);
+                    
+                    if (valueEl && labelEl) {
+                        valueEl.textContent = sampleData[measurement];
+                        const labelText = settings.use_emoji ? emojiLabels[measurement] : textLabels[measurement];
+                        labelEl.textContent = labelText;
+                        
+                        // Apply emoji class for proper sizing
+                        labelEl.className = `preview-label ${settings.use_emoji ? 'emoji' : ''}`;
+                        
+                        // Apply colors with contrast checking
+                        const colorKey = measurement.replace('_', '_') + '_color';
+                        const color = getColorHexByIndex(settings[colorKey] ?? 63, 63);
+                        const bgColor = getColorHexByIndex(settings.background_color ?? 0, 0);
+                        
+                        // Ensure sufficient contrast
+                        const finalColor = ensureContrast(color, bgColor);
+                        valueEl.style.color = finalColor;
+                        labelEl.style.color = finalColor;
+                    }
+                });
             }
         }
         
-        // Set default flexible layout configuration
-        function setDefaultFlexibleLayout() {
-            // Default: 1 row with Readiness, Sleep, Heart Rate (matches watchface C code defaults)
-            document.getElementById('layout-rows').value = '1';
-            document.getElementById('left-position').value = '0';  // Readiness
-            document.getElementById('middle-position').value = '1';  // Sleep
-            document.getElementById('right-position').value = '2';  // Heart Rate
+        // Ensure sufficient contrast between text and background colors
+        function ensureContrast(textColor, bgColor) {
+            const contrast = getContrastRatio(textColor, bgColor);
             
-            // Default Row 2: Activity, Stress (only used when 2-row is selected)
-            document.getElementById('row2-left-position').value = '3';  // Activity
-            document.getElementById('row2-right-position').value = '4';  // Stress
+            // If contrast is too low, use white or black for better readability
+            if (contrast < 3.0) {
+                const bgLuminance = getLuminance(bgColor);
+                return bgLuminance > 0.5 ? '#000000' : '#FFFFFF';
+            }
             
-            // Hide row 2 selectors since default is 1 row
-            updateRowSelectorsVisibility();
-            
-            saveLayoutConfiguration();
-            debugLog('📐 Set default flexible layout configuration (1 row, 3 complications)');
+            return textColor;
         }
+        
+        // Calculate contrast ratio between two colors
+        function getContrastRatio(color1, color2) {
+            const lum1 = getLuminance(color1);
+            const lum2 = getLuminance(color2);
+            const brightest = Math.max(lum1, lum2);
+            const darkest = Math.min(lum1, lum2);
+            return (brightest + 0.05) / (darkest + 0.05);
+        }
+        
+        // Calculate relative luminance of a color
+        function getLuminance(hex) {
+            const rgb = hexToRgb(hex);
+            const rsRGB = rgb.r / 255;
+            const gsRGB = rgb.g / 255;
+            const bsRGB = rgb.b / 255;
+            
+            const r = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+            const g = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+            const b = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+            
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+        
+        // Convert hex color to RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        function updateSaveButton() {
+            const saveBtn = document.getElementById('save-btn');
+            if (hasUnsavedChanges) {
+                saveBtn.disabled = false;
+                saveBtn.classList.add('has-changes');
+                saveBtn.textContent = 'Save*';
+            } else {
+                saveBtn.disabled = true;
+                saveBtn.classList.remove('has-changes');
+                saveBtn.textContent = 'Save';
+            }
+        }
+
+        // Connection state management
+        function updateConnectionState() {
+            const connectBtn = document.getElementById('connect-btn');
+            const statusDiv = document.getElementById('connection-status');
+            const token = localStorage.getItem('oura_access_token');
+            
+            if (token) {
+                // Check if token is valid by making a test request
+                fetch('https://peppy-pothos-093b81.netlify.app/.netlify/functions/oura-proxy?endpoint=personal_info', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Connected state
+                        connectBtn.className = 'connect-btn connected';
+                        connectBtn.textContent = '✅ Connected to Oura Ring';
+                        statusDiv.className = 'connection-status connected';
+                        statusDiv.textContent = `✅ Token stored. Review diagnostics below, then tap "Send to Pebble" when ready.`;
+                        statusDiv.style.display = 'block';
+                    } else {
+                        // Error state
+                        connectBtn.className = 'connect-btn error';
+                        connectBtn.textContent = '❌ Connection Error - Retry';
+                        statusDiv.className = 'connection-status error';
+                        statusDiv.textContent = 'Token expired or invalid. Please reconnect.';
+                        statusDiv.style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    // Error state
+                    connectBtn.className = 'connect-btn error';
+                    connectBtn.textContent = '❌ Connection Error - Retry';
+                    statusDiv.className = 'connection-status error';
+                    statusDiv.textContent = 'Unable to verify connection. Please try again.';
+                    statusDiv.style.display = 'block';
+                });
+            } else {
+                // Disconnected state
+                connectBtn.className = 'connect-btn disconnected';
+                connectBtn.textContent = 'Connect to Oura Ring';
+                statusDiv.style.display = 'none';
+            }
+        }
+        
+        
+
+        // Pebble communication
+        function sendToPebble() {
+            console.log('sendToPebble called with settings:', settings);
+            
+            if (typeof Pebble !== 'undefined') {
+                console.log('Pebble object found, sending message and closing...');
+                Pebble.sendAppMessage(settings);
+                Pebble.close();
+            } else {
+                console.log('No Pebble object found, running in browser mode');
+                // Don't try to close here - let closeConfig handle it
+            }
+        }
+
+        function sendColorPreview(colorIndex) {
+            if (typeof Pebble !== 'undefined') {
+                Pebble.sendAppMessage({
+                    custom_color_index: colorIndex,
+                    theme_mode: 2 // Force custom color mode for preview
+                });
+            }
+        }
+
+        function connectToOura() {
+            // Save current settings before redirect
+            collectAllSettings();
+            localStorage.setItem('oura_settings', JSON.stringify(settings));
+            
+            const CLIENT_ID = 'TGDTXUBGWULVNKSC';
+            const REDIRECT_URI = 'https://peppy-pothos-093b81.netlify.app/pebble-static-config.html';
+            const SCOPE = 'email personal heartrate workout tag session daily';
+            const authUrl = `https://cloud.ouraring.com/oauth/authorize?response_type=token&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPE)}`;
+            window.location.href = authUrl;
+        }
+
+        // Check for OAuth token on page load
+        window.addEventListener('load', function() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+            
+            if (accessToken) {
+                // Load existing settings first
+                const saved = localStorage.getItem('oura_settings');
+                if (saved) {
+                    settings = JSON.parse(saved);
+                }
+                
+                // Add the access token
+                settings.access_token = accessToken;
+                localStorage.setItem('oura_settings', JSON.stringify(settings));
+                originalSettings = JSON.parse(JSON.stringify(settings)); // Update baseline
+                
+                // Clear the hash from URL
+                window.location.hash = '';
+                alert('Successfully connected to Oura Ring!');
+                
+                // Update UI to reflect the connection
+                applySettingsToUI();
+                updateSaveButton();
+            }
+        });
     </script>
 </body>
 </html>

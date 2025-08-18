@@ -1,7 +1,7 @@
 {
   "name": "oura-stats-watchface",
   "author": "Arturo J. Real",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "keywords": [
     "pebble-app"
   ],
@@ -72,7 +72,18 @@
       "show_debug",
       "refresh_frequency",
       "show_seconds",
-      "compact_time"
+      "compact_time",
+      "use_emoji",
+      "background_color",
+      "time_color",
+      "date_color",
+      "readiness_color",
+      "sleep_color",
+      "heart_rate_color",
+      "activity_color",
+      "stress_color",
+      "layout_row2_left",
+      "layout_row2_right"
     ],
     "resources": {
       "media": []

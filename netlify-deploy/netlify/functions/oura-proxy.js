@@ -30,7 +30,12 @@ exports.handler = async (event, context) => {
 
   try {
     // Extract parameters
-    const { endpoint, token, start_date, end_date } = event.queryStringParameters || {};
+    const { endpoint, token: tokenFromQuery, start_date, end_date } = event.queryStringParameters || {};
+
+    // Prefer Authorization header if present; fallback to token query param
+    const authHeader = (event.headers && (event.headers.Authorization || event.headers.authorization)) || '';
+    const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+    const token = bearerMatch ? bearerMatch[1] : tokenFromQuery;
 
     if (!endpoint || !token) {
       return {
@@ -48,7 +53,8 @@ exports.handler = async (event, context) => {
       'daily_readiness', 
       'daily_sleep',
       'daily_activity',
-      'daily_stress'
+      'daily_stress',
+      'personal_info'
     ];
 
     if (!allowedEndpoints.includes(endpoint)) {
@@ -70,7 +76,8 @@ exports.handler = async (event, context) => {
       'daily_readiness': 'https://api.ouraring.com/v2/usercollection/daily_readiness',
       'daily_sleep': 'https://api.ouraring.com/v2/usercollection/daily_sleep',
       'daily_activity': 'https://api.ouraring.com/v2/usercollection/daily_activity',
-      'daily_stress': 'https://api.ouraring.com/v2/usercollection/daily_stress'
+      'daily_stress': 'https://api.ouraring.com/v2/usercollection/daily_stress',
+      'personal_info': 'https://api.ouraring.com/v2/usercollection/personal_info'
     };
     
     ouraUrl = endpointMap[endpoint];

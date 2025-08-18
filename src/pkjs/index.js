@@ -208,22 +208,6 @@ function loadCachedScores() {
           console.log('Loaded cached sleep score:', g_cached_sleep_score);
         }
 
-      // Check if we got show_loading configuration
-      if (settings.show_loading !== undefined && settings.show_loading !== null) {
-        try {
-          var sl = (settings.show_loading === true || settings.show_loading === 1 || settings.show_loading === '1');
-          localStorage.setItem('oura_show_loading', sl ? '1' : '0'); // Use '1'/'0' format to match config page
-          console.log('💾 show_loading stored:', sl);
-          // Send immediately to watchface
-          Pebble.sendAppMessage({ 'show_loading': sl ? 1 : 0 }, function() {
-            console.log('✅ show_loading sent to watchface');
-          }, function(err) {
-            console.error('❌ Error sending show_loading:', err);
-          });
-        } catch (err) {
-          console.error('Error handling show_loading setting:', err);
-        }
-      }
         if (data.readiness_score) {
           g_cached_readiness_score = parseInt(data.readiness_score);
           console.log('Loaded cached readiness score:', g_cached_readiness_score);
@@ -1587,6 +1571,126 @@ Pebble.addEventListener('ready', function() {
     console.log('Error determining show_loading on ready:', e);
   }
 
+  // Immediately send time display preferences (show_seconds, compact_time)
+  try {
+    var ssPref = localStorage.getItem('oura_show_seconds');
+    var ctPref = localStorage.getItem('oura_compact_time');
+    var ssVal = (ssPref === '1');
+    var ctVal = (ctPref === '1');
+    Pebble.sendAppMessage({ 'show_seconds': ssVal ? 1 : 0 }, function() {
+      console.log('✅ Initial show_seconds sent:', ssVal ? 1 : 0);
+    }, function(err) {
+      console.error('❌ Error sending initial show_seconds:', err);
+    });
+    Pebble.sendAppMessage({ 'compact_time': ctVal ? 1 : 0 }, function() {
+      console.log('✅ Initial compact_time sent:', ctVal ? 1 : 0);
+    }, function(err) {
+      console.error('❌ Error sending initial compact_time:', err);
+    });
+  } catch (e) {
+    console.log('Error determining time prefs on ready:', e);
+  }
+
+  // Immediately send emoji preference (use_emoji)
+  try {
+    var uePref = localStorage.getItem('oura_use_emoji');
+    // Stored as '1'/'0' in config page; default to false if not set
+    var ueVal = (uePref === '1');
+    Pebble.sendAppMessage({ 'use_emoji': ueVal ? 1 : 0 }, function() {
+      console.log('✅ Initial use_emoji sent:', ueVal ? 1 : 0);
+    }, function(err) {
+      console.error('❌ Error sending initial use_emoji:', err);
+    });
+  } catch (e) {
+    console.log('Error determining use_emoji on ready:', e);
+  }
+
+  // Immediately send show_debug and refresh_frequency to the watchface
+  try {
+    var storedShowDebug = localStorage.getItem('oura_show_debug');
+    var showDebugVal = (storedShowDebug === null || storedShowDebug === undefined) ? true : (storedShowDebug === 'true');
+    CONFIG_SETTINGS.show_debug = showDebugVal;
+    Pebble.sendAppMessage({ 'show_debug': showDebugVal ? 1 : 0 }, function() {
+      console.log('✅ Initial show_debug sent:', showDebugVal ? 1 : 0);
+    }, function(err) {
+      console.error('❌ Error sending initial show_debug:', err);
+    });
+  } catch (e) {
+    console.log('Error determining show_debug on ready:', e);
+  }
+
+  try {
+    var storedFreq = localStorage.getItem('oura_refresh_frequency');
+    var freqVal = storedFreq ? parseInt(storedFreq) : (CONFIG_SETTINGS.refresh_frequency || 30);
+    if (freqVal !== 15 && freqVal !== 30 && freqVal !== 60) freqVal = 30;
+    CONFIG_SETTINGS.refresh_frequency = freqVal;
+    Pebble.sendAppMessage({ 'refresh_frequency': freqVal }, function() {
+      console.log('✅ Initial refresh_frequency sent:', freqVal);
+    }, function(err) {
+      console.error('❌ Error sending initial refresh_frequency:', err);
+    });
+    // Ensure periodic fetch interval matches
+    updateRefreshInterval();
+  } catch (e) {
+    console.log('Error determining refresh_frequency on ready:', e);
+  }
+
+  // Rehydrate persisted theme/date/colors/layout so user prefs persist across restarts
+  try {
+    // Theme mode
+    var tm = localStorage.getItem('oura_theme_mode');
+    if (tm !== null && tm !== undefined) {
+      var tmVal = parseInt(tm);
+      if (!isNaN(tmVal)) {
+        Pebble.sendAppMessage({ 'theme_mode': tmVal }, function(){ console.log('✅ Restored theme_mode:', tmVal); }, function(err){ console.error('❌ Restore theme_mode failed:', err); });
+      }
+    }
+
+    // Date format
+    var df = localStorage.getItem('oura_date_format');
+    if (df !== null && df !== undefined) {
+      var dfVal = parseInt(df);
+      if (!isNaN(dfVal)) {
+        Pebble.sendAppMessage({ 'date_format': dfVal }, function(){ console.log('✅ Restored date_format:', dfVal); }, function(err){ console.error('❌ Restore date_format failed:', err); });
+      }
+    }
+
+    // Colors
+    var colorKeys = ['background_color','time_color','date_color','readiness_color','sleep_color','heart_rate_color','activity_color','stress_color'];
+    var colorMsg = {}; var haveAny = false;
+    for (var i=0;i<colorKeys.length;i++) {
+      var ck = colorKeys[i];
+      var stored = localStorage.getItem('oura_' + ck);
+      if (stored !== null && stored !== undefined && stored !== '') {
+        var cv = parseInt(stored);
+        if (!isNaN(cv)) { colorMsg[ck] = cv; haveAny = true; }
+      }
+    }
+    if (haveAny) {
+      enqueueMessage(colorMsg, function(){ console.log('✅ Restored colors:', colorMsg); }, function(err){ console.error('❌ Restore colors failed:', err); });
+    }
+
+    // Layout
+    var layoutJson = localStorage.getItem('oura_measurement_layout');
+    if (layoutJson) {
+      try {
+        var lc = JSON.parse(layoutJson);
+        var lmsg = {};
+        if (lc.left !== undefined) lmsg.layout_left = parseInt(lc.left);
+        if (lc.middle !== undefined) lmsg.layout_middle = parseInt(lc.middle);
+        if (lc.right !== undefined) lmsg.layout_right = parseInt(lc.right);
+        if (lc.rows !== undefined) lmsg.layout_rows = parseInt(lc.rows);
+        if (lc.row2_left !== undefined) lmsg.layout_row2_left = parseInt(lc.row2_left);
+        if (lc.row2_right !== undefined) lmsg.layout_row2_right = parseInt(lc.row2_right);
+        if (Object.keys(lmsg).length > 0) {
+          enqueueMessage(lmsg, function(){ console.log('✅ Restored layout:', lmsg); }, function(err){ console.error('❌ Restore layout failed:', err); });
+        }
+      } catch (e4) { console.error('Error parsing stored layout:', e4); }
+    }
+  } catch (rehErr) {
+    console.error('❌ Error during settings rehydrate:', rehErr);
+  }
+
   // Check if we have a valid token and fetch data
   if (CONFIG_SETTINGS.connected && CONFIG_SETTINGS.access_token) {
     console.log('Valid token found in CONFIG_SETTINGS, fetching Oura data');
@@ -1674,16 +1778,44 @@ Pebble.addEventListener('webviewclosed', function(e) {
           left: settings.layout_left.toString(),
           middle: settings.layout_middle.toString(),
           right: settings.layout_right.toString(),
-          // Add flexible layout fields from config page
+          // Add flexible layout fields from config page (correct keys)
           rows: (settings.layout_rows !== undefined && settings.layout_rows !== null) ? settings.layout_rows.toString() : '1',
-          row2_left: (settings.row2_left !== undefined && settings.row2_left !== null) ? settings.row2_left.toString() : '3',
-          row2_right: (settings.row2_right !== undefined && settings.row2_right !== null) ? settings.row2_right.toString() : '4'
+          row2_left: (settings.layout_row2_left !== undefined && settings.layout_row2_left !== null) ? settings.layout_row2_left.toString() : '3',
+          row2_right: (settings.layout_row2_right !== undefined && settings.layout_row2_right !== null) ? settings.layout_row2_right.toString() : '4'
         };
         console.log('💾 Storing layout config:', JSON.stringify(layoutConfig));
         console.log('🔍 Flexible layout fields - rows:', layoutConfig.rows, 'row2_left:', layoutConfig.row2_left, 'row2_right:', layoutConfig.row2_right);
         localStorage.setItem('oura_measurement_layout', JSON.stringify(layoutConfig));
         console.log('✅ Layout configuration stored in localStorage');
         sendDebugStatus('Layout config stored');
+
+        // Send layout settings to watchface immediately
+        try {
+          var layoutMessage = {
+            'layout_left': parseInt(settings.layout_left),
+            'layout_middle': parseInt(settings.layout_middle),
+            'layout_right': parseInt(settings.layout_right)
+          };
+          // Optional row2 fields
+          if (settings.layout_rows !== undefined && settings.layout_rows !== null) {
+            layoutMessage.layout_rows = parseInt(settings.layout_rows);
+          }
+          if (settings.layout_row2_left !== undefined && settings.layout_row2_left !== null) {
+            layoutMessage.layout_row2_left = parseInt(settings.layout_row2_left);
+          }
+          if (settings.layout_row2_right !== undefined && settings.layout_row2_right !== null) {
+            layoutMessage.layout_row2_right = parseInt(settings.layout_row2_right);
+          }
+          enqueueMessage(layoutMessage, function() {
+            console.log('✅ Layout settings sent to watchface:', layoutMessage);
+            sendDebugStatus('Layout applied');
+          }, function(err) {
+            console.error('❌ Error sending layout settings:', err);
+            sendDebugStatus('Error applying layout');
+          });
+        } catch (e3) {
+          console.error('❌ Error preparing layout message:', e3);
+        }
       }
       
       // Check if we got date format configuration
@@ -1737,6 +1869,62 @@ Pebble.addEventListener('webviewclosed', function(e) {
           });
         } catch (error) {
           console.error('❌ Error sending theme mode message:', error);
+        }
+      }
+
+      // Handle individual color settings (send immediately to watchface)
+      try {
+        var colorKeys = [
+          'background_color',
+          'time_color',
+          'date_color',
+          'readiness_color',
+          'sleep_color',
+          'heart_rate_color',
+          'activity_color',
+          'stress_color'
+        ];
+        var colorMessage = {};
+        var anyColor = false;
+        for (var ci = 0; ci < colorKeys.length; ci++) {
+          var ck = colorKeys[ci];
+          if (settings.hasOwnProperty(ck) && settings[ck] !== undefined && settings[ck] !== null && settings[ck] !== '') {
+            var v = parseInt(settings[ck]);
+            if (!isNaN(v)) {
+              colorMessage[ck] = v;
+              anyColor = true;
+              // Persist on phone for consistency (watch persists separately)
+              try { localStorage.setItem('oura_' + ck, String(v)); } catch (e3) {}
+            }
+          }
+        }
+        if (anyColor) {
+          enqueueMessage(colorMessage, function() {
+            console.log('✅ Color settings sent to watchface:', colorMessage);
+            sendDebugStatus('Colors applied');
+          }, function(err) {
+            console.error('❌ Error sending color settings:', err);
+            sendDebugStatus('Error applying colors');
+          });
+        } else {
+          console.log('ℹ️ No color settings present to send');
+        }
+      } catch (e2) {
+        console.error('❌ Error preparing color settings message:', e2);
+      }
+
+      // Handle use_emoji setting
+      if (settings.use_emoji !== undefined && settings.use_emoji !== null) {
+        try {
+          var ue = (settings.use_emoji === 1 || settings.use_emoji === '1' || settings.use_emoji === true);
+          localStorage.setItem('oura_use_emoji', ue ? '1' : '0');
+          Pebble.sendAppMessage({ 'use_emoji': ue ? 1 : 0 }, function() {
+            console.log('✅ use_emoji sent to watchface:', ue ? 1 : 0);
+          }, function(err) {
+            console.error('❌ Error sending use_emoji:', err);
+          });
+        } catch (e2) {
+          console.error('❌ Error handling use_emoji:', e2);
         }
       }
 
@@ -1803,6 +1991,73 @@ Pebble.addEventListener('webviewclosed', function(e) {
       } else {
         console.log('⚠️ Layout configuration not found in settings');
         sendDebugStatus('No layout config in settings');
+      }
+
+      // Handle show_debug setting
+      if (settings.show_debug !== undefined && settings.show_debug !== null) {
+        try {
+          var sd = !!settings.show_debug;
+          localStorage.setItem('oura_show_debug', sd ? 'true' : 'false');
+          CONFIG_SETTINGS.show_debug = sd;
+          Pebble.sendAppMessage({ 'show_debug': sd ? 1 : 0 }, function() {
+            console.log('✅ show_debug sent to watchface:', sd ? 1 : 0);
+          }, function(err) {
+            console.error('❌ Error sending show_debug:', err);
+          });
+        } catch (e2) {
+          console.error('❌ Error handling show_debug:', e2);
+        }
+      }
+
+      // Handle show_seconds setting
+      if (settings.show_seconds !== undefined && settings.show_seconds !== null) {
+        try {
+          var ss = (settings.show_seconds === 1 || settings.show_seconds === '1' || settings.show_seconds === true);
+          localStorage.setItem('oura_show_seconds', ss ? '1' : '0');
+          CONFIG_SETTINGS.show_seconds = ss;
+          Pebble.sendAppMessage({ 'show_seconds': ss ? 1 : 0 }, function() {
+            console.log('✅ show_seconds sent to watchface:', ss ? 1 : 0);
+          }, function(err) {
+            console.error('❌ Error sending show_seconds:', err);
+          });
+        } catch (e2) {
+          console.error('❌ Error handling show_seconds:', e2);
+        }
+      }
+
+      // Handle compact_time setting
+      if (settings.compact_time !== undefined && settings.compact_time !== null) {
+        try {
+          var ct = (settings.compact_time === 1 || settings.compact_time === '1' || settings.compact_time === true);
+          localStorage.setItem('oura_compact_time', ct ? '1' : '0');
+          CONFIG_SETTINGS.compact_time = ct;
+          Pebble.sendAppMessage({ 'compact_time': ct ? 1 : 0 }, function() {
+            console.log('✅ compact_time sent to watchface:', ct ? 1 : 0);
+          }, function(err) {
+            console.error('❌ Error sending compact_time:', err);
+          });
+        } catch (e2) {
+          console.error('❌ Error handling compact_time:', e2);
+        }
+      }
+
+      // Handle refresh_frequency setting
+      if (settings.refresh_frequency !== undefined && settings.refresh_frequency !== null) {
+        try {
+          var rf = parseInt(settings.refresh_frequency) || 30;
+          if (rf !== 15 && rf !== 30 && rf !== 60) rf = 30;
+          localStorage.setItem('oura_refresh_frequency', String(rf));
+          CONFIG_SETTINGS.refresh_frequency = rf;
+          Pebble.sendAppMessage({ 'refresh_frequency': rf }, function() {
+            console.log('✅ refresh_frequency sent to watchface:', rf);
+          }, function(err) {
+            console.error('❌ Error sending refresh_frequency:', err);
+          });
+          // Apply new interval to phone-side fetch timer
+          updateRefreshInterval();
+        } catch (e2) {
+          console.error('❌ Error handling refresh_frequency:', e2);
+        }
       }
       
       // Update configuration

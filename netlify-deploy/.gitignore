@@ -1,0 +1,14 @@
+# Netlify deploy workspace ignore
+node_modules/
+.DS_Store
+*.log
+.cache/
+dist/
+build/
+.tmp/
+# Pebble artifacts
+build/
+pebble-app.bin
+pebble-app.pbw
+# OS files
+Thumbs.db
